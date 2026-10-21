@@ -1,0 +1,104 @@
+.home-placeholder {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  overflow: hidden;
+  padding: 32px;
+  background: #f2efe9;
+  color: #171717;
+  text-align: center;
+  animation: home-arrival 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-brand {
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 850;
+  letter-spacing: 0.28em;
+  transform: translateX(-50%);
+}
+
+.home-kicker {
+  margin: 0 0 18px;
+  color: #927353;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+}
+
+.home-placeholder h1 {
+  position: relative;
+  margin: 0;
+  font-size: clamp(3.4rem, 9vw, 8.2rem);
+  font-weight: 520;
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.home-note {
+  margin: 24px 0 0;
+  color: #77716a;
+  font-size: 0.92rem;
+}
+
+.home-orbit {
+  position: absolute;
+  width: min(65vw, 740px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgb(36 31 23 / 10%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+}
+
+.home-orbit::before,
+.home-orbit::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border: 1px solid rgb(36 31 23 / 8%);
+  border-radius: 50%;
+}
+
+.home-orbit::after {
+  inset: 31%;
+}
+
+.home-orbit span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #171717;
+}
+
+.home-orbit span:nth-child(1) {
+  top: 20%;
+  left: 8%;
+}
+
+.home-orbit span:nth-child(2) {
+  right: 2%;
+  bottom: 36%;
+}
+
+.home-orbit span:nth-child(3) {
+  right: 29%;
+  bottom: 1%;
+}
+
+@keyframes home-arrival {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
