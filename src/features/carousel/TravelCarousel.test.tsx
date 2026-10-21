@@ -15,19 +15,28 @@ describe('TravelCarousel', () => {
     )
   })
 
-  it('reveals color from the same fitted image inside the animated frame', () => {
+  it('keeps the gray image, color reveal, and frame in one coordinate system', () => {
     const { container } = render(<TravelCarousel paused={false} />)
     const activeSlide = container.querySelector('.travel-slide--current')
-    const grayImage = activeSlide?.querySelector<HTMLImageElement>(
-      '.travel-image--gray',
-    )
-    const colorImage = activeSlide?.querySelector<HTMLImageElement>(
-      '.travel-image--color',
-    )
+    const visual = activeSlide?.querySelector('svg.travel-visual')
+    const grayImage = visual?.querySelector('.travel-image--gray')
+    const colorImage = visual?.querySelector('.travel-image--color')
+    const shape = visual?.querySelector('.color-window__shape')
+    const border = visual?.querySelector('.color-window__border')
 
+    expect(visual).not.toBeNull()
+    expect(grayImage?.getAttribute('href')).toBe(
+      colorImage?.getAttribute('href'),
+    )
     expect(colorImage).not.toBeNull()
-    expect(colorImage?.src).toBe(grayImage?.src)
-    expect(colorImage?.style.clipPath).toContain('travel-window-current-0')
+    expect(colorImage?.getAttribute('clip-path')).toContain(
+      'travel-window-current-0',
+    )
+    for (const attribute of ['x', 'y', 'width', 'height', 'rx']) {
+      expect(shape?.getAttribute(attribute)).toBe(
+        border?.getAttribute(attribute),
+      )
+    }
   })
 
   it('keeps a neutral location card when a travel image fails to load', () => {

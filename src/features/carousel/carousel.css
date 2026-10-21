@@ -37,12 +37,11 @@
     linear-gradient(145deg, #5f635e, #242d2c 74%);
 }
 
-.travel-slide.has-image-error .travel-image {
+.travel-slide.has-image-error .travel-visual {
   display: none;
 }
 
-.travel-image,
-.color-window,
+.travel-visual,
 .slide-shade {
   position: absolute;
   inset: 0;
@@ -50,25 +49,14 @@
   height: 100%;
 }
 
-.travel-image {
-  object-fit: cover;
+.travel-visual {
   user-select: none;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .travel-image--gray {
   filter: grayscale(1) contrast(0.92) brightness(0.82);
-  transform: scale(1.015);
-}
-
-.travel-image--color {
-  z-index: 1;
-  transform: scale(1.015);
-}
-
-.color-window {
-  z-index: 2;
-  overflow: visible;
-  pointer-events: none;
 }
 
 .color-window__shape,
