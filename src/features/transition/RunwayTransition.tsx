@@ -19,7 +19,26 @@ type TransitionStyle = CSSProperties & {
   '--divider-x': string
   '--card-top': string
   '--card-height': string
+  '--origin-center-x': string
+  '--origin-center-y': string
+  '--circle-left': string
+  '--circle-top': string
+  '--bar-left': string
+  '--plane-top': string
+  '--tail-left-x': string
+  '--tail-right-x': string
+  '--tail-y': string
+  '--wipe-left-x': string
+  '--wipe-right-x': string
+  '--wipe-far-y': string
+  '--flight-distance': string
 }
+
+const BAR_WIDTH = 44
+const PLANE_SIZE = 64
+const TAIL_HALF_SPAN = 12.2
+const TAIL_Y_OFFSET = 59.5
+const TAIL_EDGE_SLOPE = 3.3 / 12.2
 
 function Airplane() {
   return (
@@ -70,6 +89,32 @@ export function RunwayTransition({
   }, [onComplete])
 
   const style: TransitionStyle = {
+    ...(() => {
+      const originCenterX = origin.left + origin.width / 2
+      const originCenterY = origin.top + origin.height / 2
+      const planeTop = origin.cardTop + origin.cardHeight - PLANE_SIZE
+      const tailY = planeTop + TAIL_Y_OFFSET
+      const tailLeftX = origin.dividerX - TAIL_HALF_SPAN
+      const tailRightX = origin.dividerX + TAIL_HALF_SPAN
+      const wipeFarY = window.innerHeight * 3
+      const wipeHorizontalRun = (wipeFarY - tailY) / TAIL_EDGE_SLOPE
+
+      return {
+        '--origin-center-x': `${originCenterX}px`,
+        '--origin-center-y': `${originCenterY}px`,
+        '--circle-left': `${originCenterX - BAR_WIDTH / 2}px`,
+        '--circle-top': `${originCenterY - BAR_WIDTH / 2}px`,
+        '--bar-left': `${origin.dividerX - BAR_WIDTH / 2}px`,
+        '--plane-top': `${planeTop}px`,
+        '--tail-left-x': `${tailLeftX}px`,
+        '--tail-right-x': `${tailRightX}px`,
+        '--tail-y': `${tailY}px`,
+        '--wipe-left-x': `${tailLeftX - wipeHorizontalRun}px`,
+        '--wipe-right-x': `${tailRightX + wipeHorizontalRun}px`,
+        '--wipe-far-y': `${wipeFarY}px`,
+        '--flight-distance': `${-(origin.cardTop + origin.cardHeight + 34)}px`,
+      }
+    })(),
     '--origin-left': `${origin.left}px`,
     '--origin-top': `${origin.top}px`,
     '--origin-width': `${origin.width}px`,
@@ -87,20 +132,22 @@ export function RunwayTransition({
       style={style}
       aria-hidden="true"
     >
-      <div className="page-wipe" data-testid="page-wipe" />
       <div className="transition-shape" data-testid="transition-shape">
         <span className="transition-label">Login</span>
       </div>
       <span className="transition-dot" data-testid="transition-dot" />
-      <span
-        className="wing-guide wing-guide--left"
-        data-testid="wing-guide-left"
-      />
-      <span
-        className="wing-guide wing-guide--right"
-        data-testid="wing-guide-right"
-      />
-      <Airplane />
+      <div className="flight-assembly" data-testid="flight-assembly">
+        <div className="page-wipe" data-testid="page-wipe" />
+        <span
+          className="wing-guide wing-guide--left"
+          data-testid="wing-guide-left"
+        />
+        <span
+          className="wing-guide wing-guide--right"
+          data-testid="wing-guide-right"
+        />
+        <Airplane />
+      </div>
     </div>
   )
 }

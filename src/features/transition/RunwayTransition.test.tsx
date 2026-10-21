@@ -80,18 +80,57 @@ describe('RunwayTransition', () => {
       '--divider-x': '640px',
       '--card-top': '48px',
       '--card-height': '760px',
+      '--origin-center-x': '266px',
+      '--origin-center-y': '548px',
+      '--circle-left': '244px',
+      '--circle-top': '526px',
+      '--bar-left': '618px',
+      '--plane-top': '744px',
+      '--tail-left-x': '627.8px',
+      '--tail-right-x': '652.2px',
+      '--tail-y': '803.5px',
+      '--flight-distance': '-842px',
     })
     expect(screen.getByTestId('transition-shape')).toBeInTheDocument()
     expect(screen.getByTestId('transition-dot')).toBeInTheDocument()
-    expect(screen.getByTestId('transition-airplane')).toHaveAttribute(
+    const flightAssembly = screen.getByTestId('flight-assembly')
+    const airplane = screen.getByTestId('transition-airplane')
+    const pageWipe = screen.getByTestId('page-wipe')
+    const leftGuide = screen.getByTestId('wing-guide-left')
+    const rightGuide = screen.getByTestId('wing-guide-right')
+    expect(airplane).toHaveAttribute(
       'aria-hidden',
       'true',
     )
-    expect(screen.getByTestId('page-wipe')).toBeInTheDocument()
-    expect(screen.getByTestId('wing-guide-left')).toBeInTheDocument()
-    expect(screen.getByTestId('wing-guide-right')).toBeInTheDocument()
+    expect(flightAssembly).toContainElement(airplane)
+    expect(flightAssembly).toContainElement(pageWipe)
+    expect(flightAssembly).toContainElement(leftGuide)
+    expect(flightAssembly).toContainElement(rightGuide)
+    expect(window.getComputedStyle(leftGuide).transform).toBe('rotate(74.86deg)')
+    expect(window.getComputedStyle(rightGuide).transform).toBe(
+      'rotate(-74.86deg)',
+    )
     expect(document.querySelector('#gooey-runway-filter')).not.toBeInTheDocument()
     expect(document.querySelector('.liquid-drop')).not.toBeInTheDocument()
+  })
+
+  it('keeps the circular cap radius while stretching and ends as a rectangle', () => {
+    render(<RunwayTransition origin={origin} onComplete={vi.fn()} />)
+    const shape = screen.getByTestId('transition-shape')
+
+    act(() => vi.advanceTimersByTime(1000))
+    expect(screen.getByTestId('runway-transition')).toHaveAttribute(
+      'data-stage',
+      'stretch',
+    )
+    expect(window.getComputedStyle(shape).borderRadius).toBe('22px')
+
+    act(() => vi.advanceTimersByTime(700))
+    expect(screen.getByTestId('runway-transition')).toHaveAttribute(
+      'data-stage',
+      'morph',
+    )
+    expect(window.getComputedStyle(shape).borderRadius).toBe('0px')
   })
 
   it('cleans up timers when the transition unmounts', () => {
