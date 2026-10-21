@@ -4,240 +4,386 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  perspective: 900px;
+  --bar-width: 44px;
+  --dot-size: 10px;
+  --plane-size: 64px;
+  --page-background: #f3f1ed;
 }
 
-.goo-filter {
+.transition-shape {
   position: absolute;
-  width: 0;
-  height: 0;
-}
-
-.liquid-field {
-  position: absolute;
-  inset: 0;
-  filter: url('#gooey-runway-filter');
-}
-
-.liquid-button {
-  position: absolute;
+  z-index: 1;
   left: var(--origin-left);
   top: var(--origin-top);
   width: var(--origin-width);
   height: var(--origin-height);
   display: grid;
   place-items: center;
+  overflow: hidden;
   border-radius: 0;
-  background: #171717;
+  background-color: #171717;
   color: #fff;
-  transform-origin: center;
-  transition:
-    left 780ms cubic-bezier(0.65, 0, 0.35, 1),
-    top 780ms cubic-bezier(0.65, 0, 0.35, 1),
-    width 780ms cubic-bezier(0.65, 0, 0.35, 1),
-    height 780ms cubic-bezier(0.65, 0, 0.35, 1),
-    border-radius 500ms ease,
-    transform 600ms ease;
+  will-change: left, top, width, height, border-radius;
 }
 
-.liquid-label {
+.transition-label {
   font-size: 0.92rem;
   font-weight: 700;
-  transition: opacity 280ms ease, filter 280ms ease, transform 280ms ease;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-.liquid-drop {
-  position: absolute;
-  width: 46px;
-  height: 46px;
-  left: calc(var(--origin-left) + var(--origin-width) - 28px);
-  top: calc(var(--origin-top) + 5px);
-  border-radius: 50%;
-  background: #171717;
-  animation: liquid-seek 820ms cubic-bezier(0.5, 0, 0.2, 1) forwards;
-}
-
-.liquid-drop--two {
-  width: 30px;
-  height: 30px;
-  animation-delay: 80ms;
-}
-
-.liquid-drop--three {
-  width: 20px;
-  height: 20px;
-  animation-delay: 170ms;
-}
-
-.stage-runway .liquid-button,
-.stage-flight .liquid-button {
-  left: calc(50vw - 35px);
-  top: -5vh;
-  width: 70px;
-  height: 112vh;
-  border-radius: 0;
-  transform: perspective(900px) rotateX(10deg) scaleX(1.05);
-}
-
-.stage-runway .liquid-label,
-.stage-flight .liquid-label {
-  opacity: 0;
-  filter: blur(8px);
-  transform: scale(0.5);
-}
-
-.stage-runway .liquid-drop,
-.stage-flight .liquid-drop {
-  opacity: 0;
-}
-
-.runway-plane {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: -10vh;
-  width: 12vw;
-  min-width: 80px;
-  max-width: 180px;
-  height: 120vh;
-  background: #171717;
-  clip-path: polygon(41% 0, 59% 0, 100% 100%, 0 100%);
-  opacity: 0;
-  transform: translateX(-50%) scaleY(0.08);
-  transform-origin: top;
-  transition: opacity 260ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.stage-runway .runway-plane,
-.stage-flight .runway-plane {
-  opacity: 1;
-  transform: translateX(-50%) scaleY(1);
-}
-
-.runway-centerline {
-  position: absolute;
-  left: 50%;
-  top: 24%;
-  width: 4px;
-  height: 13%;
-  background: rgb(255 255 255 / 88%);
-  transform: translateX(-50%);
-}
-
-.runway-centerline--two {
-  top: 49%;
-  width: 7px;
-  height: 15%;
-}
-
-.runway-centerline--three {
-  top: 78%;
-  width: 11px;
-  height: 18%;
-}
-
-.runway-airplane {
-  position: absolute;
-  z-index: 4;
-  left: 50%;
-  top: 3vh;
-  width: clamp(38px, 4.8vw, 72px);
-  fill: #fff;
-  filter: drop-shadow(0 8px 13px rgb(0 0 0 / 28%));
-  opacity: 0;
-  transform: translate(-50%, -100px) scale(0.45);
-}
-
-.stage-runway .runway-airplane {
-  opacity: 1;
-  transform: translate(-50%, 8vh) scale(0.7);
-  transition: opacity 280ms ease, transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.stage-flight .runway-airplane {
-  opacity: 1;
-  animation: airplane-flight 1500ms cubic-bezier(0.62, 0, 0.9, 0.36) both;
-}
-
-.speed-light {
+.transition-dot {
   position: absolute;
   z-index: 3;
-  top: -15%;
-  width: 2px;
-  height: 38%;
-  background: linear-gradient(transparent, rgb(255 255 255 / 68%), transparent);
+  left: calc(var(--origin-left) + var(--origin-width) / 2 - var(--dot-size) / 2);
+  top: calc(var(--origin-top) + var(--origin-height) / 2 - var(--dot-size) / 2);
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  background: #fff;
   opacity: 0;
+  transform: scale(0);
+  will-change: left, top, opacity, transform;
 }
 
-.speed-light--left {
-  left: calc(50% - 8vw);
+.transition-airplane {
+  position: absolute;
+  z-index: 5;
+  left: var(--divider-x);
+  top: calc(var(--card-top) + var(--card-height) - var(--plane-size));
+  width: var(--plane-size);
+  height: var(--plane-size);
+  fill: #fff;
+  opacity: 0;
+  filter: drop-shadow(0 7px 12px rgb(0 0 0 / 28%));
+  transform: translateX(-50%) scale(0.12);
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
-.speed-light--right {
-  right: calc(50% - 8vw);
+.wing-guide {
+  position: absolute;
+  z-index: 4;
+  left: var(--divider-x);
+  top: calc(var(--card-top) + var(--card-height) - 27px);
+  width: 3px;
+  height: 145vh;
+  border-radius: 999px;
+  background: var(--page-background);
+  opacity: 0;
+  transform-origin: top center;
+  will-change: transform, opacity;
 }
 
-.stage-flight .speed-light {
-  animation: speed-streak 520ms linear infinite;
+.wing-guide--left {
+  margin-left: -20px;
+  transform: rotate(21deg);
 }
 
-@keyframes liquid-seek {
-  0% {
-    transform: translate(0, 0) scale(0.2);
-  }
-  48% {
-    transform: translate(calc(50vw - var(--origin-left) - var(--origin-width)), -34px) scale(1);
-  }
-  100% {
-    transform: translate(calc(50vw - var(--origin-left) - var(--origin-width)), calc(-1 * var(--origin-top))) scale(1.7);
-  }
+.wing-guide--right {
+  margin-left: 17px;
+  transform: rotate(-21deg);
 }
 
-@keyframes airplane-flight {
-  0% {
-    transform: translate(-50%, 8vh) scale(0.7);
-  }
-  48% {
-    transform: translate(-50%, 48vh) scale(0.95);
-  }
-  100% {
-    transform: translate(-50%, 112vh) scale(1.6);
-  }
+.page-wipe {
+  position: absolute;
+  z-index: 2;
+  inset: -2px;
+  background: var(--page-background);
+  clip-path: polygon(50% 100%, 50% 100%, 50% 100%, 50% 100%);
+  will-change: clip-path;
 }
 
-@keyframes speed-streak {
+.stage-collapse .transition-shape {
+  animation: shape-collapse 450ms cubic-bezier(0.7, 0, 0.25, 1) both;
+}
+
+.stage-collapse .transition-label {
+  animation: label-to-dot 450ms cubic-bezier(0.55, 0, 0.2, 1) both;
+}
+
+.stage-collapse .transition-dot {
+  animation: dot-appear 450ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.stage-dock .transition-shape {
+  animation: shape-dock 550ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.stage-dock .transition-label,
+.stage-stretch .transition-label,
+.stage-morph .transition-label,
+.stage-flight .transition-label {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.stage-dock .transition-dot {
+  animation: dot-dock 550ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.stage-stretch .transition-shape {
+  animation: shape-stretch 700ms linear both;
+}
+
+.stage-stretch .transition-dot {
+  animation: dot-descend 700ms linear both;
+}
+
+.stage-morph .transition-shape,
+.stage-flight .transition-shape {
+  left: calc(var(--divider-x) - var(--bar-width) / 2);
+  top: var(--card-top);
+  width: var(--bar-width);
+  height: var(--card-height);
+  border-radius: calc(var(--bar-width) / 2);
+}
+
+.stage-morph .transition-dot {
+  left: calc(var(--divider-x) - var(--dot-size) / 2);
+  top: calc(var(--card-top) + var(--card-height) - var(--plane-size) / 2 - var(--dot-size) / 2);
+  animation: dot-morph 200ms ease-in both;
+}
+
+.stage-morph .transition-airplane {
+  animation: airplane-morph 200ms cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+
+.stage-flight .transition-dot {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.stage-flight .transition-airplane {
+  animation: airplane-takeoff 1100ms cubic-bezier(0.55, 0.02, 0.88, 0.32) both;
+}
+
+.stage-flight .wing-guide--left {
+  animation: left-guide-takeoff 1100ms cubic-bezier(0.55, 0.02, 0.88, 0.32) both;
+}
+
+.stage-flight .wing-guide--right {
+  animation: right-guide-takeoff 1100ms cubic-bezier(0.55, 0.02, 0.88, 0.32) both;
+}
+
+.stage-flight .page-wipe {
+  animation: page-wipe-rise 1100ms cubic-bezier(0.55, 0.02, 0.88, 0.32) both;
+}
+
+@keyframes shape-collapse {
   from {
-    opacity: 0;
-    transform: translateY(-30vh);
+    left: var(--origin-left);
+    top: var(--origin-top);
+    width: var(--origin-width);
+    height: var(--origin-height);
+    border-radius: 0;
   }
+
+  to {
+    left: calc(var(--origin-left) + (var(--origin-width) - var(--origin-height)) / 2);
+    top: var(--origin-top);
+    width: var(--origin-height);
+    height: var(--origin-height);
+    border-radius: 50%;
+  }
+}
+
+@keyframes label-to-dot {
+  0%,
   35% {
-    opacity: 0.8;
+    opacity: 1;
+    transform: scale(1);
   }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.08);
+  }
+}
+
+@keyframes dot-appear {
+  0%,
+  58% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shape-dock {
+  from {
+    left: calc(var(--origin-left) + (var(--origin-width) - var(--origin-height)) / 2);
+    top: var(--origin-top);
+    width: var(--origin-height);
+    height: var(--origin-height);
+    border-radius: 50%;
+  }
+
+  to {
+    left: calc(var(--divider-x) - var(--origin-height) / 2);
+    top: var(--origin-top);
+    width: var(--origin-height);
+    height: var(--origin-height);
+    border-radius: 50%;
+  }
+}
+
+@keyframes dot-dock {
+  from {
+    left: calc(var(--origin-left) + var(--origin-width) / 2 - var(--dot-size) / 2);
+    top: calc(var(--origin-top) + var(--origin-height) / 2 - var(--dot-size) / 2);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    left: calc(var(--divider-x) - var(--dot-size) / 2);
+    top: calc(var(--origin-top) + var(--origin-height) / 2 - var(--dot-size) / 2);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shape-stretch {
+  from {
+    left: calc(var(--divider-x) - var(--origin-height) / 2);
+    top: var(--origin-top);
+    width: var(--origin-height);
+    height: var(--origin-height);
+    border-radius: 50%;
+  }
+
+  to {
+    left: calc(var(--divider-x) - var(--bar-width) / 2);
+    top: var(--card-top);
+    width: var(--bar-width);
+    height: var(--card-height);
+    border-radius: calc(var(--bar-width) / 2);
+  }
+}
+
+@keyframes dot-descend {
+  from {
+    left: calc(var(--divider-x) - var(--dot-size) / 2);
+    top: calc(var(--origin-top) + var(--origin-height) / 2 - var(--dot-size) / 2);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    left: calc(var(--divider-x) - var(--dot-size) / 2);
+    top: calc(var(--card-top) + var(--card-height) - var(--plane-size) / 2 - var(--dot-size) / 2);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dot-morph {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
   to {
     opacity: 0;
-    transform: translateY(110vh);
+    transform: scale(0.1);
+  }
+}
+
+@keyframes airplane-morph {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.12);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes airplane-takeoff {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  72% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-1 * (var(--card-top) + var(--card-height) + 34px))) scale(0.78);
+  }
+}
+
+@keyframes left-guide-takeoff {
+  from {
+    opacity: 0.92;
+    transform: translateY(0) rotate(21deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(calc(-1 * (var(--card-top) + var(--card-height) + 34px))) rotate(21deg);
+  }
+}
+
+@keyframes right-guide-takeoff {
+  from {
+    opacity: 0.92;
+    transform: translateY(0) rotate(-21deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(calc(-1 * (var(--card-top) + var(--card-height) + 34px))) rotate(-21deg);
+  }
+}
+
+@keyframes page-wipe-rise {
+  0% {
+    clip-path: polygon(50% 100%, 50% 100%, 50% 100%, 50% 100%);
+  }
+
+  72% {
+    clip-path: polygon(50% -8%, -18% 100%, 118% 100%, 50% -8%);
+  }
+
+  100% {
+    clip-path: polygon(-20% -20%, -20% 120%, 120% 120%, 120% -20%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .runway-transition *,
-  .runway-transition *::before,
-  .runway-transition *::after {
-    animation-duration: 80ms !important;
-    transition-duration: 80ms !important;
+  .stage-collapse .transition-shape,
+  .stage-collapse .transition-label,
+  .stage-collapse .transition-dot,
+  .stage-dock .transition-shape,
+  .stage-dock .transition-dot,
+  .stage-stretch .transition-shape,
+  .stage-stretch .transition-dot,
+  .stage-morph .transition-dot,
+  .stage-morph .transition-airplane,
+  .stage-flight .transition-airplane,
+  .stage-flight .wing-guide,
+  .stage-flight .page-wipe {
+    animation-duration: 30ms;
+    animation-timing-function: linear;
   }
-}
 
-@media (max-width: 880px) {
-  .runway-plane {
-    width: 18vw;
+  .stage-flight .transition-airplane,
+  .stage-flight .wing-guide {
+    opacity: 0;
   }
 
-  .speed-light--left {
-    left: calc(50% - 14vw);
-  }
-
-  .speed-light--right {
-    right: calc(50% - 14vw);
+  .stage-flight .page-wipe {
+    clip-path: inset(0);
   }
 }

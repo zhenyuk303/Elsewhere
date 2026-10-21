@@ -98,17 +98,36 @@ describe('App', () => {
     fillValidSignupForm()
 
     const submit = screen.getByRole('button', { name: 'Login' })
+    const card = screen.getByTestId('auth-journey')
+    const authShell = screen
+      .getByRole('heading', { name: 'Create your account' })
+      .closest('.auth-shell') as HTMLElement
+    const carousel = screen.getByLabelText('Travel destinations')
     fireEvent.click(submit)
     fireEvent.click(submit)
 
     expect(screen.getAllByTestId('runway-transition')).toHaveLength(1)
-    expect(screen.getByLabelText('Travel destinations')).toHaveClass('is-paused')
-    expect(screen.getByTestId('auth-journey')).toHaveClass('is-transitioning')
+    expect(carousel).toHaveClass('is-paused')
+    expect(card).toHaveClass('is-transitioning')
+    expect(card).toBeInTheDocument()
+    expect(authShell).toBeInTheDocument()
+    expect(window.getComputedStyle(authShell).animationName).toBe('none')
+    expect(window.getComputedStyle(carousel).animationName).toBe('none')
+    const transitionShape = screen.getByTestId('transition-shape')
+    expect(window.getComputedStyle(transitionShape).position).toBe('absolute')
+    expect(window.getComputedStyle(transitionShape).backgroundColor).toBe(
+      'rgb(23, 23, 23)',
+    )
     expect(
       screen.queryByRole('heading', { name: 'Your journey starts here.' }),
     ).not.toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(3200))
+    act(() => vi.advanceTimersByTime(2999))
+    expect(
+      screen.queryByRole('heading', { name: 'Your journey starts here.' }),
+    ).not.toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(1))
 
     expect(
       screen.getByRole('heading', { name: 'Your journey starts here.' }),

@@ -65,28 +65,6 @@ input {
   transform: scale(0.96);
 }
 
-.journey-card.is-transitioning .auth-shell {
-  animation: auth-panel-depart 1800ms 1250ms cubic-bezier(0.55, 0, 0.5, 1) both;
-}
-
-.journey-card.is-transitioning > .travel-carousel {
-  animation: carousel-depart 1800ms 1250ms cubic-bezier(0.55, 0, 0.5, 1) both;
-}
-
-@keyframes auth-panel-depart {
-  to {
-    opacity: 0;
-    transform: translate(-18vw, 16vh) rotate(-4deg);
-  }
-}
-
-@keyframes carousel-depart {
-  to {
-    opacity: 0;
-    transform: translate(18vw, 16vh) rotate(4deg);
-  }
-}
-
 @media (max-width: 880px) {
   .app-shell {
     display: block;
@@ -111,19 +89,6 @@ input {
     border-left: 0;
   }
 
-  @keyframes auth-panel-depart {
-    to {
-      opacity: 0;
-      transform: translateY(-24vh) scale(0.94);
-    }
-  }
-
-  @keyframes carousel-depart {
-    to {
-      opacity: 0;
-      transform: translateY(28vh) scale(1.03);
-    }
-  }
 }
 
 @media (max-width: 480px) {
@@ -140,9 +105,7 @@ input {
     scroll-behavior: auto !important;
   }
 
-  .journey-card.is-transitioning .auth-shell,
-  .journey-card.is-transitioning > .travel-carousel {
-    animation-duration: 100ms;
-    animation-delay: 0ms;
+  .journey-card.is-transitioning .primary-button {
+    transition-duration: 30ms;
   }
 }
