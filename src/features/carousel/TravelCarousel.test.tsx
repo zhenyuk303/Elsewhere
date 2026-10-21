@@ -15,6 +15,21 @@ describe('TravelCarousel', () => {
     )
   })
 
+  it('reveals color from the same fitted image inside the animated frame', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const grayImage = activeSlide?.querySelector<HTMLImageElement>(
+      '.travel-image--gray',
+    )
+    const colorImage = activeSlide?.querySelector<HTMLImageElement>(
+      '.travel-image--color',
+    )
+
+    expect(colorImage).not.toBeNull()
+    expect(colorImage?.src).toBe(grayImage?.src)
+    expect(colorImage?.style.clipPath).toContain('travel-window-current-0')
+  })
+
   it('keeps a neutral location card when a travel image fails to load', () => {
     const { container } = render(<TravelCarousel paused={false} />)
     const activeSlide = container.querySelector('.travel-slide--current')

@@ -1,6 +1,5 @@
 .auth-panel {
-  width: min(100%, 430px);
-  min-height: 610px;
+  width: min(100%, 390px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -8,16 +7,17 @@
 }
 
 .auth-header {
-  margin-bottom: 32px;
+  margin-bottom: 22px;
+  text-align: center;
 }
 
 .brand {
-  display: inline-flex;
-  margin: 0 0 clamp(48px, 7vh, 80px);
+  display: block;
+  margin: 0 0 clamp(32px, 5.5vh, 56px);
   color: #121212;
-  font-size: 1.05rem;
-  font-weight: 850;
-  letter-spacing: 0.24em;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-decoration: none;
 }
 
@@ -25,33 +25,25 @@
   animation: auth-content-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.eyebrow {
-  margin: 0 0 12px;
-  color: #9a7650;
-  font-size: 0.68rem;
-  font-weight: 750;
-  letter-spacing: 0.22em;
-}
-
 .auth-header h1 {
-  max-width: 430px;
+  max-width: 390px;
   margin: 0;
-  font-size: clamp(2rem, 3vw, 3.05rem);
+  font-size: clamp(1.45rem, 1.75vw, 1.75rem);
   font-weight: 600;
-  letter-spacing: -0.055em;
-  line-height: 1.05;
+  letter-spacing: -0.035em;
+  line-height: 1.18;
 }
 
 .auth-subtitle {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   color: #83807a;
-  font-size: 0.88rem;
-  line-height: 1.65;
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .auth-form {
   display: grid;
-  gap: 17px;
+  gap: 14px;
 }
 
 .field-group {
@@ -70,19 +62,19 @@
 }
 
 .field-shell {
-  min-height: 54px;
+  min-height: 46px;
   display: flex;
   align-items: center;
-  border: 1px solid #e7e3de;
-  border-radius: 14px;
-  background: #fbfaf8;
+  border: 1px solid #dedede;
+  border-radius: 0;
+  background: #fff;
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .field-shell:focus-within {
-  border-color: #a78a68;
+  border-color: #7b7b7b;
   background: #fff;
-  box-shadow: 0 0 0 4px rgb(167 138 104 / 12%);
+  box-shadow: 0 0 0 2px rgb(23 23 23 / 8%);
 }
 
 .field-shell.has-error {
@@ -90,7 +82,7 @@
 }
 
 .field-icon {
-  width: 47px;
+  width: 42px;
   display: grid;
   place-items: center;
   color: #9b9892;
@@ -98,7 +90,7 @@
 
 .field-icon svg,
 .password-toggle svg {
-  width: 18px;
+  width: 16px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -114,7 +106,7 @@
   outline: 0;
   background: transparent;
   color: #171717;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 
 .field-shell input::placeholder {
@@ -122,7 +114,7 @@
 }
 
 .password-toggle {
-  width: 48px;
+  width: 42px;
   align-self: stretch;
   display: grid;
   place-items: center;
@@ -145,9 +137,9 @@
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: #77736d;
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   cursor: pointer;
 }
 
@@ -157,13 +149,13 @@
 }
 
 .custom-check {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
   border: 1px solid #d3cec6;
-  border-radius: 6px;
+  border-radius: 2px;
   background: #fff;
   transition: 160ms ease;
 }
@@ -191,25 +183,25 @@
 }
 
 .primary-button {
-  min-height: 56px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
   margin-top: 4px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 0;
   background: #171717;
-  box-shadow: 0 12px 28px rgb(0 0 0 / 16%);
+  box-shadow: none;
   color: #fff;
-  font-weight: 680;
+  font-size: 0.78rem;
+  font-weight: 600;
   cursor: pointer;
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .primary-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px rgb(0 0 0 / 21%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 14%);
 }
 
 .primary-button:active {
@@ -221,18 +213,9 @@
   opacity: 0.72;
 }
 
-.button-arrow {
-  font-size: 1rem;
-  transition: transform 180ms ease;
-}
-
-.primary-button:hover .button-arrow {
-  transform: translate(2px, -2px);
-}
-
 .social-block {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .social-label {
@@ -241,7 +224,7 @@
   gap: 13px;
   margin: 1px 0 0;
   color: #aaa59e;
-  font-size: 0.73rem;
+  font-size: 0.7rem;
 }
 
 .social-label::before,
@@ -259,16 +242,17 @@
 }
 
 .social-actions button {
-  min-height: 49px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   border: 1px solid #e8e4de;
-  border-radius: 13px;
+  border-radius: 0;
   background: #fff;
   color: #34312e;
-  font-weight: 650;
+  font-size: 0.76rem;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
@@ -301,9 +285,9 @@
 }
 
 .mode-switch {
-  margin: 24px 0 0;
+  margin: 18px 0 0;
   color: #8b8781;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   text-align: center;
 }
 
@@ -330,12 +314,8 @@
 }
 
 @media (max-height: 780px) and (min-width: 881px) {
-  .auth-panel {
-    min-height: 560px;
-  }
-
   .brand {
-    margin-bottom: 42px;
+    margin-bottom: 28px;
   }
 
   .auth-header {
@@ -358,11 +338,11 @@
   }
 
   .brand {
-    margin-bottom: 42px;
+    margin-bottom: 34px;
   }
 
   .auth-header h1 {
-    font-size: clamp(2.05rem, 9vw, 3rem);
+    font-size: clamp(1.45rem, 6vw, 1.8rem);
   }
 }
 
@@ -377,7 +357,7 @@
 
   .field-shell,
   .primary-button {
-    min-height: 52px;
+    min-height: 48px;
   }
 
   .agreement-row {
@@ -399,8 +379,7 @@
   }
 
   .primary-button,
-  .social-actions button,
-  .button-arrow {
+  .social-actions button {
     transition-duration: 80ms;
   }
 }

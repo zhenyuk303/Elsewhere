@@ -60,8 +60,15 @@
   transform: scale(1.015);
 }
 
+.travel-image--color {
+  z-index: 1;
+  transform: scale(1.015);
+}
+
 .color-window {
+  z-index: 2;
   overflow: visible;
+  pointer-events: none;
 }
 
 .color-window__shape,
@@ -73,9 +80,8 @@
 .color-window__border {
   fill: none;
   stroke: rgb(255 255 255 / 94%);
-  stroke-width: 7px;
+  stroke-width: 2px;
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 12px 18px rgb(0 0 0 / 16%));
 }
 
 .color-window--reveal .color-window__shape,

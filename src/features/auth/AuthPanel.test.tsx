@@ -24,6 +24,7 @@ describe('AuthPanel', () => {
     renderPanel()
 
     expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
+    expect(screen.queryByText('YOUR NEXT CHAPTER')).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Create your account' }),
     ).toBeInTheDocument()

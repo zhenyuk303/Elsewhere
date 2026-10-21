@@ -27,7 +27,7 @@
   height: var(--origin-height);
   display: grid;
   place-items: center;
-  border-radius: 18px;
+  border-radius: 0;
   background: #171717;
   color: #fff;
   transform-origin: center;

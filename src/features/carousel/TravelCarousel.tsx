@@ -35,40 +35,42 @@ function TravelSlide({ index, phase, active, slot }: SlideProps) {
         onError={() => setImageError(true)}
       />
       {active && !imageError ? (
-        <svg
-          className={`color-window color-window--${animationPhase}`}
-          viewBox="0 0 1000 1000"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <defs>
-            <clipPath id={clipId}>
-              <rect
-                className="color-window__shape"
-                x="150"
-                y="150"
-                width="700"
-                height="700"
-                rx="38"
-              />
-            </clipPath>
-          </defs>
-          <image
-            href={slide.src}
-            width="1000"
-            height="1000"
-            preserveAspectRatio="xMidYMid slice"
-            clipPath={`url(#${clipId})`}
+        <>
+          <img
+            className="travel-image travel-image--color"
+            src={slide.src}
+            alt=""
+            draggable="false"
+            style={{ clipPath: `url(#${clipId})` }}
           />
-          <rect
-            className="color-window__border"
-            x="150"
-            y="150"
-            width="700"
-            height="700"
-            rx="38"
-          />
-        </svg>
+          <svg
+            className={`color-window color-window--${animationPhase}`}
+            viewBox="0 0 1000 1000"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+                <rect
+                  className="color-window__shape"
+                  x="0.15"
+                  y="0.15"
+                  width="0.7"
+                  height="0.7"
+                  rx="0.038"
+                />
+              </clipPath>
+            </defs>
+            <rect
+              className="color-window__border"
+              x="150"
+              y="150"
+              width="700"
+              height="700"
+              rx="38"
+            />
+          </svg>
+        </>
       ) : null}
       <div className="slide-shade" aria-hidden="true" />
       <div className="location-lockup">
