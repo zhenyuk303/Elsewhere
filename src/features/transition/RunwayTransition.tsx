@@ -3,8 +3,8 @@ import type { TransitionOrigin } from '../auth/types'
 import type { TransitionStage } from './transitionTypes'
 import './transition.css'
 
-export const TRANSITION_MS = 3200
-export const REDUCED_TRANSITION_MS = 120
+export const TRANSITION_MS = 3000
+export const REDUCED_TRANSITION_MS = 150
 
 type RunwayTransitionProps = {
   origin: TransitionOrigin
@@ -24,8 +24,8 @@ type TransitionStyle = CSSProperties & {
 function Airplane() {
   return (
     <svg
-      className="runway-airplane"
-      data-testid="airplane"
+      className="transition-airplane"
+      data-testid="transition-airplane"
       aria-hidden="true"
       viewBox="0 0 64 64"
     >
@@ -38,19 +38,25 @@ export function RunwayTransition({
   origin,
   onComplete,
 }: RunwayTransitionProps) {
-  const [stage, setStage] = useState<TransitionStage>('liquid')
+  const [stage, setStage] = useState<TransitionStage>('collapse')
   const completed = useRef(false)
 
   useEffect(() => {
     const reduced = window.matchMedia?.(
       '(prefers-reduced-motion: reduce)',
     ).matches
-    const runwayAt = reduced ? 35 : 900
-    const flightAt = reduced ? 70 : 1700
+    const boundaries = reduced
+      ? { dock: 30, stretch: 65, morph: 100, flight: 120 }
+      : { dock: 450, stretch: 1000, morph: 1700, flight: 1900 }
     const completeAt = reduced ? REDUCED_TRANSITION_MS : TRANSITION_MS
 
-    const runwayTimer = window.setTimeout(() => setStage('runway'), runwayAt)
-    const flightTimer = window.setTimeout(() => setStage('flight'), flightAt)
+    const stageTimers = (
+      Object.entries(boundaries) as Array<
+        [Exclude<TransitionStage, 'collapse'>, number]
+      >
+    ).map(([nextStage, delay]) =>
+      window.setTimeout(() => setStage(nextStage), delay),
+    )
     const completionTimer = window.setTimeout(() => {
       if (completed.current) return
       completed.current = true
@@ -58,8 +64,7 @@ export function RunwayTransition({
     }, completeAt)
 
     return () => {
-      window.clearTimeout(runwayTimer)
-      window.clearTimeout(flightTimer)
+      stageTimers.forEach((timer) => window.clearTimeout(timer))
       window.clearTimeout(completionTimer)
     }
   }, [onComplete])
@@ -82,38 +87,20 @@ export function RunwayTransition({
       style={style}
       aria-hidden="true"
     >
-      <svg className="goo-filter" aria-hidden="true">
-        <defs>
-          <filter id="gooey-runway-filter">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10"
-              result="goo"
-            />
-            <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-          </filter>
-        </defs>
-      </svg>
-
-      <div className="liquid-field">
-        <div className="liquid-button">
-          <span className="liquid-label">Login</span>
-        </div>
-        <span className="liquid-drop liquid-drop--one" />
-        <span className="liquid-drop liquid-drop--two" />
-        <span className="liquid-drop liquid-drop--three" />
+      <div className="page-wipe" data-testid="page-wipe" />
+      <div className="transition-shape" data-testid="transition-shape">
+        <span className="transition-label">Login</span>
       </div>
-
-      <div className="runway-plane">
-        <span className="runway-centerline" />
-        <span className="runway-centerline runway-centerline--two" />
-        <span className="runway-centerline runway-centerline--three" />
-      </div>
+      <span className="transition-dot" data-testid="transition-dot" />
+      <span
+        className="wing-guide wing-guide--left"
+        data-testid="wing-guide-left"
+      />
+      <span
+        className="wing-guide wing-guide--right"
+        data-testid="wing-guide-right"
+      />
       <Airplane />
-      <div className="speed-light speed-light--left" />
-      <div className="speed-light speed-light--right" />
     </div>
   )
 }

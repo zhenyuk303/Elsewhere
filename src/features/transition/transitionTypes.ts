@@ -1,1 +1,6 @@
-export type TransitionStage = 'liquid' | 'runway' | 'flight'
+export type TransitionStage =
+  | 'collapse'
+  | 'dock'
+  | 'stretch'
+  | 'morph'
+  | 'flight'
