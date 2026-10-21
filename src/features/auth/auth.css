@@ -273,25 +273,29 @@
   transform: translateY(-1px);
 }
 
-.qq-mark,
-.wechat-mark {
-  width: 22px;
-  height: 22px;
+.social-icon {
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  font-size: 0.67rem;
-  font-weight: 850;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
-.qq-mark {
-  background: #171717;
+.social-icon img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  object-fit: contain;
 }
 
-.wechat-mark {
-  background: #5abb62;
-  font-size: 0.58rem;
+.social-icon--qq {
+  background: #fff1e6;
+}
+
+.social-icon--wechat {
+  background: #eaf8ee;
 }
 
 .mode-switch {

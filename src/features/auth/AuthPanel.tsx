@@ -1,4 +1,6 @@
 import { FormEvent, useState } from 'react'
+import qqIcon from '../../assets/social/qq-icon.png'
+import wechatIcon from '../../assets/social/wechat-icon.png'
 import type { AuthMode, TransitionOrigin } from './types'
 import './auth.css'
 
@@ -189,14 +191,17 @@ export function AuthPanel({
             </p>
             <div className="social-actions">
               <button type="button" disabled={disabled}>
-                <span className="qq-mark" aria-hidden="true">
-                  Q
+                <span className="social-icon social-icon--qq" aria-hidden="true">
+                  <img src={qqIcon} alt="" />
                 </span>
                 QQ
               </button>
               <button type="button" disabled={disabled}>
-                <span className="wechat-mark" aria-hidden="true">
-                  ●
+                <span
+                  className="social-icon social-icon--wechat"
+                  aria-hidden="true"
+                >
+                  <img src={wechatIcon} alt="" />
                 </span>
                 微信
               </button>

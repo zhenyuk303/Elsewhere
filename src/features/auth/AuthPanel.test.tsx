@@ -40,6 +40,25 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
   })
 
+  it('uses decorative cutout artwork for the social sign-up actions', () => {
+    renderPanel()
+
+    const qqIcon = screen
+      .getByRole('button', { name: 'QQ' })
+      .querySelector('img')
+    const wechatIcon = screen
+      .getByRole('button', { name: '微信' })
+      .querySelector('img')
+
+    expect(qqIcon).toHaveAttribute('src', expect.stringContaining('qq-icon'))
+    expect(qqIcon).toHaveAttribute('alt', '')
+    expect(wechatIcon).toHaveAttribute(
+      'src',
+      expect.stringContaining('wechat-icon'),
+    )
+    expect(wechatIcon).toHaveAttribute('alt', '')
+  })
+
   it('switches password visibility without changing its value', async () => {
     const user = userEvent.setup()
     renderPanel()
