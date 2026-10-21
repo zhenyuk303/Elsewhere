@@ -82,20 +82,15 @@ export function AuthPanel({
           ELSEWHERE
         </a>
         <div className="title-block" key={mode}>
-          <p className="eyebrow">YOUR NEXT CHAPTER</p>
           <h1 id="auth-title">
-            {isSignup
-              ? 'Create your account'
-              : 'A wonderful journey begins now.'}
+            {isSignup ? 'Create your account' : 'Welcome'}
           </h1>
           {isSignup ? (
             <p className="auth-subtitle">
               Let's create an account and start a wonderful journey
             </p>
           ) : (
-            <p className="auth-subtitle">
-              Welcome back. Your next destination is waiting.
-            </p>
+            <p className="auth-subtitle">A wonderful journey begins now</p>
           )}
         </div>
       </header>

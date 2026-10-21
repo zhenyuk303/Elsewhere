@@ -47,9 +47,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Login' }))
 
     expect(
-      screen.getByRole('heading', {
-        name: 'A wonderful journey begins now.',
-      }),
+      screen.getByRole('heading', { name: 'Welcome' }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Travel destinations')).toBe(carousel)
     expect(carousel).toHaveAttribute('data-index', '0')

@@ -24,7 +24,7 @@ describe('AuthPanel', () => {
     renderPanel()
 
     expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
-    expect(screen.getByText('YOUR NEXT CHAPTER')).toBeInTheDocument()
+    expect(screen.queryByText('YOUR NEXT CHAPTER')).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Create your account' }),
     ).toBeInTheDocument()
@@ -115,10 +115,9 @@ describe('AuthPanel', () => {
     const user = userEvent.setup()
     const { onModeChange, onValidSubmit } = renderPanel('login')
 
+    expect(screen.getByRole('heading', { name: 'Welcome' })).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', {
-        name: 'A wonderful journey begins now.',
-      }),
+      screen.getByText('A wonderful journey begins now'),
     ).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
