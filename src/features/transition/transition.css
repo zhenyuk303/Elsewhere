@@ -227,3 +227,17 @@
     transition-duration: 80ms !important;
   }
 }
+
+@media (max-width: 880px) {
+  .runway-plane {
+    width: 18vw;
+  }
+
+  .speed-light--left {
+    left: calc(50% - 14vw);
+  }
+
+  .speed-light--right {
+    right: calc(50% - 14vw);
+  }
+}

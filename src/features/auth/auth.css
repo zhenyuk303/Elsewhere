@@ -328,3 +328,79 @@
     transform: translateX(0);
   }
 }
+
+@media (max-height: 780px) and (min-width: 881px) {
+  .auth-panel {
+    min-height: 560px;
+  }
+
+  .brand {
+    margin-bottom: 42px;
+  }
+
+  .auth-header {
+    margin-bottom: 24px;
+  }
+
+  .auth-form {
+    gap: 13px;
+  }
+
+  .mode-switch {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 880px) {
+  .auth-panel {
+    min-height: 0;
+    padding-top: 0;
+  }
+
+  .brand {
+    margin-bottom: 42px;
+  }
+
+  .auth-header h1 {
+    font-size: clamp(2.05rem, 9vw, 3rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-header {
+    margin-bottom: 26px;
+  }
+
+  .auth-form {
+    gap: 14px;
+  }
+
+  .field-shell,
+  .primary-button {
+    min-height: 52px;
+  }
+
+  .agreement-row {
+    max-width: 94%;
+  }
+
+  .social-actions {
+    gap: 9px;
+  }
+
+  .mode-switch {
+    margin-top: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-block {
+    animation-duration: 100ms;
+  }
+
+  .primary-button,
+  .social-actions button,
+  .button-arrow {
+    transition-duration: 80ms;
+  }
+}

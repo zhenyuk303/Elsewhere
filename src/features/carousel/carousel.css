@@ -29,6 +29,18 @@
   background: #4d4b46;
 }
 
+.travel-image-fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 22%, rgb(255 255 255 / 16%), transparent 28%),
+    linear-gradient(145deg, #5f635e, #242d2c 74%);
+}
+
+.travel-slide.has-image-error .travel-image {
+  display: none;
+}
+
 .travel-image,
 .color-window,
 .slide-shade {
@@ -156,5 +168,25 @@
 
   .carousel-track--slide {
     transition-duration: 120ms;
+  }
+}
+
+@media (max-width: 880px) {
+  .travel-carousel {
+    min-height: 46svh;
+  }
+
+  .location-lockup {
+    left: 24px;
+    bottom: 28px;
+  }
+
+  .location-lockup h2 {
+    font-size: clamp(2.3rem, 13vw, 4.4rem);
+  }
+
+  .carousel-counter {
+    right: 22px;
+    bottom: 22px;
   }
 }

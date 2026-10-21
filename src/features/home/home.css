@@ -102,3 +102,23 @@
     transform: scale(1);
   }
 }
+
+@media (max-width: 600px) {
+  .home-placeholder {
+    padding-inline: 22px;
+  }
+
+  .home-placeholder h1 {
+    font-size: clamp(3.3rem, 18vw, 5.6rem);
+  }
+
+  .home-orbit {
+    width: 108vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-placeholder {
+    animation-duration: 100ms;
+  }
+}

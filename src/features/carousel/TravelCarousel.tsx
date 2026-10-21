@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { CarouselPhase } from './useCarousel'
 import { travelSlides } from './carouselData'
 import { useCarousel } from './useCarousel'
@@ -18,19 +19,22 @@ function TravelSlide({ index, phase, active, slot }: SlideProps) {
   const slide = travelSlides[index]
   const clipId = `travel-window-${slot}-${index}`
   const animationPhase = active ? phase : 'waiting'
+  const [imageError, setImageError] = useState(false)
 
   return (
     <article
-      className={`travel-slide travel-slide--${slot}`}
+      className={`travel-slide travel-slide--${slot} ${imageError ? 'has-image-error' : ''}`}
       aria-label={slide.location}
     >
+      <div className="travel-image-fallback" aria-hidden="true" />
       <img
         className="travel-image travel-image--gray"
         src={slide.src}
         alt=""
         draggable="false"
+        onError={() => setImageError(true)}
       />
-      {active ? (
+      {active && !imageError ? (
         <svg
           className={`color-window color-window--${animationPhase}`}
           viewBox="0 0 1000 1000"
