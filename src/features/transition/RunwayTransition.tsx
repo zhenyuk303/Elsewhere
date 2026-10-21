@@ -16,6 +16,9 @@ type TransitionStyle = CSSProperties & {
   '--origin-top': string
   '--origin-width': string
   '--origin-height': string
+  '--divider-x': string
+  '--card-top': string
+  '--card-height': string
 }
 
 function Airplane() {
@@ -66,6 +69,9 @@ export function RunwayTransition({
     '--origin-top': `${origin.top}px`,
     '--origin-width': `${origin.width}px`,
     '--origin-height': `${origin.height}px`,
+    '--divider-x': `${origin.dividerX}px`,
+    '--card-top': `${origin.cardTop}px`,
+    '--card-height': `${origin.cardHeight}px`,
   }
 
   return (

@@ -1,14 +1,14 @@
 import { FormEvent, useState } from 'react'
 import qqIcon from '../../assets/social/qq-icon.png'
 import wechatIcon from '../../assets/social/wechat-icon.svg'
-import type { AuthMode, TransitionOrigin } from './types'
+import type { AuthMode, ButtonRect } from './types'
 import './auth.css'
 
 type AuthPanelProps = {
   mode: AuthMode
   disabled: boolean
   onModeChange: (mode: AuthMode) => void
-  onValidSubmit: (origin: TransitionOrigin) => void
+  onValidSubmit: (origin: ButtonRect) => void
 }
 
 type FormErrors = Partial<

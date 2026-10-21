@@ -2,6 +2,44 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
 
+function rect({
+  left,
+  top,
+  width,
+  height,
+}: {
+  left: number
+  top: number
+  width: number
+  height: number
+}): DOMRect {
+  return {
+    x: left,
+    y: top,
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    toJSON: () => ({}),
+  }
+}
+
+function fillValidSignupForm() {
+  fireEvent.change(screen.getByLabelText('Username'), {
+    target: { value: 'traveler' },
+  })
+  fireEvent.change(screen.getByLabelText('Password'), {
+    target: { value: 'secret-path' },
+  })
+  fireEvent.click(
+    screen.getByRole('checkbox', {
+      name: 'I agree to all Term, Privacy Policy and Fees',
+    }),
+  )
+}
+
 describe('App', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -57,17 +95,7 @@ describe('App', () => {
   it('pauses one transition and mounts the home placeholder only after it ends', () => {
     render(<App />)
 
-    fireEvent.change(screen.getByLabelText('Username'), {
-      target: { value: 'traveler' },
-    })
-    fireEvent.change(screen.getByLabelText('Password'), {
-      target: { value: 'secret-path' },
-    })
-    fireEvent.click(
-      screen.getByRole('checkbox', {
-        name: 'I agree to all Term, Privacy Policy and Fees',
-      }),
-    )
+    fillValidSignupForm()
 
     const submit = screen.getByRole('button', { name: 'Login' })
     fireEvent.click(submit)
@@ -87,5 +115,71 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Travel destinations')).not.toBeInTheDocument()
+  })
+
+  it('captures the real button, divider, and card geometry for the transition', () => {
+    render(<App />)
+
+    const card = screen.getByTestId('auth-journey')
+    const carousel = screen.getByLabelText('Travel destinations')
+    const submit = screen.getByRole('button', { name: 'Login' })
+
+    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue(
+      rect({ left: 40, top: 28, width: 1180, height: 760 }),
+    )
+    vi.spyOn(carousel, 'getBoundingClientRect').mockReturnValue(
+      rect({ left: 548, top: 28, width: 672, height: 760 }),
+    )
+    vi.spyOn(submit, 'getBoundingClientRect').mockReturnValue(
+      rect({ left: 128, top: 524, width: 332, height: 52 }),
+    )
+
+    fillValidSignupForm()
+    fireEvent.click(submit)
+
+    expect(screen.getByTestId('runway-transition')).toHaveStyle({
+      '--origin-left': '128px',
+      '--origin-top': '524px',
+      '--origin-width': '332px',
+      '--origin-height': '52px',
+      '--divider-x': '548px',
+      '--card-top': '28px',
+      '--card-height': '760px',
+    })
+  })
+
+  it('uses the card horizontal center as the transition axis on stacked layouts', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(max-width: 880px)',
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    )
+    render(<App />)
+
+    const card = screen.getByTestId('auth-journey')
+    const submit = screen.getByRole('button', { name: 'Login' })
+    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue(
+      rect({ left: 12, top: 0, width: 360, height: 720 }),
+    )
+    vi.spyOn(submit, 'getBoundingClientRect').mockReturnValue(
+      rect({ left: 32, top: 420, width: 320, height: 52 }),
+    )
+
+    fillValidSignupForm()
+    fireEvent.click(submit)
+
+    expect(screen.getByTestId('runway-transition')).toHaveStyle({
+      '--divider-x': '192px',
+      '--card-top': '0px',
+      '--card-height': '720px',
+    })
   })
 })
