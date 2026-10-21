@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
 import qqIcon from '../../assets/social/qq-icon.png'
-import wechatIcon from '../../assets/social/wechat-icon.png'
+import wechatIcon from '../../assets/social/wechat-icon.svg'
 import type { AuthMode, TransitionOrigin } from './types'
 import './auth.css'
 

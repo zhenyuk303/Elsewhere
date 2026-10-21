@@ -40,7 +40,7 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
   })
 
-  it('uses decorative cutout artwork for the social sign-up actions', () => {
+  it('uses local icon artwork for the social sign-up actions', () => {
     renderPanel()
 
     const qqIcon = screen
@@ -52,10 +52,7 @@ describe('AuthPanel', () => {
 
     expect(qqIcon).toHaveAttribute('src', expect.stringContaining('qq-icon'))
     expect(qqIcon).toHaveAttribute('alt', '')
-    expect(wechatIcon).toHaveAttribute(
-      'src',
-      expect.stringContaining('wechat-icon'),
-    )
+    expect(wechatIcon?.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/)
     expect(wechatIcon).toHaveAttribute('alt', '')
   })
 

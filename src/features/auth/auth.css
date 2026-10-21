@@ -295,7 +295,15 @@
 }
 
 .social-icon--wechat {
-  background: #eaf8ee;
+  width: 30px;
+  height: 30px;
+  background: #07c160;
+}
+
+.social-icon--wechat img {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
 }
 
 .mode-switch {
