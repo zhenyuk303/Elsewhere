@@ -1,0 +1,53 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import { TravelCarousel } from './TravelCarousel'
+
+describe('TravelCarousel', () => {
+  it('renders location-only travel slides and starts in grayscale reveal', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+
+    const carousel = screen.getByLabelText('Travel destinations')
+    expect(carousel).toHaveAttribute('data-phase', 'reveal')
+    expect(screen.getByText('Beijing')).toBeInTheDocument()
+    expect(screen.queryByText(/travel package/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/package in/i)).not.toBeInTheDocument()
+    expect(container.querySelector('.travel-slide')).not.toHaveClass(
+      'has-image-error',
+    )
+  })
+
+  it('keeps the gray image, color reveal, and frame in one coordinate system', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const visual = activeSlide?.querySelector('svg.travel-visual')
+    const grayImage = visual?.querySelector('.travel-image--gray')
+    const colorImage = visual?.querySelector('.travel-image--color')
+    const shape = visual?.querySelector('.color-window__shape')
+    const border = visual?.querySelector('.color-window__border')
+
+    expect(visual).not.toBeNull()
+    expect(grayImage?.getAttribute('href')).toBe(
+      colorImage?.getAttribute('href'),
+    )
+    expect(colorImage).not.toBeNull()
+    expect(colorImage?.getAttribute('clip-path')).toContain(
+      'travel-window-current-0',
+    )
+    for (const attribute of ['x', 'y', 'width', 'height', 'rx']) {
+      expect(shape?.getAttribute(attribute)).toBe(
+        border?.getAttribute(attribute),
+      )
+    }
+  })
+
+  it('keeps a neutral location card when a travel image fails to load', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const grayImage = activeSlide?.querySelector('.travel-image--gray')
+
+    expect(grayImage).not.toBeNull()
+    fireEvent.error(grayImage!)
+
+    expect(activeSlide).toHaveClass('has-image-error')
+    expect(screen.getByText('Beijing')).toBeInTheDocument()
+  })
+})
