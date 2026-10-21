@@ -29,27 +29,44 @@ input {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: clamp(16px, 3vw, 44px);
 }
 
-.auth-shell {
-  width: min(100%, 1080px);
-  min-height: 680px;
-  padding: 64px;
+.journey-card {
+  width: min(1180px, 100%);
+  min-height: min(760px, calc(100vh - 48px));
+  display: grid;
+  grid-template-columns: minmax(460px, 0.92fr) minmax(480px, 1.08fr);
+  overflow: hidden;
   border-radius: 28px;
   background: #fff;
   box-shadow: 0 32px 90px rgb(36 31 23 / 12%);
 }
 
-.brand {
-  margin: 0 0 56px;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
+.auth-shell {
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  padding: clamp(40px, 6vw, 78px);
+  background: #fff;
 }
 
-h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  letter-spacing: -0.04em;
+.visual-placeholder {
+  position: relative;
+  min-width: 0;
+  border-left: 1px solid #e5e1da;
+  background:
+    linear-gradient(180deg, transparent 44%, rgb(0 0 0 / 58%)),
+    radial-gradient(circle at 68% 24%, #e3b26f, transparent 28%),
+    linear-gradient(145deg, #726f66, #273535 70%);
+}
+
+.visual-placeholder span {
+  position: absolute;
+  left: 44px;
+  bottom: 40px;
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  font-weight: 550;
+  letter-spacing: -0.05em;
 }
