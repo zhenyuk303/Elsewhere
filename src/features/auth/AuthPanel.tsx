@@ -82,6 +82,7 @@ export function AuthPanel({
           ELSEWHERE
         </a>
         <div className="title-block" key={mode}>
+          <p className="eyebrow">YOUR NEXT CHAPTER</p>
           <h1 id="auth-title">
             {isSignup
               ? 'Create your account'
@@ -181,6 +182,9 @@ export function AuthPanel({
           disabled={disabled}
         >
           <span>Login</span>
+          <span aria-hidden="true" className="button-arrow">
+            ↗
+          </span>
         </button>
 
         {isSignup ? (
