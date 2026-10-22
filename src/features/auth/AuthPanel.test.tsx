@@ -37,7 +37,7 @@ describe('AuthPanel', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'QQ' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Wechat' })).toBeInTheDocument()
   })
 
   it('uses local icon artwork for the social sign-up actions', () => {
@@ -47,7 +47,7 @@ describe('AuthPanel', () => {
       .getByRole('button', { name: 'QQ' })
       .querySelector('img')
     const wechatIcon = screen
-      .getByRole('button', { name: '微信' })
+      .getByRole('button', { name: 'Wechat' })
       .querySelector('img')
 
     expect(qqIcon).toHaveAttribute('src', expect.stringContaining('qq-icon'))

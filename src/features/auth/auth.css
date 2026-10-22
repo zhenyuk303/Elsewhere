@@ -73,9 +73,15 @@
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
+.field-shell input:focus-visible {
+  outline: none;
+}
+
 .field-shell:focus-within {
-  border-color: #a78a68;
+  border-color: #907355;
   background: #fff;
+  outline: 2px solid #907355;
+  outline-offset: -2px;
   box-shadow: 0 0 0 4px rgb(167 138 104 / 12%);
 }
 

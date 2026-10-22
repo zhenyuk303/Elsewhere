@@ -81,7 +81,7 @@
 .color-window--hold .color-window__border,
 .color-window--slide .color-window__shape,
 .color-window--slide .color-window__border {
-  transform: rotate(-8deg) scale(1);
+  transform: rotate(8deg) scale(0.86);
 }
 
 .is-paused .color-window__shape,
@@ -115,10 +115,10 @@
 
 .location-lockup h2 {
   margin: 0;
-  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  font-size: clamp(1.8rem, 3.2vw, 3.4rem);
   font-weight: 500;
-  letter-spacing: -0.065em;
-  line-height: 0.95;
+  letter-spacing: -0.04em;
+  line-height: 0.85;
   text-shadow: 0 10px 34px rgb(0 0 0 / 28%);
 }
 
@@ -147,10 +147,10 @@
     transform: rotate(0deg) scale(0.035);
   }
   45% {
-    transform: rotate(-4deg) scale(0.46);
+    transform: rotate(4deg) scale(0.4);
   }
   to {
-    transform: rotate(-8deg) scale(1);
+    transform: rotate(8deg) scale(0.86);
   }
 }
 
@@ -176,8 +176,9 @@
   }
 
   .location-lockup h2 {
-    font-size: clamp(2.3rem, 13vw, 4.4rem);
-  }
+    max-width: 70%;
+    font-size: clamp(1.75rem, 9vw, 3rem);
+    }
 
   .carousel-counter {
     right: 22px;

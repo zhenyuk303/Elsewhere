@@ -89,7 +89,7 @@ export function AuthPanel({
           </h1>
           {isSignup ? (
             <p className="auth-subtitle">
-              Let's create an account and start a wonderful journey
+              Start a wonderful journey
             </p>
           ) : (
             <p className="auth-subtitle">A wonderful journey begins now</p>
@@ -203,7 +203,7 @@ export function AuthPanel({
                 >
                   <img src={wechatIcon} alt="" />
                 </span>
-                微信
+                Wechat
               </button>
             </div>
           </div>
