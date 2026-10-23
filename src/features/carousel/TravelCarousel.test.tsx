@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { vi } from 'vitest'
 import { TravelCarousel } from './TravelCarousel'
 
 describe('TravelCarousel', () => {
@@ -36,6 +37,31 @@ describe('TravelCarousel', () => {
       expect(shape?.getAttribute(attribute)).toBe(
         border?.getAttribute(attribute),
       )
+    }
+  })
+
+  it('finishes the reveal with a clockwise square rotation', () => {
+    vi.useFakeTimers()
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+
+      act(() => {
+        vi.advanceTimersByTime(2500)
+      })
+
+      const carousel = screen.getByLabelText('Travel destinations')
+      const shape = container.querySelector(
+        '.color-window--hold .color-window__shape',
+      )
+
+      expect(carousel).toHaveAttribute('data-phase', 'hold')
+      expect(shape).not.toBeNull()
+      expect(window.getComputedStyle(shape!).transform).toBe(
+        'rotate(8deg) scale(1)',
+      )
+    } finally {
+      vi.useRealTimers()
     }
   })
 

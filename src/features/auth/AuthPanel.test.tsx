@@ -72,6 +72,44 @@ describe('AuthPanel', () => {
     ).toBeInTheDocument()
   })
 
+  it('uses one equally sized outer focus highlight for both credential fields', async () => {
+    const user = userEvent.setup()
+    renderPanel()
+
+    const username = screen.getByLabelText('Username')
+    const password = screen.getByLabelText('Password')
+    const usernameShell = username.closest('.field-shell')
+    const passwordShell = password.closest('.field-shell')
+    const passwordToggle = screen.getByRole('button', {
+      name: 'Show password',
+    })
+
+    expect(usernameShell).not.toBeNull()
+    expect(passwordShell).not.toBeNull()
+    expect(passwordShell).toContainElement(passwordToggle)
+
+    await user.click(username)
+    const usernameHighlight = window.getComputedStyle(usernameShell!).boxShadow
+    expect(window.getComputedStyle(username).outlineStyle).toBe('none')
+
+    await user.click(password)
+    const passwordHighlight = window.getComputedStyle(passwordShell!).boxShadow
+
+    expect(window.getComputedStyle(password).outlineStyle).toBe('none')
+    expect(passwordHighlight).toBe(usernameHighlight)
+    expect(passwordHighlight).not.toBe('none')
+
+    const inputFocusRule = Array.from(document.styleSheets)
+      .flatMap((styleSheet) => Array.from(styleSheet.cssRules))
+      .find(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule &&
+          rule.selectorText === '.field-shell input:focus-visible',
+      )
+
+    expect(inputFocusRule?.style.outline).toBe('none')
+  })
+
   it('asks the parent to switch only when the bottom login link is used', async () => {
     const user = userEvent.setup()
     const { onModeChange, onValidSubmit } = renderPanel()

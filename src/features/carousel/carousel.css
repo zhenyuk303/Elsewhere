@@ -81,7 +81,7 @@
 .color-window--hold .color-window__border,
 .color-window--slide .color-window__shape,
 .color-window--slide .color-window__border {
-  transform: rotate(-8deg) scale(1);
+  transform: rotate(8deg) scale(1);
 }
 
 .is-paused .color-window__shape,
@@ -147,10 +147,10 @@
     transform: rotate(0deg) scale(0.035);
   }
   45% {
-    transform: rotate(-4deg) scale(0.46);
+    transform: rotate(4deg) scale(0.46);
   }
   to {
-    transform: rotate(-8deg) scale(1);
+    transform: rotate(8deg) scale(1);
   }
 }
 
