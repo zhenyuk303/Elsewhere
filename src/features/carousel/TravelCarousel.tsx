@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import type { CarouselPhase } from './useCarousel'
-import { travelSlides } from './carouselData'
+import {
+  shuffleTravelSlides,
+  travelSlides,
+  type TravelSlide as TravelSlideData,
+} from './carouselData'
 import { useCarousel } from './useCarousel'
 import './carousel.css'
 
@@ -9,14 +13,14 @@ type TravelCarouselProps = {
 }
 
 type SlideProps = {
+  slide: TravelSlideData
   index: number
   phase: CarouselPhase
   active: boolean
   slot: 'current' | 'next'
 }
 
-function TravelSlide({ index, phase, active, slot }: SlideProps) {
-  const slide = travelSlides[index]
+function TravelSlide({ slide, index, phase, active, slot }: SlideProps) {
   const clipId = `travel-window-${slot}-${index}`
   const animationPhase = active ? phase : 'waiting'
   const [imageError, setImageError] = useState(false)
@@ -86,8 +90,9 @@ function TravelSlide({ index, phase, active, slot }: SlideProps) {
 }
 
 export function TravelCarousel({ paused }: TravelCarouselProps) {
+  const [slides] = useState(() => shuffleTravelSlides(travelSlides))
   const { currentIndex, nextIndex, phase } = useCarousel(
-    travelSlides.length,
+    slides.length,
     paused,
   )
 
@@ -97,15 +102,19 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
       aria-label="Travel destinations"
       data-index={currentIndex}
       data-phase={phase}
+      data-slide-count={slides.length}
+      data-location={slides[currentIndex]?.location}
     >
       <div className={`carousel-track carousel-track--${phase}`}>
         <TravelSlide
+          slide={slides[currentIndex]}
           index={currentIndex}
           phase={phase}
           active
           slot="current"
         />
         <TravelSlide
+          slide={slides[nextIndex]}
           index={nextIndex}
           phase="reveal"
           active={false}
@@ -115,7 +124,7 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
       <div className="carousel-counter" aria-hidden="true">
         <span>{String(currentIndex + 1).padStart(2, '0')}</span>
         <i />
-        <span>{String(travelSlides.length).padStart(2, '0')}</span>
+        <span>{String(slides.length).padStart(2, '0')}</span>
       </div>
     </section>
   )

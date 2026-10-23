@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 import { TravelCarousel } from './TravelCarousel'
+import { travelSlides } from './carouselData'
 
 describe('TravelCarousel', () => {
   it('renders location-only travel slides and starts in grayscale reveal', () => {
@@ -8,12 +9,31 @@ describe('TravelCarousel', () => {
 
     const carousel = screen.getByLabelText('Travel destinations')
     expect(carousel).toHaveAttribute('data-phase', 'reveal')
-    expect(screen.getByText('Beijing')).toBeInTheDocument()
+    expect(
+      container.querySelector('.travel-slide--current .location-lockup h2'),
+    ).toHaveTextContent(/\S+/)
     expect(screen.queryByText(/travel package/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/package in/i)).not.toBeInTheDocument()
     expect(container.querySelector('.travel-slide')).not.toHaveClass(
       'has-image-error',
     )
+  })
+
+  it('starts from a shuffled destination order and reports the full collection', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    try {
+      render(<TravelCarousel paused={false} />)
+
+      const carousel = screen.getByLabelText('Travel destinations')
+      expect(carousel).toHaveAttribute('data-slide-count', '34')
+      expect(carousel).toHaveAttribute(
+        'data-location',
+        travelSlides[1].location,
+      )
+    } finally {
+      vi.restoreAllMocks()
+    }
   })
 
   it('keeps the gray image, color reveal, and frame in one coordinate system', () => {
@@ -74,6 +94,8 @@ describe('TravelCarousel', () => {
     fireEvent.error(grayImage!)
 
     expect(activeSlide).toHaveClass('has-image-error')
-    expect(screen.getByText('Beijing')).toBeInTheDocument()
+    expect(
+      activeSlide?.querySelector('.location-lockup h2'),
+    ).toHaveTextContent(/\S+/)
   })
 })

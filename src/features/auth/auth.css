@@ -206,7 +206,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
   margin-top: 4px;
   border: 0;
   border-radius: 0;
@@ -230,15 +229,6 @@
 .primary-button:disabled {
   cursor: wait;
   opacity: 0.72;
-}
-
-.button-arrow {
-  font-size: 1rem;
-  transition: transform 180ms ease;
-}
-
-.primary-button:hover .button-arrow {
-  transform: translate(2px, -2px);
 }
 
 .social-block {
@@ -421,8 +411,7 @@
   }
 
   .primary-button,
-  .social-actions button,
-  .button-arrow {
+  .social-actions button {
     transition-duration: 80ms;
   }
 }

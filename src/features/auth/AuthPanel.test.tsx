@@ -40,6 +40,15 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
   })
 
+  it('renders the primary login action without a decorative arrow', () => {
+    renderPanel()
+
+    const loginButton = screen.getByRole('button', { name: 'Login' })
+
+    expect(loginButton).toHaveTextContent(/^Login$/)
+    expect(loginButton.querySelector('.button-arrow')).toBeNull()
+  })
+
   it('animates the three-line heading block while keeping its anchor fixed', () => {
     const { container } = render(
       <AuthPanel

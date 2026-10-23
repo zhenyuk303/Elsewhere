@@ -186,9 +186,6 @@ export function AuthPanel({
           disabled={disabled}
         >
           <span>Login</span>
-          <span aria-hidden="true" className="button-arrow">
-            ↗
-          </span>
         </button>
 
         <div className="social-block">
