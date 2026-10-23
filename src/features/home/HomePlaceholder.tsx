@@ -1,6 +1,13 @@
+import { useEffect } from 'react'
 import './home.css'
 
 export function HomePlaceholder() {
+  useEffect(() => {
+    document.body.classList.add('home-view')
+
+    return () => document.body.classList.remove('home-view')
+  }, [])
+
   return (
     <main className="home-placeholder">
       <div className="home-orbit" aria-hidden="true">

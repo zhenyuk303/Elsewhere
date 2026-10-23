@@ -1,3 +1,7 @@
+body.home-view {
+  overflow: hidden;
+}
+
 .home-placeholder {
   position: relative;
   min-height: 100vh;
