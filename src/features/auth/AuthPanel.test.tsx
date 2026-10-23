@@ -40,6 +40,23 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
   })
 
+  it('anchors the three-line heading block without positional animation', () => {
+    const { container } = render(
+      <AuthPanel
+        mode="signup"
+        disabled={false}
+        onModeChange={vi.fn()}
+        onValidSubmit={vi.fn()}
+      />,
+    )
+
+    const panel = container.querySelector('.auth-panel')
+    const titleBlock = container.querySelector('.title-block')
+
+    expect(window.getComputedStyle(panel!).justifyContent).toBe('flex-start')
+    expect(window.getComputedStyle(titleBlock!).animationName).toBe('none')
+  })
+
   it('uses local icon artwork for the social sign-up actions', () => {
     renderPanel()
 
@@ -171,7 +188,7 @@ describe('AuthPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Welcome' })).toBeInTheDocument()
     expect(
-      screen.getByText('A wonderful journey begins now'),
+      screen.getByText('The best view comes after the hardest climb.'),
     ).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()

@@ -92,7 +92,9 @@ export function AuthPanel({
               Let's create an account and start a wonderful journey
             </p>
           ) : (
-            <p className="auth-subtitle">A wonderful journey begins now</p>
+            <p className="auth-subtitle">
+              The best view comes after the hardest climb.
+            </p>
           )}
         </div>
       </header>
