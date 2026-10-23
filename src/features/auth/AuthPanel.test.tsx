@@ -40,7 +40,7 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
   })
 
-  it('anchors the three-line heading block without positional animation', () => {
+  it('animates the three-line heading block while keeping its anchor fixed', () => {
     const { container } = render(
       <AuthPanel
         mode="signup"
@@ -54,7 +54,10 @@ describe('AuthPanel', () => {
     const titleBlock = container.querySelector('.title-block')
 
     expect(window.getComputedStyle(panel!).justifyContent).toBe('flex-start')
-    expect(window.getComputedStyle(titleBlock!).animationName).toBe('none')
+    expect(window.getComputedStyle(titleBlock!).animationName).toBe(
+      'auth-content-in',
+    )
+    expect(window.getComputedStyle(titleBlock!).transform).toBe('none')
   })
 
   it('uses local icon artwork for the social sign-up actions', () => {
