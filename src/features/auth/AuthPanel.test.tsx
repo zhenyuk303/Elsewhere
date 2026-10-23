@@ -182,6 +182,24 @@ describe('AuthPanel', () => {
     })
   })
 
+  it('places login social actions in the same form slot as signup', () => {
+    renderPanel('login')
+
+    const socialLabel = screen.getByText('Or login with')
+    const socialBlock = socialLabel.closest('.social-block')
+    const form = socialBlock?.closest('form')
+
+    expect(screen.getByRole('button', { name: 'QQ' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
+    expect(form?.children).toHaveLength(5)
+    expect(form?.children.item(2)).toHaveClass(
+      'agreement-row',
+      'agreement-row--placeholder',
+    )
+    expect(form?.children.item(2)).toHaveAttribute('aria-hidden', 'true')
+    expect(form?.children.item(4)).toBe(socialBlock)
+  })
+
   it('renders login copy and submits without an agreement checkbox', async () => {
     const user = userEvent.setup()
     const { onModeChange, onValidSubmit } = renderPanel('login')
@@ -191,7 +209,6 @@ describe('AuthPanel', () => {
       screen.getByText('The best view comes after the hardest climb.'),
     ).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
 
     await user.type(screen.getByLabelText('Username'), 'traveler')
     await user.type(screen.getByLabelText('Password'), 'secret-path')

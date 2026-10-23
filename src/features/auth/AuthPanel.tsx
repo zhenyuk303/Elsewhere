@@ -172,7 +172,12 @@ export function AuthPanel({
               <p className="field-error agreement-error">{errors.agreement}</p>
             ) : null}
           </div>
-        ) : null}
+        ) : (
+          <div
+            className="agreement-row agreement-row--placeholder"
+            aria-hidden="true"
+          />
+        )}
 
         <button
           className="primary-button"
@@ -186,30 +191,28 @@ export function AuthPanel({
           </span>
         </button>
 
-        {isSignup ? (
-          <div className="social-block">
-            <p className="social-label">
-              <span>Or sign up with</span>
-            </p>
-            <div className="social-actions">
-              <button type="button" disabled={disabled}>
-                <span className="social-icon social-icon--qq" aria-hidden="true">
-                  <img src={qqIcon} alt="" />
-                </span>
-                QQ
-              </button>
-              <button type="button" disabled={disabled}>
-                <span
-                  className="social-icon social-icon--wechat"
-                  aria-hidden="true"
-                >
-                  <img src={wechatIcon} alt="" />
-                </span>
-                微信
-              </button>
-            </div>
+        <div className="social-block">
+          <p className="social-label">
+            <span>{isSignup ? 'Or sign up with' : 'Or login with'}</span>
+          </p>
+          <div className="social-actions">
+            <button type="button" disabled={disabled}>
+              <span className="social-icon social-icon--qq" aria-hidden="true">
+                <img src={qqIcon} alt="" />
+              </span>
+              QQ
+            </button>
+            <button type="button" disabled={disabled}>
+              <span
+                className="social-icon social-icon--wechat"
+                aria-hidden="true"
+              >
+                <img src={wechatIcon} alt="" />
+              </span>
+              微信
+            </button>
           </div>
-        ) : null}
+        </div>
       </form>
 
       <p className="mode-switch">
