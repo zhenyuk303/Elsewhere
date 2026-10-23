@@ -5,6 +5,7 @@ import { AuthPanel } from './AuthPanel'
 
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
   const onModeChange = vi.fn()
+  const onAuthenticate = vi.fn().mockResolvedValue(undefined)
   const onValidSubmit = vi.fn()
 
   render(
@@ -12,11 +13,12 @@ function renderPanel(mode: 'signup' | 'login' = 'signup') {
       mode={mode}
       disabled={false}
       onModeChange={onModeChange}
+      onAuthenticate={onAuthenticate}
       onValidSubmit={onValidSubmit}
     />,
   )
 
-  return { onModeChange, onValidSubmit }
+  return { onModeChange, onAuthenticate, onValidSubmit }
 }
 
 describe('AuthPanel', () => {
@@ -89,7 +91,7 @@ describe('AuthPanel', () => {
 
     await user.type(screen.getByLabelText('Username'), '   ')
     await user.type(screen.getByLabelText('Password'), '   ')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
 
     expect(screen.getByText('Username is required')).toBeInTheDocument()
     expect(screen.getByText('Password is required')).toBeInTheDocument()
@@ -102,7 +104,7 @@ describe('AuthPanel', () => {
   it('submits signup only after the agreement is accepted', async () => {
     const user = userEvent.setup()
     const { onValidSubmit } = renderPanel()
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Create account' })
     vi.spyOn(submit, 'getBoundingClientRect').mockReturnValue({
       left: 120,
       top: 480,
@@ -145,5 +147,18 @@ describe('AuthPanel', () => {
 
     await user.click(screen.getByRole('link', { name: 'Sign up' }))
     expect(onModeChange).toHaveBeenCalledWith('signup')
+  })
+
+  it('keeps the user on the form when the server rejects the credentials', async () => {
+    const user = userEvent.setup()
+    const { onAuthenticate, onValidSubmit } = renderPanel('login')
+    onAuthenticate.mockRejectedValueOnce(new Error('Invalid username or password'))
+
+    await user.type(screen.getByLabelText('Username'), 'traveler')
+    await user.type(screen.getByLabelText('Password'), 'wrong password')
+    await user.click(screen.getByRole('button', { name: 'Login' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password')
+    expect(onValidSubmit).not.toHaveBeenCalled()
   })
 })
