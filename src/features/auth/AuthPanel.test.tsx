@@ -6,6 +6,7 @@ import { AuthPanel } from './AuthPanel'
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
   const onModeChange = vi.fn()
   const onAuthenticate = vi.fn().mockResolvedValue(undefined)
+  const onSocialLogin = vi.fn().mockResolvedValue(undefined)
   const onValidSubmit = vi.fn()
 
   render(
@@ -14,11 +15,12 @@ function renderPanel(mode: 'signup' | 'login' = 'signup') {
       disabled={false}
       onModeChange={onModeChange}
       onAuthenticate={onAuthenticate}
+      onSocialLogin={onSocialLogin}
       onValidSubmit={onValidSubmit}
     />,
   )
 
-  return { onModeChange, onAuthenticate, onValidSubmit }
+  return { onModeChange, onAuthenticate, onSocialLogin, onValidSubmit }
 }
 
 describe('AuthPanel', () => {
@@ -58,6 +60,7 @@ describe('AuthPanel', () => {
         disabled={false}
         onModeChange={vi.fn()}
         onAuthenticate={vi.fn().mockResolvedValue(undefined)}
+        onSocialLogin={vi.fn().mockResolvedValue(undefined)}
         onValidSubmit={vi.fn()}
       />,
     )
@@ -86,6 +89,18 @@ describe('AuthPanel', () => {
     expect(qqIcon).toHaveAttribute('alt', '')
     expect(wechatIcon?.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/)
     expect(wechatIcon).toHaveAttribute('alt', '')
+  })
+
+  it('reports an unavailable social provider without leaving the form', async () => {
+    const user = userEvent.setup()
+    const { onSocialLogin, onValidSubmit } = renderPanel('login')
+    onSocialLogin.mockRejectedValueOnce(new Error('QQ login is not configured yet'))
+
+    await user.click(screen.getByRole('button', { name: 'QQ' }))
+
+    expect(onSocialLogin).toHaveBeenCalledWith('qq')
+    expect(await screen.findByRole('alert')).toHaveTextContent('QQ login is not configured yet')
+    expect(onValidSubmit).not.toHaveBeenCalled()
   })
 
   it('switches password visibility without changing its value', async () => {

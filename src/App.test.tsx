@@ -4,6 +4,7 @@ import { App } from './App'
 
 vi.mock('./features/auth/authApi', () => ({
   authenticate: vi.fn().mockResolvedValue({ id: 1, username: 'traveler' }),
+  beginSocialLogin: vi.fn().mockResolvedValue('https://example.com/authorize'),
   currentUser: vi.fn().mockResolvedValue(null),
   logout: vi.fn().mockResolvedValue(undefined),
 }))

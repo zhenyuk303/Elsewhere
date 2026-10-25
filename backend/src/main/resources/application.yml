@@ -12,3 +12,12 @@ elsewhere:
   demo:
     enabled: ${ELSEWHERE_DEMO_USERS:false}
     password: ${ELSEWHERE_DEMO_PASSWORD:}
+  oauth:
+    qq:
+      app-id: ${QQ_APP_ID:}
+      app-secret: ${QQ_APP_SECRET:}
+      redirect-uri: ${QQ_REDIRECT_URI:}
+    wechat:
+      app-id: ${WECHAT_APP_ID:}
+      app-secret: ${WECHAT_APP_SECRET:}
+      redirect-uri: ${WECHAT_REDIRECT_URI:}

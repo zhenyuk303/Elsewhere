@@ -38,3 +38,23 @@ export async function currentUser(): Promise<AuthUser | null> {
 export async function logout(): Promise<void> {
   await request('logout', { method: 'POST' })
 }
+
+export type SocialProvider = 'qq' | 'wechat'
+
+export async function beginSocialLogin(provider: SocialProvider): Promise<string> {
+  let response: Response
+  try {
+    response = await fetch(`/api/auth/oauth/${provider}/start`, {
+      method: 'POST',
+      credentials: 'same-origin',
+    })
+  } catch {
+    throw new Error('Cannot reach the server. Please try again.')
+  }
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(typeof body.message === 'string' ? body.message : 'Social login is unavailable')
+  }
+  if (typeof body.authorizationUrl !== 'string') throw new Error('Social login is unavailable')
+  return body.authorizationUrl
+}
