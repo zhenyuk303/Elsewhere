@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthPanel } from './features/auth/AuthPanel'
+import { authenticate, currentUser, logout, type AuthUser } from './features/auth/authApi'
 import type {
   AuthMode,
   ButtonRect,
@@ -15,8 +16,33 @@ export function App() {
   const cardRef = useRef<HTMLDivElement>(null)
   const [authMode, setAuthMode] = useState<AuthMode>('signup')
   const [view, setView] = useState<ViewState>('auth')
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [transitionOrigin, setTransitionOrigin] =
     useState<TransitionOrigin | null>(null)
+
+  useEffect(() => {
+    let active = true
+    currentUser().then((restored) => {
+      if (active && restored) {
+        setUser(restored)
+        setView('home')
+      }
+    })
+    return () => { active = false }
+  }, [])
+
+  const handleAuthenticate = useCallback(async (username: string, password: string, agreementAccepted: boolean) => {
+    const signedIn = await authenticate(authMode, username, password, agreementAccepted)
+    setUser(signedIn)
+  }, [authMode])
+
+  const handleLogout = useCallback(async () => {
+    await logout()
+    setUser(null)
+    setTransitionOrigin(null)
+    setView('auth')
+    setAuthMode('login')
+  }, [])
 
   const handleValidSubmit = useCallback(
     (buttonOrigin: ButtonRect) => {
@@ -50,7 +76,7 @@ export function App() {
   }, [])
 
   if (view === 'home') {
-    return <HomePlaceholder />
+    return <HomePlaceholder username={user?.username} onLogout={handleLogout} />
   }
 
   return (
@@ -66,6 +92,7 @@ export function App() {
             mode={authMode}
             disabled={view === 'transitioning'}
             onModeChange={setAuthMode}
+            onAuthenticate={handleAuthenticate}
             onValidSubmit={handleValidSubmit}
           />
         </section>

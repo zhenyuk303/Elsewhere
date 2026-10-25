@@ -5,6 +5,7 @@ import { AuthPanel } from './AuthPanel'
 
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
   const onModeChange = vi.fn()
+  const onAuthenticate = vi.fn().mockResolvedValue(undefined)
   const onValidSubmit = vi.fn()
 
   render(
@@ -12,11 +13,12 @@ function renderPanel(mode: 'signup' | 'login' = 'signup') {
       mode={mode}
       disabled={false}
       onModeChange={onModeChange}
+      onAuthenticate={onAuthenticate}
       onValidSubmit={onValidSubmit}
     />,
   )
 
-  return { onModeChange, onValidSubmit }
+  return { onModeChange, onAuthenticate, onValidSubmit }
 }
 
 describe('AuthPanel', () => {
@@ -55,6 +57,7 @@ describe('AuthPanel', () => {
         mode="signup"
         disabled={false}
         onModeChange={vi.fn()}
+        onAuthenticate={vi.fn().mockResolvedValue(undefined)}
         onValidSubmit={vi.fn()}
       />,
     )
@@ -229,5 +232,18 @@ describe('AuthPanel', () => {
 
     await user.click(screen.getByRole('link', { name: 'Sign up' }))
     expect(onModeChange).toHaveBeenCalledWith('signup')
+  })
+
+  it('keeps the user on the form when the server rejects the credentials', async () => {
+    const user = userEvent.setup()
+    const { onAuthenticate, onValidSubmit } = renderPanel('login')
+    onAuthenticate.mockRejectedValueOnce(new Error('Invalid username or password'))
+
+    await user.type(screen.getByLabelText('Username'), 'traveler')
+    await user.type(screen.getByLabelText('Password'), 'wrong password')
+    await user.click(screen.getByRole('button', { name: 'Login' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password')
+    expect(onValidSubmit).not.toHaveBeenCalled()
   })
 })

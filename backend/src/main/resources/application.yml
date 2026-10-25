@@ -1,0 +1,14 @@
+server:
+  port: ${PORT:8080}
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/elsewhere;MODE=MySQL;DATABASE_TO_LOWER=TRUE}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  sql:
+    init:
+      mode: always
+elsewhere:
+  demo:
+    enabled: ${ELSEWHERE_DEMO_USERS:false}
+    password: ${ELSEWHERE_DEMO_PASSWORD:}

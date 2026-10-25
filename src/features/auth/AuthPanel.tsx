@@ -8,6 +8,7 @@ type AuthPanelProps = {
   mode: AuthMode
   disabled: boolean
   onModeChange: (mode: AuthMode) => void
+  onAuthenticate: (username: string, password: string, agreementAccepted: boolean) => Promise<void>
   onValidSubmit: (origin: ButtonRect) => void
 }
 
@@ -47,6 +48,7 @@ export function AuthPanel({
   mode,
   disabled,
   onModeChange,
+  onAuthenticate,
   onValidSubmit,
 }: AuthPanelProps) {
   const [username, setUsername] = useState('')
@@ -54,10 +56,13 @@ export function AuthPanel({
   const [showPassword, setShowPassword] = useState(false)
   const [agreement, setAgreement] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
+  const [serverError, setServerError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const isSignup = mode === 'signup'
+  const isDisabled = disabled || busy
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const nextErrors: FormErrors = {}
@@ -68,13 +73,22 @@ export function AuthPanel({
     }
 
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0 || disabled) return
+    if (Object.keys(nextErrors).length > 0 || isDisabled) return
 
     const button = event.currentTarget.elements.namedItem(
       'primary-action',
     ) as HTMLButtonElement
     const { left, top, width, height } = button.getBoundingClientRect()
-    onValidSubmit({ left, top, width, height })
+    setBusy(true)
+    setServerError('')
+    try {
+      await onAuthenticate(username.trim(), password, agreement)
+      onValidSubmit({ left, top, width, height })
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : 'Request failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -112,7 +126,7 @@ export function AuthPanel({
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder="Username"
-              disabled={disabled}
+              disabled={isDisabled}
               aria-describedby={errors.username ? `${mode}-username-error` : undefined}
             />
           </div>
@@ -136,7 +150,7 @@ export function AuthPanel({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
-              disabled={disabled}
+              disabled={isDisabled}
               aria-describedby={errors.password ? `${mode}-password-error` : undefined}
             />
             <button
@@ -144,7 +158,7 @@ export function AuthPanel({
               type="button"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               onClick={() => setShowPassword((visible) => !visible)}
-              disabled={disabled}
+              disabled={isDisabled}
             >
               <EyeIcon hidden={showPassword} />
             </button>
@@ -163,7 +177,7 @@ export function AuthPanel({
                 type="checkbox"
                 checked={agreement}
                 onChange={(event) => setAgreement(event.target.checked)}
-                disabled={disabled}
+                disabled={isDisabled}
               />
               <span aria-hidden="true" className="custom-check" />
               <span>I agree to all Term, Privacy Policy and Fees</span>
@@ -183,23 +197,24 @@ export function AuthPanel({
           className="primary-button"
           type="submit"
           name="primary-action"
-          disabled={disabled}
+          disabled={isDisabled}
         >
-          <span>Login</span>
+          <span>{busy ? 'Please wait…' : 'Login'}</span>
         </button>
+        {serverError ? <p className="field-error" role="alert">{serverError}</p> : null}
 
         <div className="social-block">
           <p className="social-label">
             <span>{isSignup ? 'Or sign up with' : 'Or login with'}</span>
           </p>
           <div className="social-actions">
-            <button type="button" disabled={disabled}>
+            <button type="button" disabled={isDisabled}>
               <span className="social-icon social-icon--qq" aria-hidden="true">
                 <img src={qqIcon} alt="" />
               </span>
               QQ
             </button>
-            <button type="button" disabled={disabled}>
+            <button type="button" disabled={isDisabled}>
               <span
                 className="social-icon social-icon--wechat"
                 aria-hidden="true"

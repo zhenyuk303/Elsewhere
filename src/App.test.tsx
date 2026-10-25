@@ -2,6 +2,12 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
 
+vi.mock('./features/auth/authApi', () => ({
+  authenticate: vi.fn().mockResolvedValue({ id: 1, username: 'traveler' }),
+  currentUser: vi.fn().mockResolvedValue(null),
+  logout: vi.fn().mockResolvedValue(undefined),
+}))
+
 function rect({
   left,
   top,
@@ -92,7 +98,7 @@ describe('App', () => {
     expect(carousel).toHaveAttribute('data-phase', 'hold')
   })
 
-  it('pauses one transition and mounts the home placeholder only after it ends', () => {
+  it('pauses one transition and mounts the home placeholder only after it ends', async () => {
     render(<App />)
 
     fillValidSignupForm()
@@ -103,8 +109,7 @@ describe('App', () => {
       .getByRole('heading', { name: 'Create your account' })
       .closest('.auth-shell') as HTMLElement
     const carousel = screen.getByLabelText('Travel destinations')
-    fireEvent.click(submit)
-    fireEvent.click(submit)
+    await act(async () => { fireEvent.click(submit); fireEvent.click(submit) })
 
     expect(screen.getAllByTestId('runway-transition')).toHaveLength(1)
     expect(carousel).toHaveClass('is-paused')
@@ -136,7 +141,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Travel destinations')).not.toBeInTheDocument()
   })
 
-  it('captures the real button, divider, and card geometry for the transition', () => {
+  it('captures the real button, divider, and card geometry for the transition', async () => {
     render(<App />)
 
     const card = screen.getByTestId('auth-journey')
@@ -154,7 +159,7 @@ describe('App', () => {
     )
 
     fillValidSignupForm()
-    fireEvent.click(submit)
+    await act(async () => { fireEvent.click(submit) })
 
     expect(screen.getByTestId('runway-transition')).toHaveStyle({
       '--origin-left': '128px',
@@ -167,7 +172,7 @@ describe('App', () => {
     })
   })
 
-  it('uses the card horizontal center as the transition axis on stacked layouts', () => {
+  it('uses the card horizontal center as the transition axis on stacked layouts', async () => {
     vi.stubGlobal(
       'matchMedia',
       vi.fn().mockImplementation((query: string) => ({
@@ -193,7 +198,7 @@ describe('App', () => {
     )
 
     fillValidSignupForm()
-    fireEvent.click(submit)
+    await act(async () => { fireEvent.click(submit) })
 
     expect(screen.getByTestId('runway-transition')).toHaveStyle({
       '--divider-x': '192px',
