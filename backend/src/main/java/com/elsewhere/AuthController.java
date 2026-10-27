@@ -60,7 +60,7 @@ public class AuthController {
         return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookie("", http, true)).build();
     }
 
-    private static String cookie(String token, HttpServletRequest http, boolean clear) {
+    static String cookie(String token, HttpServletRequest http, boolean clear) {
         return ResponseCookie.from(COOKIE, token).httpOnly(true).secure(http.isSecure())
                 .sameSite("Lax").path("/api").maxAge(clear ? Duration.ZERO : Duration.ofDays(7)).build().toString();
     }

@@ -6,6 +6,7 @@ import { AuthPanel } from './AuthPanel'
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
   const onModeChange = vi.fn()
   const onAuthenticate = vi.fn().mockResolvedValue(undefined)
+  const onSocialLogin = vi.fn().mockResolvedValue(undefined)
   const onValidSubmit = vi.fn()
 
   render(
@@ -14,11 +15,12 @@ function renderPanel(mode: 'signup' | 'login' = 'signup') {
       disabled={false}
       onModeChange={onModeChange}
       onAuthenticate={onAuthenticate}
+      onSocialLogin={onSocialLogin}
       onValidSubmit={onValidSubmit}
     />,
   )
 
-  return { onModeChange, onAuthenticate, onValidSubmit }
+  return { onModeChange, onAuthenticate, onSocialLogin, onValidSubmit }
 }
 
 describe('AuthPanel', () => {
@@ -38,8 +40,8 @@ describe('AuthPanel', () => {
     expect(screen.getByLabelText('Username')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'QQ' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Google' })).toBeInTheDocument()
   })
 
   it('renders the primary login action without a decorative arrow', () => {
@@ -58,6 +60,7 @@ describe('AuthPanel', () => {
         disabled={false}
         onModeChange={vi.fn()}
         onAuthenticate={vi.fn().mockResolvedValue(undefined)}
+        onSocialLogin={vi.fn().mockResolvedValue(undefined)}
         onValidSubmit={vi.fn()}
       />,
     )
@@ -72,20 +75,25 @@ describe('AuthPanel', () => {
     expect(window.getComputedStyle(titleBlock!).transform).toBe('none')
   })
 
-  it('uses local icon artwork for the social sign-up actions', () => {
+  it('shows GitHub and Google marks without the retired providers', () => {
     renderPanel()
 
-    const qqIcon = screen
-      .getByRole('button', { name: 'QQ' })
-      .querySelector('img')
-    const wechatIcon = screen
-      .getByRole('button', { name: '微信' })
-      .querySelector('img')
+    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('.social-icon')).toHaveTextContent('GH')
+    expect(screen.getByRole('button', { name: 'Google' }).querySelector('.social-icon')).toHaveTextContent('G')
+    expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '微信' })).not.toBeInTheDocument()
+  })
 
-    expect(qqIcon).toHaveAttribute('src', expect.stringContaining('qq-icon'))
-    expect(qqIcon).toHaveAttribute('alt', '')
-    expect(wechatIcon?.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/)
-    expect(wechatIcon).toHaveAttribute('alt', '')
+  it('shows a backend configuration error without leaving the form', async () => {
+    const user = userEvent.setup()
+    const { onSocialLogin, onValidSubmit } = renderPanel('login')
+    onSocialLogin.mockRejectedValueOnce(new Error('GitHub login is not configured yet'))
+
+    await user.click(screen.getByRole('button', { name: 'GitHub' }))
+
+    expect(onSocialLogin).toHaveBeenCalledWith('github')
+    expect(await screen.findByRole('alert')).toHaveTextContent('GitHub login is not configured yet')
+    expect(onValidSubmit).not.toHaveBeenCalled()
   })
 
   it('switches password visibility without changing its value', async () => {
@@ -204,8 +212,8 @@ describe('AuthPanel', () => {
     const socialBlock = socialLabel.closest('.social-block')
     const form = socialBlock?.closest('form')
 
-    expect(screen.getByRole('button', { name: 'QQ' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Google' })).toBeInTheDocument()
     expect(form?.children).toHaveLength(5)
     expect(form?.children.item(2)).toHaveClass(
       'agreement-row',

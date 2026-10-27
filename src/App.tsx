@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthPanel } from './features/auth/AuthPanel'
-import { authenticate, currentUser, logout, type AuthUser } from './features/auth/authApi'
+import { authenticate, beginSocialLogin, currentUser, logout, type AuthUser, type SocialProvider } from './features/auth/authApi'
 import type {
   AuthMode,
   ButtonRect,
@@ -17,6 +17,12 @@ export function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('signup')
   const [view, setView] = useState<ViewState>('auth')
   const [user, setUser] = useState<AuthUser | null>(null)
+  const [oauthError] = useState(() => {
+    const error = new URLSearchParams(window.location.search).get('oauthError')
+    return error === 'cancelled' ? 'Third-party login was cancelled.'
+      : error === 'invalid' ? 'Third-party login expired. Please try again.'
+      : error === 'failed' ? 'Third-party login failed. Please try again.' : ''
+  })
   const [transitionOrigin, setTransitionOrigin] =
     useState<TransitionOrigin | null>(null)
 
@@ -31,10 +37,23 @@ export function App() {
     return () => { active = false }
   }, [])
 
+  useEffect(() => {
+    if (oauthError) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('oauthError')
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash)
+    }
+  }, [oauthError])
+
   const handleAuthenticate = useCallback(async (username: string, password: string, agreementAccepted: boolean) => {
     const signedIn = await authenticate(authMode, username, password, agreementAccepted)
     setUser(signedIn)
   }, [authMode])
+
+  const handleSocialLogin = useCallback(async (provider: SocialProvider) => {
+    const url = await beginSocialLogin(provider)
+    window.location.assign(url)
+  }, [])
 
   const handleLogout = useCallback(async () => {
     await logout()
@@ -93,6 +112,8 @@ export function App() {
             disabled={view === 'transitioning'}
             onModeChange={setAuthMode}
             onAuthenticate={handleAuthenticate}
+            onSocialLogin={handleSocialLogin}
+            initialError={oauthError}
             onValidSubmit={handleValidSubmit}
           />
         </section>

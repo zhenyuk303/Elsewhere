@@ -68,6 +68,30 @@ public class AuthService {
     }
 
     @Transactional
+    public SignedIn loginExternal(String provider, String appId, String providerUserId) {
+        User user = jdbc.query("SELECT u.id, u.username FROM oauth_identities i JOIN users u ON u.id = i.user_id "
+                        + "WHERE i.provider = ? AND i.app_id = ? AND i.provider_user_id = ?",
+                (rs, row) -> new User(rs.getLong(1), rs.getString(2)), provider, appId, providerUserId)
+                .stream().findFirst().orElseGet(() -> createExternalUser(provider, appId, providerUserId));
+        return createSession(user);
+    }
+
+    private User createExternalUser(String provider, String appId, String providerUserId) {
+        byte[] suffix = new byte[8];
+        random.nextBytes(suffix);
+        String username = provider + "_" + HexFormat.of().formatHex(suffix);
+        byte[] secret = new byte[32];
+        random.nextBytes(secret);
+        jdbc.update("INSERT INTO users(username, username_key, password_hash, created_at) VALUES (?, ?, ?, ?)",
+                username, username, passwords.encode(Base64.getUrlEncoder().withoutPadding().encodeToString(secret)),
+                Timestamp.from(Instant.now()));
+        User user = findByKey(username).orElseThrow();
+        jdbc.update("INSERT INTO oauth_identities(provider, app_id, provider_user_id, user_id, created_at) "
+                        + "VALUES (?, ?, ?, ?, ?)", provider, appId, providerUserId, user.id(), Timestamp.from(Instant.now()));
+        return user;
+    }
+
+    @Transactional
     public void createDemoUser(String username, String password) {
         String key = username.toLowerCase(Locale.ROOT);
         if (findByKey(key).isEmpty())

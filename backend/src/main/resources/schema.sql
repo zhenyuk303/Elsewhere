@@ -12,3 +12,22 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
   CONSTRAINT fk_auth_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS oauth_login_states (
+  state_hash VARCHAR(64) PRIMARY KEY,
+  provider VARCHAR(16) NOT NULL,
+  code_verifier VARCHAR(128) NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+ALTER TABLE oauth_login_states ADD COLUMN IF NOT EXISTS code_verifier VARCHAR(128);
+
+CREATE TABLE IF NOT EXISTS oauth_identities (
+  provider VARCHAR(16) NOT NULL,
+  app_id VARCHAR(255) NOT NULL,
+  provider_user_id VARCHAR(255) NOT NULL,
+  user_id BIGINT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  PRIMARY KEY (provider, app_id, provider_user_id),
+  CONSTRAINT fk_oauth_identity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

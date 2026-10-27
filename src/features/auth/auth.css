@@ -297,20 +297,19 @@
   object-fit: contain;
 }
 
-.social-icon--qq {
-  background: #fff1e6;
+.social-icon--github {
+  background: #24292f;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: -0.08em;
 }
 
-.social-icon--wechat {
-  width: 30px;
-  height: 30px;
-  background: #07c160;
-}
-
-.social-icon--wechat img {
-  width: 22px;
-  height: 22px;
-  filter: brightness(0) invert(1);
+.social-icon--google {
+  background: #fff;
+  color: #4285f4;
+  font-size: 1.35rem;
+  font-weight: 700;
 }
 
 .mode-switch {

@@ -1,6 +1,5 @@
 import { FormEvent, useState } from 'react'
-import qqIcon from '../../assets/social/qq-icon.png'
-import wechatIcon from '../../assets/social/wechat-icon.svg'
+import type { SocialProvider } from './authApi'
 import type { AuthMode, ButtonRect } from './types'
 import './auth.css'
 
@@ -9,6 +8,8 @@ type AuthPanelProps = {
   disabled: boolean
   onModeChange: (mode: AuthMode) => void
   onAuthenticate: (username: string, password: string, agreementAccepted: boolean) => Promise<void>
+  onSocialLogin: (provider: SocialProvider) => Promise<void>
+  initialError?: string
   onValidSubmit: (origin: ButtonRect) => void
 }
 
@@ -49,6 +50,8 @@ export function AuthPanel({
   disabled,
   onModeChange,
   onAuthenticate,
+  onSocialLogin,
+  initialError = '',
   onValidSubmit,
 }: AuthPanelProps) {
   const [username, setUsername] = useState('')
@@ -56,7 +59,7 @@ export function AuthPanel({
   const [showPassword, setShowPassword] = useState(false)
   const [agreement, setAgreement] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [serverError, setServerError] = useState('')
+  const [serverError, setServerError] = useState(initialError)
   const [busy, setBusy] = useState(false)
 
   const isSignup = mode === 'signup'
@@ -86,6 +89,19 @@ export function AuthPanel({
       onValidSubmit({ left, top, width, height })
     } catch (error) {
       setServerError(error instanceof Error ? error.message : 'Request failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleSocialLogin(provider: SocialProvider) {
+    if (isDisabled) return
+    setBusy(true)
+    setServerError('')
+    try {
+      await onSocialLogin(provider)
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : 'Social login is unavailable')
     } finally {
       setBusy(false)
     }
@@ -208,20 +224,13 @@ export function AuthPanel({
             <span>{isSignup ? 'Or sign up with' : 'Or login with'}</span>
           </p>
           <div className="social-actions">
-            <button type="button" disabled={isDisabled}>
-              <span className="social-icon social-icon--qq" aria-hidden="true">
-                <img src={qqIcon} alt="" />
-              </span>
-              QQ
+            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('github')}>
+              <span className="social-icon social-icon--github" aria-hidden="true">GH</span>
+              GitHub
             </button>
-            <button type="button" disabled={isDisabled}>
-              <span
-                className="social-icon social-icon--wechat"
-                aria-hidden="true"
-              >
-                <img src={wechatIcon} alt="" />
-              </span>
-              微信
+            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('google')}>
+              <span className="social-icon social-icon--google" aria-hidden="true">G</span>
+              Google
             </button>
           </div>
         </div>
