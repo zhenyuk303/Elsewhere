@@ -18,6 +18,6 @@ elsewhere:
       client-secret: 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
       redirect-uri: ${GOOGLE_REDIRECT_URI:http://127.0.0.1:5173/api/auth/oauth/google/callback}
     github:
-      client-id: ${CLIENT_ID_GITHUB:}
-      client-secret: ${CLIENT_SECRET_GITHUB:}
+      client-id: Ov23liIYiLGRqwy8AuUT
+      client-secret: 5402643e2d21f9e44fc7f7cdf59d38f5b3c4f6e0
       redirect-uri: ${GITHUB_REDIRECT_URI:http://127.0.0.1:5173/api/auth/oauth/github/callback}
