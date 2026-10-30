@@ -14,8 +14,8 @@ elsewhere:
     password: ${ELSEWHERE_DEMO_PASSWORD:}
   oauth:
     google:
-      client-id: ${CLIENT_ID_GOOGLE:}
-      client-secret: ${CLIENT_SECRET_GOOGLE:}
+      client-id: 229620813476-rd4li9a9pu4ik6r5qb89igrb8vfhsr6s.apps.googleusercontent.com
+      client-secret: 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
       redirect-uri: ${GOOGLE_REDIRECT_URI:http://127.0.0.1:5173/api/auth/oauth/google/callback}
     github:
       client-id: ${CLIENT_ID_GITHUB:}
