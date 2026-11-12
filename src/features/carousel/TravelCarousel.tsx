@@ -24,6 +24,7 @@ function TravelSlide({ slide, index, phase, active, slot }: SlideProps) {
   const clipId = `travel-window-${slot}-${index}`
   const animationPhase = active ? phase : 'waiting'
   const [imageError, setImageError] = useState(false)
+  const [labelError, setLabelError] = useState(false)
 
   return (
     <article
@@ -80,10 +81,17 @@ function TravelSlide({ slide, index, phase, active, slot }: SlideProps) {
       </svg>
       <div className="slide-shade" aria-hidden="true" />
       <div className="location-lockup">
-        <span className="location-index">
-          {String(index + 1).padStart(2, '0')}
-        </span>
-        <h2>{slide.location}</h2>
+        {labelError ? (
+          <h2 className="location-fallback">{slide.location}</h2>
+        ) : (
+          <img
+            className="location-calligraphy"
+            src={slide.labelSrc}
+            alt=""
+            aria-hidden="true"
+            onError={() => setLabelError(true)}
+          />
+        )}
       </div>
     </article>
   )
@@ -107,6 +115,7 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
     >
       <div className={`carousel-track carousel-track--${phase}`}>
         <TravelSlide
+          key={`current-${slides[currentIndex].labelSrc}`}
           slide={slides[currentIndex]}
           index={currentIndex}
           phase={phase}
@@ -114,6 +123,7 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
           slot="current"
         />
         <TravelSlide
+          key={`next-${slides[nextIndex].labelSrc}`}
           slide={slides[nextIndex]}
           index={nextIndex}
           phase="reveal"

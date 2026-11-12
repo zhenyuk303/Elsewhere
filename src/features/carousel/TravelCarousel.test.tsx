@@ -8,10 +8,19 @@ describe('TravelCarousel', () => {
     const { container } = render(<TravelCarousel paused={false} />)
 
     const carousel = screen.getByLabelText('Travel destinations')
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const location = activeSlide?.getAttribute('aria-label')
+    const expectedSlide = travelSlides.find(
+      (slide) => slide.location === location,
+    )
+    const calligraphy = activeSlide?.querySelector('.location-calligraphy')
+
     expect(carousel).toHaveAttribute('data-phase', 'reveal')
-    expect(
-      container.querySelector('.travel-slide--current .location-lockup h2'),
-    ).toHaveTextContent(/\S+/)
+    expect(expectedSlide).toBeDefined()
+    expect(calligraphy).toHaveAttribute('src', expectedSlide?.labelSrc)
+    expect(activeSlide).toHaveAttribute('aria-label', expectedSlide?.location)
+    expect(activeSlide?.querySelector('.location-index')).toBeNull()
+    expect(activeSlide?.querySelector('.location-fallback')).toBeNull()
     expect(screen.queryByText(/travel package/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/package in/i)).not.toBeInTheDocument()
     expect(container.querySelector('.travel-slide')).not.toHaveClass(
@@ -94,8 +103,22 @@ describe('TravelCarousel', () => {
     fireEvent.error(grayImage!)
 
     expect(activeSlide).toHaveClass('has-image-error')
-    expect(
-      activeSlide?.querySelector('.location-lockup h2'),
-    ).toHaveTextContent(/\S+/)
+    expect(activeSlide?.querySelector('.location-calligraphy')).not.toBeNull()
+  })
+
+  it('falls back to the English location only when a calligraphy label fails', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const calligraphy = activeSlide?.querySelector('.location-calligraphy')
+    const location = activeSlide?.getAttribute('aria-label')
+
+    expect(calligraphy).not.toBeNull()
+    fireEvent.error(calligraphy!)
+
+    expect(activeSlide?.querySelector('.location-calligraphy')).toBeNull()
+    expect(activeSlide?.querySelector('.location-fallback')).toHaveTextContent(
+      location!,
+    )
+    expect(activeSlide?.querySelector('.location-index')).toBeNull()
   })
 })
