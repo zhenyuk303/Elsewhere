@@ -7,6 +7,7 @@ export default defineConfig({
     proxy: { '/api': 'http://localhost:8080' },
   },
   test: {
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
