@@ -36,9 +36,11 @@ export function buildFfmpegArgs(inputPath, outputPath, panel) {
   const alphaExpression =
     "if(lte(val\\,90)\\,255\\,if(gte(val\\,150)\\,0\\,(150-val)*255/60))"
   const filter = [
-    `[0:v]crop=${PANEL.width}:${PANEL.height}:${PANEL.left}:${top},split=2[panel][masksrc]`,
+    `[0:v]crop=${PANEL.width}:${PANEL.height}:${PANEL.left}:${top},split=3[panel][masksrc][alphasrc]`,
     '[panel]format=rgb24,lutrgb=r=255:g=255:b=255[white]',
-    `[masksrc]format=gray,lut=y='${alphaExpression}'[alpha]`,
+    `[masksrc]format=gray,lut=y='${alphaExpression}'[luma]`,
+    '[alphasrc]alphaextract,format=gray[srcalpha]',
+    '[luma][srcalpha]blend=all_mode=multiply[alpha]',
     '[white][alpha]alphamerge[out]',
   ].join(';')
 

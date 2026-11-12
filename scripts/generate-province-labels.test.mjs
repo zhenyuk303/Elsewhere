@@ -48,6 +48,8 @@ test('builds an upper-panel FFmpeg command with a smooth white alpha mask', () =
   assert.deepEqual(args.slice(0, 4), ['-y', '-i', 'source.png', '-filter_complex'])
   assert.match(args[4], /crop=2896:1728:88:174/)
   assert.match(args[4], /format=gray,lut=y=/)
+  assert.match(args[4], /alphaextract/)
+  assert.match(args[4], /blend=all_mode=multiply/)
   assert.match(args[4], /alphamerge/)
   assert.deepEqual(args.slice(-3), ['-frames:v', '1', '云南.png'])
 })
@@ -65,7 +67,7 @@ test('rejects an unknown panel', () => {
   )
 })
 
-test('keeps dark lettering opaque while removing the pale grid and background', () => {
+test('keeps dark lettering opaque while removing transparent RGB and pale artwork', () => {
   const directory = mkdtempSync(join(tmpdir(), 'province-label-test-'))
   const sourcePath = join(directory, 'source.png')
   const outputPath = join(directory, 'output.png')
@@ -75,9 +77,9 @@ test('keeps dark lettering opaque while removing the pale grid and background', 
       '-f',
       'lavfi',
       '-i',
-      'color=c=0xDED1D1:s=3072x4107',
+      'color=c=black@0.0:s=3072x4107,format=rgba',
       '-vf',
-      'drawgrid=width=128:height=128:thickness=2:color=0xAFA0A0,drawbox=x=200:y=300:w=120:h=120:color=black:t=fill',
+      'drawbox=x=200:y=300:w=120:h=120:color=black@1:t=fill:replace=1,drawbox=x=400:y=500:w=120:h=120:color=0xC8C8C8@1:t=fill:replace=1',
       '-frames:v',
       '1',
       sourcePath,
@@ -86,8 +88,8 @@ test('keeps dark lettering opaque while removing the pale grid and background', 
     runFfmpeg(buildFfmpegArgs(sourcePath, outputPath, 'upper'))
 
     assert.ok(readAlphaAt(outputPath, 150, 180) >= 250, 'dark brush stroke')
-    assert.equal(readAlphaAt(outputPath, 40, 100), 0, 'pale grid line')
-    assert.equal(readAlphaAt(outputPath, 20, 20), 0, 'pale background')
+    assert.equal(readAlphaAt(outputPath, 350, 350), 0, 'pale watermark')
+    assert.equal(readAlphaAt(outputPath, 20, 20), 0, 'transparent black RGB')
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
