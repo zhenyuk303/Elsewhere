@@ -64,6 +64,6 @@ Run: `npm test -- --run`, `npm run typecheck`, and `npm run build`.
 
 Expected: all tests pass and both TypeScript and Vite builds exit successfully.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Commit the spec, plan, tests, and implementation with message `fix: make login the default app entry`.
