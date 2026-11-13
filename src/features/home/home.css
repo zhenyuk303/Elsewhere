@@ -297,6 +297,9 @@ body.home-view {
   .homepage-nav {
     right: 18px;
     left: 18px;
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 14px;
   }
 
   .homepage-brand {
@@ -305,6 +308,7 @@ body.home-view {
   }
 
   .homepage-nav-links {
+    justify-self: end;
     gap: 8px;
     font-size: 0.56rem;
   }
