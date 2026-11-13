@@ -3,6 +3,7 @@ import { AuthPanel } from './features/auth/AuthPanel'
 import {
   authenticate,
   beginSocialLogin,
+  currentUser,
   logout,
   type SocialProvider,
 } from './features/auth/authApi'
@@ -21,24 +22,39 @@ export function App() {
   const cardRef = useRef<HTMLDivElement>(null)
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [view, setView] = useState<ViewState>('auth')
+  const [isLogoutPending, setIsLogoutPending] = useState(false)
   const [oauthError] = useState(() => {
     const error = new URLSearchParams(window.location.search).get('oauthError')
     return error === 'cancelled' ? 'Third-party login was cancelled.'
       : error === 'invalid' ? 'Third-party login expired. Please try again.'
       : error === 'failed' ? 'Third-party login failed. Please try again.' : ''
   })
+  const [oauthSucceeded] = useState(
+    () => new URLSearchParams(window.location.search).get('oauth') === 'success',
+  )
   const [transitionOrigin, setTransitionOrigin] =
     useState<TransitionOrigin | null>(null)
   const [transitionActionLabel, setTransitionActionLabel] =
     useState<'Sign Up' | 'Login' | null>(null)
 
   useEffect(() => {
-    if (oauthError) {
-      const url = new URL(window.location.href)
-      url.searchParams.delete('oauthError')
-      window.history.replaceState(null, '', url.pathname + url.search + url.hash)
-    }
-  }, [oauthError])
+    if (!oauthSucceeded) return
+
+    let active = true
+    currentUser().then((restored) => {
+      if (active && restored) setView('home')
+    })
+    return () => { active = false }
+  }, [oauthSucceeded])
+
+  useEffect(() => {
+    if (!oauthError && !oauthSucceeded) return
+
+    const url = new URL(window.location.href)
+    url.searchParams.delete('oauthError')
+    url.searchParams.delete('oauth')
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash)
+  }, [oauthError, oauthSucceeded])
 
   const handleAuthenticate = useCallback(async (username: string, password: string, agreementAccepted: boolean) => {
     await authenticate(authMode, username, password, agreementAccepted)
@@ -84,6 +100,7 @@ export function App() {
   }, [])
 
   const handleLogout = useCallback(async () => {
+    setIsLogoutPending(true)
     setTransitionOrigin(null)
     setTransitionActionLabel(null)
     setAuthMode('login')
@@ -92,6 +109,8 @@ export function App() {
       await logout()
     } catch {
       // The client must still return to Login when cleanup is unavailable.
+    } finally {
+      setIsLogoutPending(false)
     }
   }, [])
 
@@ -110,7 +129,7 @@ export function App() {
           <AuthPanel
             key={authMode}
             mode={authMode}
-            disabled={view === 'transitioning'}
+            disabled={view === 'transitioning' || isLogoutPending}
             onModeChange={setAuthMode}
             onAuthenticate={handleAuthenticate}
             onSocialLogin={handleSocialLogin}

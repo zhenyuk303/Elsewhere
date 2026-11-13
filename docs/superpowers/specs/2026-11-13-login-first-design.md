@@ -8,8 +8,10 @@ ELSEWHERE must always open on the Login experience. Reaching the Homepage remain
 
 - Initialize the authentication panel in `login` mode.
 - Do not restore the Homepage from an existing server session during startup.
+- A verified OAuth callback may carry `?oauth=success`; only that marked return restores the authenticated Homepage.
 - When `Log out` is selected, immediately reset the client to the Login experience.
 - Attempt the backend logout as best-effort cleanup; a network or backend failure must not keep the user on the Homepage.
+- Keep Login controls disabled until logout cleanup settles so a delayed logout response cannot erase a newer session.
 - Preserve the existing authentication forms, airplane transition, Homepage layout, and profile-menu behavior.
 
 ## Approaches
@@ -22,4 +24,4 @@ ELSEWHERE must always open on the Login experience. Reaching the Homepage remain
 
 - No new dependencies.
 - The server-side logout endpoint remains in use when reachable.
-- Tests must cover startup with a restorable user and logout failure.
+- Tests must cover startup with a restorable user, OAuth completion, logout failure, and delayed logout cleanup.

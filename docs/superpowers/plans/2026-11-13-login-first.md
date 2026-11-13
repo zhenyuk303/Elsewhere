@@ -15,6 +15,8 @@
 - No new dependencies.
 - Preserve the existing Login/Sign Up forms, transition, and Homepage UI.
 - Keep the backend logout request as best-effort cleanup.
+- Restore a server session only for a backend-marked successful OAuth return.
+- Prevent a new authentication submission until logout cleanup settles.
 
 ## Review Focus
 

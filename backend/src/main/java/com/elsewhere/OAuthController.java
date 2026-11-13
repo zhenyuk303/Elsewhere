@@ -52,7 +52,7 @@ public class OAuthController {
     }
 
     private static ResponseEntity<Void> redirect(String error, String sessionToken, HttpServletRequest http) {
-        URI location = URI.create(error == null ? "/" : "/?oauthError=" + error);
+        URI location = URI.create(error == null ? "/?oauth=success" : "/?oauthError=" + error);
         var response = ResponseEntity.status(HttpStatus.SEE_OTHER).location(location)
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
                 .header(HttpHeaders.SET_COOKIE, stateCookie("", http, true));

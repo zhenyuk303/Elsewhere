@@ -77,6 +77,7 @@ async function renderAuthenticatedHomepage() {
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.history.replaceState(null, '', '/')
     mockedCurrentUser.mockResolvedValue(null)
     mockedLogout.mockResolvedValue(undefined)
     vi.useFakeTimers()
@@ -115,6 +116,22 @@ describe('App', () => {
     expect(
       screen.queryByText('A wonderful journey begins now.'),
     ).not.toBeInTheDocument()
+  })
+
+  it('restores the Homepage only after a successful OAuth callback', async () => {
+    window.history.replaceState(null, '', '/?oauth=success')
+    mockedCurrentUser.mockResolvedValueOnce({ id: 1, username: 'traveler' })
+
+    await act(async () => {
+      render(<App />)
+      await Promise.resolve()
+    })
+
+    expect(mockedCurrentUser).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByRole('heading', { name: 'Explore the World' }),
+    ).toBeInTheDocument()
+    expect(window.location.search).toBe('')
   })
 
   it('switches only the left panel and preserves the carousel node and phase', () => {
@@ -303,5 +320,22 @@ describe('App', () => {
     expect(
       screen.queryByRole('heading', { name: 'Explore the World' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('keeps Login disabled until backend logout cleanup settles', async () => {
+    let finishLogout: (() => void) | undefined
+    mockedLogout.mockImplementationOnce(
+      () => new Promise<void>((resolve) => { finishLogout = resolve }),
+    )
+    await renderAuthenticatedHomepage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Log out' }))
+
+    const login = screen.getByRole('button', { name: 'Login' })
+    expect(login).toBeDisabled()
+
+    await act(async () => finishLogout?.())
+    expect(login).toBeEnabled()
   })
 })

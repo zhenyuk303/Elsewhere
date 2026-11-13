@@ -51,7 +51,7 @@ class OAuthFlowTest {
 
         var completed = mvc.perform(get("/api/auth/oauth/github/callback")
                         .param("code", "sample").param("state", state).cookie(stateCookie))
-                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/"))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success"))
                 .andReturn();
         Cookie session = completed.getResponse().getCookie(AuthController.COOKIE);
         assertThat(session).isNotNull();
@@ -69,7 +69,7 @@ class OAuthFlowTest {
         Cookie secondState = secondStart.getResponse().getCookie(OAuthController.STATE_COOKIE);
         mvc.perform(get("/api/auth/oauth/github/callback")
                         .param("code", "second").param("state", secondState.getValue()).cookie(secondState))
-                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/"));
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success"));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'github'", Integer.class))
                 .isEqualTo(1);
     }
@@ -85,7 +85,7 @@ class OAuthFlowTest {
         Cookie stateCookie = started.getResponse().getCookie(OAuthController.STATE_COOKIE);
         mvc.perform(get("/api/auth/oauth/google/callback")
                         .param("code", "sample").param("state", stateCookie.getValue()).cookie(stateCookie))
-                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/"));
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success"));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'google'", Integer.class))
                 .isEqualTo(1);
     }
