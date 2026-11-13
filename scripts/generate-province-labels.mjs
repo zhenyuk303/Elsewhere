@@ -13,6 +13,9 @@ const PANEL = {
   upperTop: 174,
   lowerTop: 2110,
 }
+const PANEL_ORDER_OVERRIDES = new Map([
+  ['四川_上海.png', ['上海', '四川']],
+])
 
 export function parsePairName(fileName) {
   if (extname(fileName).toLowerCase() !== '.png') {
@@ -24,7 +27,7 @@ export function parsePairName(fileName) {
     throw new Error(`Expected <upper>_<lower>.png, received ${fileName}`)
   }
 
-  return names
+  return PANEL_ORDER_OVERRIDES.get(fileName) ?? names
 }
 
 export function buildFfmpegArgs(inputPath, outputPath, panel) {
@@ -40,7 +43,8 @@ export function buildFfmpegArgs(inputPath, outputPath, panel) {
     '[panel]format=rgb24,lutrgb=r=255:g=255:b=255[white]',
     `[masksrc]format=gray,lut=y='${alphaExpression}'[luma]`,
     '[alphasrc]alphaextract,format=gray[srcalpha]',
-    '[luma][srcalpha]blend=all_mode=multiply[alpha]',
+    '[luma][srcalpha]blend=all_mode=multiply[alpha-base]',
+    "[alpha-base]lut=y='if(lt(val\\,64)\\,0\\,val)'[alpha]",
     '[white][alpha]alphamerge[out]',
   ].join(';')
 

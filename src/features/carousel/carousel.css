@@ -99,17 +99,18 @@
 .location-lockup {
   position: absolute;
   z-index: 2;
-  left: clamp(30px, 5vw, 58px);
-  bottom: clamp(36px, 6vh, 62px);
-  width: min(52%, 430px);
+  left: clamp(18px, 2.5vw, 32px);
+  bottom: 2%;
+  width: min(34%, 240px);
+  height: 12%;
   color: #fff;
 }
 
 .location-calligraphy {
   display: block;
   width: 100%;
+  height: 100%;
   max-width: 100%;
-  max-height: clamp(140px, 26vh, 240px);
   object-fit: contain;
   object-position: left bottom;
   filter: drop-shadow(0 10px 28px rgb(0 0 0 / 36%));
@@ -173,13 +174,10 @@
   }
 
   .location-lockup {
-    left: 24px;
-    bottom: 28px;
-    width: min(58%, 320px);
-  }
-
-  .location-calligraphy {
-    max-height: 160px;
+    left: 18px;
+    bottom: 2%;
+    width: min(34%, 180px);
+    height: 12%;
   }
 
   .location-fallback {

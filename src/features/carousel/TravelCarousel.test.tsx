@@ -45,6 +45,23 @@ describe('TravelCarousel', () => {
     }
   })
 
+  it('keeps the calligraphy in the lower-left safe area outside the color window', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const lockup = container.querySelector(
+      '.travel-slide--current .location-lockup',
+    )
+    const style = window.getComputedStyle(lockup!)
+    const widthPercent = Number.parseFloat(
+      style.width.match(/min\(([\d.]+)%/)?.[1] ?? 'NaN',
+    )
+    const occupiedBottomPercent =
+      Number.parseFloat(style.bottom) + Number.parseFloat(style.height)
+
+    expect(widthPercent).toBeLessThanOrEqual(34)
+    expect(Number.parseFloat(style.bottom)).toBeGreaterThanOrEqual(2)
+    expect(occupiedBottomPercent).toBeLessThanOrEqual(15)
+  })
+
   it('keeps the gray image, color reveal, and frame in one coordinate system', () => {
     const { container } = render(<TravelCarousel paused={false} />)
     const activeSlide = container.querySelector('.travel-slide--current')
