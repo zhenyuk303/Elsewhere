@@ -8,6 +8,7 @@ export const REDUCED_TRANSITION_MS = 150
 
 type RunwayTransitionProps = {
   origin: TransitionOrigin
+  actionLabel: 'Sign Up' | 'Login'
   onComplete: () => void
 }
 
@@ -55,6 +56,7 @@ function Airplane() {
 
 export function RunwayTransition({
   origin,
+  actionLabel,
   onComplete,
 }: RunwayTransitionProps) {
   const [stage, setStage] = useState<TransitionStage>('collapse')
@@ -133,7 +135,7 @@ export function RunwayTransition({
       aria-hidden="true"
     >
       <div className="transition-shape" data-testid="transition-shape">
-        <span className="transition-label">Login</span>
+        <span className="transition-label">{actionLabel}</span>
       </div>
       <span className="transition-dot" data-testid="transition-dot" />
       <div className="flight-assembly" data-testid="flight-assembly">

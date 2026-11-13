@@ -113,6 +113,9 @@ describe('App', () => {
     await act(async () => { fireEvent.click(submit); fireEvent.click(submit) })
 
     expect(screen.getAllByTestId('runway-transition')).toHaveLength(1)
+    expect(screen.getByTestId('transition-shape')).toHaveTextContent(
+      /^Sign Up$/,
+    )
     expect(carousel).toHaveClass('is-paused')
     expect(card).toHaveClass('is-transitioning')
     expect(card).toBeInTheDocument()
@@ -140,6 +143,25 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Travel destinations')).not.toBeInTheDocument()
+  })
+
+  it('keeps the login label while the login transition collapses', async () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Login' }))
+    fireEvent.change(screen.getByLabelText('Username'), {
+      target: { value: 'traveler' },
+    })
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-path' },
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }))
+    })
+
+    expect(screen.getByTestId('transition-shape')).toHaveTextContent(
+      /^Login$/,
+    )
   })
 
   it('captures the real button, divider, and card geometry for the transition', async () => {

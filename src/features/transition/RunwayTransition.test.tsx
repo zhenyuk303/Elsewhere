@@ -45,7 +45,13 @@ describe('RunwayTransition', () => {
 
   it('runs the five transition stages at their exact boundaries', () => {
     const onComplete = vi.fn()
-    render(<RunwayTransition origin={origin} onComplete={onComplete} />)
+    render(
+      <RunwayTransition
+        origin={origin}
+        actionLabel="Login"
+        onComplete={onComplete}
+      />,
+    )
 
     const overlay = screen.getByTestId('runway-transition')
     expect(overlay).toHaveAttribute('data-stage', 'collapse')
@@ -70,7 +76,13 @@ describe('RunwayTransition', () => {
   })
 
   it('exposes the geometry and semantic animation layers', () => {
-    render(<RunwayTransition origin={origin} onComplete={vi.fn()} />)
+    render(
+      <RunwayTransition
+        origin={origin}
+        actionLabel="Login"
+        onComplete={vi.fn()}
+      />,
+    )
 
     expect(screen.getByTestId('runway-transition')).toHaveStyle({
       '--origin-left': '96px',
@@ -115,7 +127,13 @@ describe('RunwayTransition', () => {
   })
 
   it('keeps the circular cap radius while stretching and ends as a rectangle', () => {
-    render(<RunwayTransition origin={origin} onComplete={vi.fn()} />)
+    render(
+      <RunwayTransition
+        origin={origin}
+        actionLabel="Login"
+        onComplete={vi.fn()}
+      />,
+    )
     const shape = screen.getByTestId('transition-shape')
 
     act(() => vi.advanceTimersByTime(1000))
@@ -136,7 +154,11 @@ describe('RunwayTransition', () => {
   it('cleans up timers when the transition unmounts', () => {
     const onComplete = vi.fn()
     const { unmount } = render(
-      <RunwayTransition origin={origin} onComplete={onComplete} />,
+      <RunwayTransition
+        origin={origin}
+        actionLabel="Login"
+        onComplete={onComplete}
+      />,
     )
 
     act(() => vi.advanceTimersByTime(1000))
@@ -149,7 +171,13 @@ describe('RunwayTransition', () => {
   it('preserves the stage order on the short reduced-motion path', () => {
     setReducedMotion(true)
     const onComplete = vi.fn()
-    render(<RunwayTransition origin={origin} onComplete={onComplete} />)
+    render(
+      <RunwayTransition
+        origin={origin}
+        actionLabel="Login"
+        onComplete={onComplete}
+      />,
+    )
     const overlay = screen.getByTestId('runway-transition')
 
     expect(overlay).toHaveAttribute('data-stage', 'collapse')

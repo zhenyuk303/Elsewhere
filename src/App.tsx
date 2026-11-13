@@ -122,6 +122,7 @@ export function App() {
       {view === 'transitioning' && transitionOrigin ? (
         <RunwayTransition
           origin={transitionOrigin}
+          actionLabel={authMode === 'signup' ? 'Sign Up' : 'Login'}
           onComplete={handleTransitionComplete}
         />
       ) : null}
