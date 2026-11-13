@@ -161,7 +161,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Explore the World' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('region', { name: 'Travel destinations' }),
+      screen.getByRole('navigation', { name: 'Primary navigation' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Your journey starts here.')).not.toBeInTheDocument()
     expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()

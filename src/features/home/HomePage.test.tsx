@@ -46,18 +46,31 @@ describe('HomePage', () => {
     expect(
       screen.getByText('and find your own elsewhere.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('01 / A NEW PERSPECTIVE')).toBeInTheDocument()
   })
 
-  it('mounts only the current and prepared background layers', () => {
+  it('renders a solid login-page background without province media', () => {
     const { container } = renderHomePage()
+    const homepage = container.querySelector('.homepage')
+    const style = window.getComputedStyle(homepage!)
 
-    const layers = container.querySelectorAll('.homepage-slide')
-    expect(layers).toHaveLength(2)
-    expect(container.querySelectorAll('.homepage-slide.is-active')).toHaveLength(1)
+    expect(style.backgroundColor).toBe('rgb(243, 241, 237)')
+    expect(style.color).toBe('rgb(23, 23, 23)')
+    expect(container.querySelector('.homepage-background')).toBeNull()
+    expect(container.querySelector('.homepage-slide')).toBeNull()
+    expect(container.querySelector('.homepage-location')).toBeNull()
+    expect(container.querySelector('img')).toBeNull()
+    expect(screen.queryByText('ANHUI, CHINA')).not.toBeInTheDocument()
     expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('ANHUI, CHINA')
+      screen.queryByText('01 / A NEW PERSPECTIVE'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not schedule background work', () => {
+    const { unmount } = renderHomePage()
+
+    expect(vi.getTimerCount()).toBe(0)
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('keeps profile and navigation hooks static', () => {
@@ -158,113 +171,6 @@ describe('HomePage', () => {
     expect(
       screen.getByRole('heading', { name: 'Explore the World' }),
     ).toBeInTheDocument()
-  })
-
-  it('crossfades to the prepared slide at exact ten-second boundaries', () => {
-    const { container } = renderHomePage()
-    const initialImages = container.querySelectorAll('.homepage-slide img')
-    initialImages.forEach((image) => fireEvent.load(image))
-
-    act(() => vi.advanceTimersByTime(9_999))
-    expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('ANHUI, CHINA')
-
-    act(() => vi.advanceTimersByTime(1))
-    const secondLayer = container.querySelector('.homepage-slide.is-active')
-    expect(secondLayer?.querySelector('.homepage-location')).toHaveTextContent(
-      'MACAU, CHINA',
-    )
-
-    fireEvent.transitionEnd(secondLayer!, { propertyName: 'opacity' })
-    expect(
-      container.querySelector(
-        '.homepage-slide:not(.is-active) .homepage-location',
-      ),
-    ).toHaveTextContent('BEIJING, CHINA')
-    fireEvent.load(
-      container.querySelector('.homepage-slide:not(.is-active) img')!,
-    )
-
-    act(() => vi.advanceTimersByTime(10_000))
-    expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('BEIJING, CHINA')
-  })
-
-  it('keeps the current slide visible until the prepared image is ready', () => {
-    const { container } = renderHomePage()
-
-    fireEvent.load(container.querySelector('.homepage-slide.is-active img')!)
-    act(() => vi.advanceTimersByTime(10_000))
-    expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('ANHUI, CHINA')
-
-    fireEvent.load(
-      container.querySelector('.homepage-slide:not(.is-active) img')!,
-    )
-    act(() => vi.advanceTimersByTime(9_999))
-    expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('ANHUI, CHINA')
-
-    act(() => vi.advanceTimersByTime(1))
-    expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('MACAU, CHINA')
-  })
-
-  it('hides the prepared destination from assistive technology', () => {
-    const { container } = renderHomePage()
-    const activeLayer = container.querySelector('.homepage-slide.is-active')
-    const preparedLayer = container.querySelector(
-      '.homepage-slide:not(.is-active)',
-    )
-
-    expect(activeLayer).toHaveAttribute('aria-hidden', 'false')
-    expect(preparedLayer).toHaveAttribute('aria-hidden', 'true')
-  })
-
-  it('keeps the editorial layer mounted while the background rotates', () => {
-    const { container } = renderHomePage()
-    const editorial = container.querySelector('.homepage-copy')
-    fireEvent.load(
-      container.querySelector('.homepage-slide:not(.is-active) img')!,
-    )
-
-    act(() => vi.advanceTimersByTime(10_000))
-
-    expect(
-      container.querySelector('.homepage-slide.is-active .homepage-location'),
-    ).toHaveTextContent('MACAU, CHINA')
-    expect(container.querySelector('.homepage-copy')).toBe(editorial)
-  })
-
-  it('clears its rotation timer when it unmounts', () => {
-    const { unmount } = renderHomePage()
-
-    expect(vi.getTimerCount()).toBe(1)
-    unmount()
-    expect(vi.getTimerCount()).toBe(0)
-  })
-
-  it('uses full-bleed cover imagery with opacity-only crossfades', () => {
-    const { container } = renderHomePage()
-    const activeLayer = container.querySelector('.homepage-slide.is-active')
-    const inactiveLayer = container.querySelector(
-      '.homepage-slide:not(.is-active)',
-    )
-    const image = activeLayer?.querySelector('img')
-    const activeStyle = window.getComputedStyle(activeLayer!)
-
-    expect(activeStyle.position).toBe('absolute')
-    expect(activeStyle.inset).toBe('0px')
-    expect(activeStyle.opacity).toBe('1')
-    expect(activeStyle.transitionProperty).toBe('opacity')
-    expect(activeStyle.transform).toBe('none')
-    expect(window.getComputedStyle(inactiveLayer!).opacity).toBe('0')
-    expect(window.getComputedStyle(image!).objectFit).toBe('cover')
   })
 
   it('has no homepage entrance animation', () => {
