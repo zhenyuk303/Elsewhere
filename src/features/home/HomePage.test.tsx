@@ -101,4 +101,39 @@ describe('HomePage', () => {
     unmount()
     expect(vi.getTimerCount()).toBe(0)
   })
+
+  it('uses full-bleed cover imagery with opacity-only crossfades', () => {
+    const { container } = render(<HomePage />)
+    const activeLayer = container.querySelector('.homepage-slide.is-active')
+    const inactiveLayer = container.querySelector(
+      '.homepage-slide:not(.is-active)',
+    )
+    const image = activeLayer?.querySelector('img')
+    const activeStyle = window.getComputedStyle(activeLayer!)
+
+    expect(activeStyle.position).toBe('absolute')
+    expect(activeStyle.inset).toBe('0px')
+    expect(activeStyle.opacity).toBe('1')
+    expect(activeStyle.transitionProperty).toBe('opacity')
+    expect(activeStyle.transform).toBe('none')
+    expect(window.getComputedStyle(inactiveLayer!).opacity).toBe('0')
+    expect(window.getComputedStyle(image!).objectFit).toBe('cover')
+  })
+
+  it('has no homepage entrance animation', () => {
+    const { container } = render(<HomePage />)
+    const homepage = container.querySelector('.homepage')
+
+    expect(window.getComputedStyle(homepage!).animationName).toBe('none')
+  })
+
+  it('locks document scrolling only while mounted', () => {
+    const { unmount } = render(<HomePage />)
+
+    expect(document.body).toHaveClass('home-view')
+    expect(window.getComputedStyle(document.body).overflow).toBe('hidden')
+
+    unmount()
+    expect(document.body).not.toHaveClass('home-view')
+  })
 })
