@@ -62,6 +62,66 @@ describe('TravelCarousel', () => {
     expect(occupiedBottomPercent).toBeLessThanOrEqual(15)
   })
 
+  it('shrinks the rotated color window away from the label on wide layouts', () => {
+    let resizeCallback: ResizeObserverCallback | undefined
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback
+      }
+
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+      const carousel = screen.getByLabelText('Travel destinations')
+
+      expect(resizeCallback).toBeDefined()
+      act(() => {
+        resizeCallback?.(
+          [
+            {
+              contentRect: { width: 880, height: 360 },
+            } as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver,
+        )
+      })
+
+      const windowScale = Number.parseFloat(
+        carousel.style.getPropertyValue('--color-window-scale'),
+      )
+      const label = container.querySelector('.location-lockup')
+      const labelStyle = window.getComputedStyle(label!)
+      const labelRight =
+        Number.parseFloat(labelStyle.left) +
+        Math.min(880 * 0.34, 180)
+      const labelTop =
+        360 *
+        (1 -
+          (Number.parseFloat(labelStyle.bottom) +
+            Number.parseFloat(labelStyle.height)) /
+            100)
+      const radians = (8 * Math.PI) / 180
+      const svgScale = 880 / 1000
+      const svgTop = (360 - 880) / 2
+      const labelRightInViewBox = labelRight / svgScale
+      const rotatedSquareBottomInViewBox =
+        500 +
+        Math.tan(radians) * (labelRightInViewBox - 500) +
+        (350 * windowScale) / Math.cos(radians)
+      const rotatedSquareBottom =
+        svgTop + rotatedSquareBottomInViewBox * svgScale
+
+      expect(rotatedSquareBottom).toBeLessThan(labelTop)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('keeps the gray image, color reveal, and frame in one coordinate system', () => {
     const { container } = render(<TravelCarousel paused={false} />)
     const activeSlide = container.querySelector('.travel-slide--current')
@@ -104,7 +164,7 @@ describe('TravelCarousel', () => {
       expect(carousel).toHaveAttribute('data-phase', 'hold')
       expect(shape).not.toBeNull()
       expect(window.getComputedStyle(shape!).transform).toBe(
-        'rotate(8deg) scale(1)',
+        'rotate(8deg) scale(var(--color-window-scale, 1))',
       )
     } finally {
       vi.useRealTimers()
