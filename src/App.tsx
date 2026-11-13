@@ -25,6 +25,8 @@ export function App() {
   })
   const [transitionOrigin, setTransitionOrigin] =
     useState<TransitionOrigin | null>(null)
+  const [transitionActionLabel, setTransitionActionLabel] =
+    useState<'Sign Up' | 'Login' | null>(null)
 
   useEffect(() => {
     let active = true
@@ -59,12 +61,13 @@ export function App() {
     await logout()
     setUser(null)
     setTransitionOrigin(null)
+    setTransitionActionLabel(null)
     setView('auth')
     setAuthMode('login')
   }, [])
 
   const handleValidSubmit = useCallback(
-    (buttonOrigin: ButtonRect) => {
+    (buttonOrigin: ButtonRect, submittedMode: AuthMode) => {
       if (view !== 'auth') return
 
       const card = cardRef.current
@@ -85,6 +88,9 @@ export function App() {
         cardTop: cardRect.top,
         cardHeight: cardRect.height,
       })
+      setTransitionActionLabel(
+        submittedMode === 'signup' ? 'Sign Up' : 'Login',
+      )
       setView('transitioning')
     },
     [view],
@@ -119,9 +125,10 @@ export function App() {
         </section>
         <TravelCarousel paused={view === 'transitioning'} />
       </div>
-      {view === 'transitioning' && transitionOrigin ? (
+      {view === 'transitioning' && transitionOrigin && transitionActionLabel ? (
         <RunwayTransition
           origin={transitionOrigin}
+          actionLabel={transitionActionLabel}
           onComplete={handleTransitionComplete}
         />
       ) : null}

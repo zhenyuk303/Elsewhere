@@ -10,7 +10,7 @@ type AuthPanelProps = {
   onAuthenticate: (username: string, password: string, agreementAccepted: boolean) => Promise<void>
   onSocialLogin: (provider: SocialProvider) => Promise<void>
   initialError?: string
-  onValidSubmit: (origin: ButtonRect) => void
+  onValidSubmit: (origin: ButtonRect, mode: AuthMode) => void
 }
 
 type FormErrors = Partial<
@@ -86,7 +86,7 @@ export function AuthPanel({
     setServerError('')
     try {
       await onAuthenticate(username.trim(), password, agreement)
-      onValidSubmit({ left, top, width, height })
+      onValidSubmit({ left, top, width, height }, mode)
     } catch (error) {
       setServerError(error instanceof Error ? error.message : 'Request failed')
     } finally {
