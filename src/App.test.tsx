@@ -51,12 +51,27 @@ function fillValidSignupForm() {
   )
 }
 
-async function renderRestoredHomepage() {
-  mockedCurrentUser.mockResolvedValueOnce({ id: 1, username: 'traveler' })
+function fillValidLoginForm() {
+  fireEvent.change(screen.getByLabelText('Username'), {
+    target: { value: 'traveler' },
+  })
+  fireEvent.change(screen.getByLabelText('Password'), {
+    target: { value: 'secret-path' },
+  })
+}
+
+function switchToSignup() {
+  fireEvent.click(screen.getByRole('link', { name: 'Sign up' }))
+}
+
+async function renderAuthenticatedHomepage() {
+  render(<App />)
+  fillValidLoginForm()
   await act(async () => {
-    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }))
     await Promise.resolve()
   })
+  act(() => vi.advanceTimersByTime(3000))
 }
 
 describe('App', () => {
@@ -85,13 +100,18 @@ describe('App', () => {
     vi.unstubAllGlobals()
   })
 
-  it('opens on the signup experience', () => {
-    render(<App />)
+  it('always opens on Login even when a server session could be restored', async () => {
+    mockedCurrentUser.mockResolvedValueOnce({ id: 1, username: 'traveler' })
+    await act(async () => {
+      render(<App />)
+      await Promise.resolve()
+    })
 
     expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Create your account' }),
+      screen.getByRole('heading', { name: 'Welcome' }),
     ).toBeInTheDocument()
+    expect(mockedCurrentUser).not.toHaveBeenCalled()
     expect(
       screen.queryByText('A wonderful journey begins now.'),
     ).not.toBeInTheDocument()
@@ -104,10 +124,10 @@ describe('App', () => {
     act(() => vi.advanceTimersByTime(2500))
     expect(carousel).toHaveAttribute('data-phase', 'hold')
 
-    fireEvent.click(screen.getByRole('link', { name: 'Login' }))
+    switchToSignup()
 
     expect(
-      screen.getByRole('heading', { name: 'Welcome' }),
+      screen.getByRole('heading', { name: 'Create your account' }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Travel destinations')).toBe(carousel)
     expect(carousel).toHaveAttribute('data-index', '0')
@@ -117,6 +137,7 @@ describe('App', () => {
   it('pauses one transition and mounts the homepage only after it ends', async () => {
     const { container } = render(<App />)
 
+    switchToSignup()
     fillValidSignupForm()
 
     const submit = screen.getByRole('button', { name: 'Sign Up' })
@@ -171,13 +192,7 @@ describe('App', () => {
   it('keeps the login label while the login transition collapses', async () => {
     render(<App />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Login' }))
-    fireEvent.change(screen.getByLabelText('Username'), {
-      target: { value: 'traveler' },
-    })
-    fireEvent.change(screen.getByLabelText('Password'), {
-      target: { value: 'secret-path' },
-    })
+    fillValidLoginForm()
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Login' }))
     })
@@ -189,6 +204,7 @@ describe('App', () => {
 
   it('captures the real button, divider, and card geometry for the transition', async () => {
     render(<App />)
+    switchToSignup()
 
     const card = screen.getByTestId('auth-journey')
     const carousel = screen.getByLabelText('Travel destinations')
@@ -233,6 +249,7 @@ describe('App', () => {
       })),
     )
     render(<App />)
+    switchToSignup()
 
     const card = screen.getByTestId('auth-journey')
     const submit = screen.getByRole('button', { name: 'Sign Up' })
@@ -254,7 +271,7 @@ describe('App', () => {
   })
 
   it('logs out from the profile menu and returns to Login', async () => {
-    await renderRestoredHomepage()
+    await renderAuthenticatedHomepage()
 
     fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
     await act(async () => {
@@ -269,9 +286,9 @@ describe('App', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('keeps the homepage retryable when logout fails', async () => {
+  it('returns to Login when backend logout cleanup fails', async () => {
     mockedLogout.mockRejectedValueOnce(new Error('offline'))
-    await renderRestoredHomepage()
+    await renderAuthenticatedHomepage()
 
     fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
     await act(async () => {
@@ -281,11 +298,10 @@ describe('App', () => {
 
     expect(mockedLogout).toHaveBeenCalledTimes(1)
     expect(
-      screen.getByRole('heading', { name: 'Explore the World' }),
+      screen.getByRole('heading', { name: 'Welcome' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('menu')).toBeInTheDocument()
     expect(
-      screen.queryByRole('heading', { name: 'Welcome' }),
+      screen.queryByRole('heading', { name: 'Explore the World' }),
     ).not.toBeInTheDocument()
   })
 })

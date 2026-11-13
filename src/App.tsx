@@ -3,7 +3,6 @@ import { AuthPanel } from './features/auth/AuthPanel'
 import {
   authenticate,
   beginSocialLogin,
-  currentUser,
   logout,
   type SocialProvider,
 } from './features/auth/authApi'
@@ -20,7 +19,7 @@ type ViewState = 'auth' | 'transitioning' | 'home'
 
 export function App() {
   const cardRef = useRef<HTMLDivElement>(null)
-  const [authMode, setAuthMode] = useState<AuthMode>('signup')
+  const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [view, setView] = useState<ViewState>('auth')
   const [oauthError] = useState(() => {
     const error = new URLSearchParams(window.location.search).get('oauthError')
@@ -32,16 +31,6 @@ export function App() {
     useState<TransitionOrigin | null>(null)
   const [transitionActionLabel, setTransitionActionLabel] =
     useState<'Sign Up' | 'Login' | null>(null)
-
-  useEffect(() => {
-    let active = true
-    currentUser().then((restored) => {
-      if (active && restored) {
-        setView('home')
-      }
-    })
-    return () => { active = false }
-  }, [])
 
   useEffect(() => {
     if (oauthError) {
@@ -95,11 +84,15 @@ export function App() {
   }, [])
 
   const handleLogout = useCallback(async () => {
-    await logout()
     setTransitionOrigin(null)
     setTransitionActionLabel(null)
     setAuthMode('login')
     setView('auth')
+    try {
+      await logout()
+    } catch {
+      // The client must still return to Login when cleanup is unavailable.
+    }
   }, [])
 
   if (view === 'home') {

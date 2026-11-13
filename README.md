@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Start the backend first (see below), then open the URL printed by Vite. The signup page is the default route.
+Start the backend first (see below), then open the URL printed by Vite. The login page is always shown first when the app opens.
 
 ## Backend (IntelliJ IDEA)
 
