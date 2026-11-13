@@ -127,9 +127,15 @@ describe('HomePage', () => {
   it('keeps the editorial layer mounted while the background rotates', () => {
     const { container } = render(<HomePage />)
     const editorial = container.querySelector('.homepage-copy')
+    fireEvent.load(
+      container.querySelector('.homepage-slide:not(.is-active) img')!,
+    )
 
     act(() => vi.advanceTimersByTime(10_000))
 
+    expect(
+      container.querySelector('.homepage-slide.is-active .homepage-location'),
+    ).toHaveTextContent('MACAU, CHINA')
     expect(container.querySelector('.homepage-copy')).toBe(editorial)
   })
 
