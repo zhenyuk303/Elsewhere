@@ -44,13 +44,13 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: 'Google' })).toBeInTheDocument()
   })
 
-  it('renders the primary login action without a decorative arrow', () => {
+  it('renders the primary signup action without a decorative arrow', () => {
     renderPanel()
 
-    const loginButton = screen.getByRole('button', { name: 'Login' })
+    const signupButton = screen.getByRole('button', { name: 'Sign Up' })
 
-    expect(loginButton).toHaveTextContent(/^Login$/)
-    expect(loginButton.querySelector('.button-arrow')).toBeNull()
+    expect(signupButton).toHaveTextContent(/^Sign Up$/)
+    expect(signupButton.querySelector('.button-arrow')).toBeNull()
   })
 
   it('animates the three-line heading block while keeping its anchor fixed', () => {
@@ -167,7 +167,7 @@ describe('AuthPanel', () => {
 
     await user.type(screen.getByLabelText('Username'), '   ')
     await user.type(screen.getByLabelText('Password'), '   ')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
 
     expect(screen.getByText('Username is required')).toBeInTheDocument()
     expect(screen.getByText('Password is required')).toBeInTheDocument()
@@ -180,7 +180,7 @@ describe('AuthPanel', () => {
   it('submits signup only after the agreement is accepted', async () => {
     const user = userEvent.setup()
     const { onValidSubmit } = renderPanel()
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Sign Up' })
     vi.spyOn(submit, 'getBoundingClientRect').mockReturnValue({
       left: 120,
       top: 480,

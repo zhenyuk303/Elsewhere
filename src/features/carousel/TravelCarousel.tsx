@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CarouselPhase } from './useCarousel'
 import {
   shuffleTravelSlides,
@@ -20,10 +20,20 @@ type SlideProps = {
   slot: 'current' | 'next'
 }
 
+function colorWindowScale(width: number, height: number) {
+  if (width <= 0 || height <= 0) return 1
+
+  const aspectRatio = width / height
+  if (aspectRatio >= 1.5) return 0.5
+  if (aspectRatio >= 1.05) return 0.72
+  return 1
+}
+
 function TravelSlide({ slide, index, phase, active, slot }: SlideProps) {
   const clipId = `travel-window-${slot}-${index}`
   const animationPhase = active ? phase : 'waiting'
   const [imageError, setImageError] = useState(false)
+  const [labelError, setLabelError] = useState(false)
 
   return (
     <article
@@ -80,24 +90,61 @@ function TravelSlide({ slide, index, phase, active, slot }: SlideProps) {
       </svg>
       <div className="slide-shade" aria-hidden="true" />
       <div className="location-lockup">
-        <span className="location-index">
-          {String(index + 1).padStart(2, '0')}
-        </span>
-        <h2>{slide.location}</h2>
+        {labelError ? (
+          <h2 className="location-fallback">{slide.location}</h2>
+        ) : (
+          <img
+            className="location-calligraphy"
+            src={slide.labelSrc}
+            alt=""
+            aria-hidden="true"
+            onError={() => setLabelError(true)}
+          />
+        )}
       </div>
     </article>
   )
 }
 
 export function TravelCarousel({ paused }: TravelCarouselProps) {
+  const carouselRef = useRef<HTMLElement>(null)
   const [slides] = useState(() => shuffleTravelSlides(travelSlides))
   const { currentIndex, nextIndex, phase } = useCarousel(
     slides.length,
     paused,
   )
 
+  useEffect(() => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+
+    const updateScale = (width: number, height: number) => {
+      carousel.style.setProperty(
+        '--color-window-scale',
+        String(colorWindowScale(width, height)),
+      )
+    }
+    const updateFromElement = () => {
+      const { width, height } = carousel.getBoundingClientRect()
+      updateScale(width, height)
+    }
+
+    updateFromElement()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateFromElement)
+      return () => window.removeEventListener('resize', updateFromElement)
+    }
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) updateScale(entry.contentRect.width, entry.contentRect.height)
+    })
+    observer.observe(carousel)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <section
+      ref={carouselRef}
       className={`travel-carousel ${paused ? 'is-paused' : ''}`}
       aria-label="Travel destinations"
       data-index={currentIndex}
@@ -107,6 +154,7 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
     >
       <div className={`carousel-track carousel-track--${phase}`}>
         <TravelSlide
+          key={`current-${slides[currentIndex].labelSrc}`}
           slide={slides[currentIndex]}
           index={currentIndex}
           phase={phase}
@@ -114,6 +162,7 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
           slot="current"
         />
         <TravelSlide
+          key={`next-${slides[nextIndex].labelSrc}`}
           slide={slides[nextIndex]}
           index={nextIndex}
           phase="reveal"

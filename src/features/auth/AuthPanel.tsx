@@ -215,7 +215,7 @@ export function AuthPanel({
           name="primary-action"
           disabled={isDisabled}
         >
-          <span>{busy ? 'Please wait…' : 'Login'}</span>
+          <span>{busy ? 'Please wait…' : isSignup ? 'Sign Up' : 'Login'}</span>
         </button>
         {serverError ? <p className="field-error" role="alert">{serverError}</p> : null}
 

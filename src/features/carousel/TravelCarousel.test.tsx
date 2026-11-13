@@ -8,10 +8,19 @@ describe('TravelCarousel', () => {
     const { container } = render(<TravelCarousel paused={false} />)
 
     const carousel = screen.getByLabelText('Travel destinations')
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const location = activeSlide?.getAttribute('aria-label')
+    const expectedSlide = travelSlides.find(
+      (slide) => slide.location === location,
+    )
+    const calligraphy = activeSlide?.querySelector('.location-calligraphy')
+
     expect(carousel).toHaveAttribute('data-phase', 'reveal')
-    expect(
-      container.querySelector('.travel-slide--current .location-lockup h2'),
-    ).toHaveTextContent(/\S+/)
+    expect(expectedSlide).toBeDefined()
+    expect(calligraphy).toHaveAttribute('src', expectedSlide?.labelSrc)
+    expect(activeSlide).toHaveAttribute('aria-label', expectedSlide?.location)
+    expect(activeSlide?.querySelector('.location-index')).toBeNull()
+    expect(activeSlide?.querySelector('.location-fallback')).toBeNull()
     expect(screen.queryByText(/travel package/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/package in/i)).not.toBeInTheDocument()
     expect(container.querySelector('.travel-slide')).not.toHaveClass(
@@ -33,6 +42,83 @@ describe('TravelCarousel', () => {
       )
     } finally {
       vi.restoreAllMocks()
+    }
+  })
+
+  it('keeps the calligraphy in the lower-left safe area outside the color window', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const lockup = container.querySelector(
+      '.travel-slide--current .location-lockup',
+    )
+    const style = window.getComputedStyle(lockup!)
+    const widthPercent = Number.parseFloat(
+      style.width.match(/min\(([\d.]+)%/)?.[1] ?? 'NaN',
+    )
+    const occupiedBottomPercent =
+      Number.parseFloat(style.bottom) + Number.parseFloat(style.height)
+
+    expect(widthPercent).toBeLessThanOrEqual(34)
+    expect(Number.parseFloat(style.bottom)).toBeGreaterThanOrEqual(2)
+    expect(occupiedBottomPercent).toBeLessThanOrEqual(15)
+  })
+
+  it('shrinks the rotated color window away from the label on wide layouts', () => {
+    let resizeCallback: ResizeObserverCallback | undefined
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback
+      }
+
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+      const carousel = screen.getByLabelText('Travel destinations')
+
+      expect(resizeCallback).toBeDefined()
+      act(() => {
+        resizeCallback?.(
+          [
+            {
+              contentRect: { width: 880, height: 360 },
+            } as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver,
+        )
+      })
+
+      const windowScale = Number.parseFloat(
+        carousel.style.getPropertyValue('--color-window-scale'),
+      )
+      const label = container.querySelector('.location-lockup')
+      const labelStyle = window.getComputedStyle(label!)
+      const labelRight =
+        Number.parseFloat(labelStyle.left) +
+        Math.min(880 * 0.34, 180)
+      const labelTop =
+        360 *
+        (1 -
+          (Number.parseFloat(labelStyle.bottom) +
+            Number.parseFloat(labelStyle.height)) /
+            100)
+      const radians = (8 * Math.PI) / 180
+      const svgScale = 880 / 1000
+      const svgTop = (360 - 880) / 2
+      const labelRightInViewBox = labelRight / svgScale
+      const rotatedSquareBottomInViewBox =
+        500 +
+        Math.tan(radians) * (labelRightInViewBox - 500) +
+        (350 * windowScale) / Math.cos(radians)
+      const rotatedSquareBottom =
+        svgTop + rotatedSquareBottomInViewBox * svgScale
+
+      expect(rotatedSquareBottom).toBeLessThan(labelTop)
+    } finally {
+      vi.unstubAllGlobals()
     }
   })
 
@@ -78,7 +164,7 @@ describe('TravelCarousel', () => {
       expect(carousel).toHaveAttribute('data-phase', 'hold')
       expect(shape).not.toBeNull()
       expect(window.getComputedStyle(shape!).transform).toBe(
-        'rotate(8deg) scale(1)',
+        'rotate(8deg) scale(var(--color-window-scale, 1))',
       )
     } finally {
       vi.useRealTimers()
@@ -94,8 +180,22 @@ describe('TravelCarousel', () => {
     fireEvent.error(grayImage!)
 
     expect(activeSlide).toHaveClass('has-image-error')
-    expect(
-      activeSlide?.querySelector('.location-lockup h2'),
-    ).toHaveTextContent(/\S+/)
+    expect(activeSlide?.querySelector('.location-calligraphy')).not.toBeNull()
+  })
+
+  it('falls back to the English location only when a calligraphy label fails', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const calligraphy = activeSlide?.querySelector('.location-calligraphy')
+    const location = activeSlide?.getAttribute('aria-label')
+
+    expect(calligraphy).not.toBeNull()
+    fireEvent.error(calligraphy!)
+
+    expect(activeSlide?.querySelector('.location-calligraphy')).toBeNull()
+    expect(activeSlide?.querySelector('.location-fallback')).toHaveTextContent(
+      location!,
+    )
+    expect(activeSlide?.querySelector('.location-index')).toBeNull()
   })
 })
