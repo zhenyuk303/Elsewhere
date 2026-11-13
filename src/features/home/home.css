@@ -104,6 +104,45 @@ body.home-view {
   white-space: nowrap;
 }
 
+.homepage-nav-action {
+  position: relative;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.homepage-nav-action::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 160ms ease;
+}
+
+.homepage-nav-action:hover::after,
+.homepage-nav-action:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.homepage-nav-action:focus-visible {
+  outline: none;
+}
+
+.homepage-profile-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .homepage-profile {
   width: clamp(56px, 4.35vw, 72px);
   aspect-ratio: 1;
@@ -124,6 +163,47 @@ body.home-view {
   stroke-width: 1.25;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.homepage-profile-menu {
+  position: absolute;
+  z-index: 7;
+  top: calc(100% + 14px);
+  right: 0;
+  display: grid;
+  min-width: 184px;
+  padding: 7px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 26%);
+  border-radius: 12px;
+  background: rgb(7 14 18 / 84%);
+  box-shadow: 0 18px 42px rgb(0 0 0 / 28%);
+  backdrop-filter: blur(14px);
+}
+
+.homepage-profile-menu-item {
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.86rem;
+  line-height: 1.1;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.homepage-profile-menu-item:hover,
+.homepage-profile-menu-item:focus-visible {
+  background: rgb(255 255 255 / 12%);
+  outline: none;
+}
+
+.homepage-profile-menu-item:disabled {
+  opacity: 0.58;
+  cursor: wait;
 }
 
 .homepage-copy {
@@ -317,6 +397,11 @@ body.home-view {
     width: 34px;
   }
 
+  .homepage-profile-menu {
+    top: calc(100% + 10px);
+    min-width: 172px;
+  }
+
   .homepage-copy {
     left: 18px;
     width: calc(100% - 36px);
@@ -375,6 +460,11 @@ body.home-view {
 
   .homepage-profile {
     width: 34px;
+  }
+
+  .homepage-profile-menu {
+    top: calc(100% + 8px);
+    min-width: 172px;
   }
 
   .homepage-copy {

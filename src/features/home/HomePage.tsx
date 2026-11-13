@@ -6,6 +6,10 @@ export const HOME_ROTATION_MS = 10_000
 
 type LayerSlot = 0 | 1
 
+type HomePageProps = {
+  onLogout?: () => Promise<void>
+}
+
 function placeLabel(location: string) {
   return `${location.toUpperCase()}, CHINA`
 }
@@ -19,10 +23,15 @@ function ProfileIcon() {
   )
 }
 
-export function HomePage() {
+export function HomePage({ onLogout = async () => {} }: HomePageProps) {
   const [layerIndexes, setLayerIndexes] = useState<[number, number]>([0, 1])
   const [activeSlot, setActiveSlot] = useState<LayerSlot>(0)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [isLogoutPending, setIsLogoutPending] = useState(false)
   const layerReadyRef = useRef<[boolean, boolean]>([false, false])
+  const profileMenuRef = useRef<HTMLDivElement>(null)
+  const profileButtonRef = useRef<HTMLButtonElement>(null)
+  const logoutPendingRef = useRef(false)
 
   useEffect(() => {
     document.body.classList.add('home-view')
@@ -39,6 +48,47 @@ export function HomePage() {
 
     return () => window.clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) return
+
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        !profileMenuRef.current?.contains(event.target)
+      ) {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      setIsProfileMenuOpen(false)
+      profileButtonRef.current?.focus()
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isProfileMenuOpen])
+
+  async function handleLogout() {
+    if (logoutPendingRef.current) return
+    logoutPendingRef.current = true
+    setIsLogoutPending(true)
+    try {
+      await onLogout()
+      setIsProfileMenuOpen(false)
+    } catch {
+      // Keep the menu open so a failed logout can be retried.
+    } finally {
+      logoutPendingRef.current = false
+      setIsLogoutPending(false)
+    }
+  }
 
   function handleFadeComplete(
     slot: LayerSlot,
@@ -96,16 +146,55 @@ export function HomePage() {
       <nav className="homepage-nav" aria-label="Primary navigation">
         <span className="homepage-brand">ELSEWHERE</span>
         <div className="homepage-nav-links">
-          <span>Footprints</span>
-          <span>Guides</span>
-          <span>Community</span>
-          <button
-            className="homepage-profile"
-            type="button"
-            aria-label="User profile"
-          >
-            <ProfileIcon />
+          <button className="homepage-nav-action" type="button">
+            Footprints
           </button>
+          <button className="homepage-nav-action" type="button">
+            Guides
+          </button>
+          <button className="homepage-nav-action" type="button">
+            Community
+          </button>
+          <div className="homepage-profile-wrap" ref={profileMenuRef}>
+            <button
+              className="homepage-profile"
+              type="button"
+              aria-label="User profile"
+              aria-haspopup="menu"
+              aria-expanded={isProfileMenuOpen}
+              aria-controls="homepage-profile-menu"
+              ref={profileButtonRef}
+              onClick={() => setIsProfileMenuOpen((open) => !open)}
+            >
+              <ProfileIcon />
+            </button>
+            {isProfileMenuOpen ? (
+              <div
+                className="homepage-profile-menu"
+                id="homepage-profile-menu"
+                role="menu"
+                aria-label="User menu"
+              >
+                <button
+                  className="homepage-profile-menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => setIsProfileMenuOpen(false)}
+                >
+                  Personal homepage
+                </button>
+                <button
+                  className="homepage-profile-menu-item"
+                  type="button"
+                  role="menuitem"
+                  disabled={isLogoutPending}
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </nav>
 

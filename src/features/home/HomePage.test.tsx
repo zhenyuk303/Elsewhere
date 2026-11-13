@@ -1,6 +1,18 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HomePage } from './HomePage'
+
+function renderHomePage(
+  onLogout: () => Promise<void> = vi.fn().mockResolvedValue(undefined),
+) {
+  return render(<HomePage onLogout={onLogout} />)
+}
 
 describe('HomePage', () => {
   beforeEach(() => {
@@ -12,7 +24,7 @@ describe('HomePage', () => {
   })
 
   it('renders the fixed navigation and editorial content', () => {
-    render(<HomePage />)
+    renderHomePage()
 
     const navigation = screen.getByRole('navigation', {
       name: 'Primary navigation',
@@ -38,7 +50,7 @@ describe('HomePage', () => {
   })
 
   it('mounts only the current and prepared background layers', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
 
     const layers = container.querySelectorAll('.homepage-slide')
     expect(layers).toHaveLength(2)
@@ -49,17 +61,107 @@ describe('HomePage', () => {
   })
 
   it('keeps profile and navigation hooks static', () => {
-    render(<HomePage />)
+    renderHomePage()
 
-    expect(screen.getByRole('button', { name: 'User profile' })).toHaveAttribute(
+    expect(
+      screen.getByRole('button', { name: 'Footprints' }),
+    ).toHaveAttribute('type', 'button')
+    expect(screen.getByRole('button', { name: 'Guides' })).toHaveAttribute(
       'type',
       'button',
     )
+    expect(
+      screen.getByRole('button', { name: 'Community' }),
+    ).toHaveAttribute('type', 'button')
     expect(screen.queryAllByRole('link')).toHaveLength(0)
   })
 
+  it('toggles an accessible profile menu with the requested actions', () => {
+    renderHomePage()
+    const profile = screen.getByRole('button', { name: 'User profile' })
+
+    expect(profile).toHaveAttribute('aria-haspopup', 'menu')
+    expect(profile).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+
+    fireEvent.click(profile)
+    const menu = screen.getByRole('menu')
+    expect(profile).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      within(menu).getAllByRole('menuitem').map((item) => item.textContent),
+    ).toEqual(['Personal homepage', 'Log out'])
+
+    fireEvent.click(profile)
+    expect(profile).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('keeps the personal homepage action reserved and closes its menu', () => {
+    renderHomePage()
+    const initialUrl = window.location.href
+
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Personal homepage' }))
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(window.location.href).toBe(initialUrl)
+  })
+
+  it('dismisses the profile menu outside and with Escape', () => {
+    renderHomePage()
+    const profile = screen.getByRole('button', { name: 'User profile' })
+
+    fireEvent.click(profile)
+    fireEvent.pointerDown(document.body)
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+
+    fireEvent.click(profile)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(profile).toHaveFocus()
+  })
+
+  it('blocks duplicate logout submissions while one is pending', async () => {
+    let finishLogout: (() => void) | undefined
+    const onLogout = vi.fn(
+      () => new Promise<void>((resolve) => {
+        finishLogout = resolve
+      }),
+    )
+    renderHomePage(onLogout)
+
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    const logoutButton = screen.getByRole('menuitem', { name: 'Log out' })
+    fireEvent.click(logoutButton)
+    fireEvent.click(logoutButton)
+
+    expect(onLogout).toHaveBeenCalledTimes(1)
+    expect(logoutButton).toBeDisabled()
+
+    await act(async () => finishLogout?.())
+  })
+
+  it('keeps a failed logout available for retry', async () => {
+    const onLogout = vi.fn().mockRejectedValue(new Error('offline'))
+    renderHomePage(onLogout)
+
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Log out' }))
+      await Promise.resolve()
+    })
+
+    expect(
+      screen.getByRole('menuitem', { name: 'Log out' }),
+    ).toBeEnabled()
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Explore the World' }),
+    ).toBeInTheDocument()
+  })
+
   it('crossfades to the prepared slide at exact ten-second boundaries', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
     const initialImages = container.querySelectorAll('.homepage-slide img')
     initialImages.forEach((image) => fireEvent.load(image))
 
@@ -91,7 +193,7 @@ describe('HomePage', () => {
   })
 
   it('keeps the current slide visible until the prepared image is ready', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
 
     fireEvent.load(container.querySelector('.homepage-slide.is-active img')!)
     act(() => vi.advanceTimersByTime(10_000))
@@ -114,7 +216,7 @@ describe('HomePage', () => {
   })
 
   it('hides the prepared destination from assistive technology', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
     const activeLayer = container.querySelector('.homepage-slide.is-active')
     const preparedLayer = container.querySelector(
       '.homepage-slide:not(.is-active)',
@@ -125,7 +227,7 @@ describe('HomePage', () => {
   })
 
   it('keeps the editorial layer mounted while the background rotates', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
     const editorial = container.querySelector('.homepage-copy')
     fireEvent.load(
       container.querySelector('.homepage-slide:not(.is-active) img')!,
@@ -140,7 +242,7 @@ describe('HomePage', () => {
   })
 
   it('clears its rotation timer when it unmounts', () => {
-    const { unmount } = render(<HomePage />)
+    const { unmount } = renderHomePage()
 
     expect(vi.getTimerCount()).toBe(1)
     unmount()
@@ -148,7 +250,7 @@ describe('HomePage', () => {
   })
 
   it('uses full-bleed cover imagery with opacity-only crossfades', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
     const activeLayer = container.querySelector('.homepage-slide.is-active')
     const inactiveLayer = container.querySelector(
       '.homepage-slide:not(.is-active)',
@@ -166,14 +268,14 @@ describe('HomePage', () => {
   })
 
   it('has no homepage entrance animation', () => {
-    const { container } = render(<HomePage />)
+    const { container } = renderHomePage()
     const homepage = container.querySelector('.homepage')
 
     expect(window.getComputedStyle(homepage!).animationName).toBe('none')
   })
 
   it('locks document scrolling only while mounted', () => {
-    const { unmount } = render(<HomePage />)
+    const { unmount } = renderHomePage()
 
     expect(document.body).toHaveClass('home-view')
     expect(window.getComputedStyle(document.body).overflow).toBe('hidden')
