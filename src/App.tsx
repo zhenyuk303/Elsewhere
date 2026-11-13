@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthPanel } from './features/auth/AuthPanel'
-import { authenticate, beginSocialLogin, currentUser, logout, type AuthUser, type SocialProvider } from './features/auth/authApi'
+import { authenticate, beginSocialLogin, currentUser, type SocialProvider } from './features/auth/authApi'
 import type {
   AuthMode,
   ButtonRect,
   TransitionOrigin,
 } from './features/auth/types'
 import { TravelCarousel } from './features/carousel/TravelCarousel'
-import { HomePlaceholder } from './features/home/HomePlaceholder'
+import { HomePage } from './features/home/HomePage'
 import { RunwayTransition } from './features/transition/RunwayTransition'
 
 type ViewState = 'auth' | 'transitioning' | 'home'
@@ -16,7 +16,6 @@ export function App() {
   const cardRef = useRef<HTMLDivElement>(null)
   const [authMode, setAuthMode] = useState<AuthMode>('signup')
   const [view, setView] = useState<ViewState>('auth')
-  const [user, setUser] = useState<AuthUser | null>(null)
   const [oauthError] = useState(() => {
     const error = new URLSearchParams(window.location.search).get('oauthError')
     return error === 'cancelled' ? 'Third-party login was cancelled.'
@@ -32,7 +31,6 @@ export function App() {
     let active = true
     currentUser().then((restored) => {
       if (active && restored) {
-        setUser(restored)
         setView('home')
       }
     })
@@ -48,22 +46,12 @@ export function App() {
   }, [oauthError])
 
   const handleAuthenticate = useCallback(async (username: string, password: string, agreementAccepted: boolean) => {
-    const signedIn = await authenticate(authMode, username, password, agreementAccepted)
-    setUser(signedIn)
+    await authenticate(authMode, username, password, agreementAccepted)
   }, [authMode])
 
   const handleSocialLogin = useCallback(async (provider: SocialProvider) => {
     const url = await beginSocialLogin(provider)
     window.location.assign(url)
-  }, [])
-
-  const handleLogout = useCallback(async () => {
-    await logout()
-    setUser(null)
-    setTransitionOrigin(null)
-    setTransitionActionLabel(null)
-    setView('auth')
-    setAuthMode('login')
   }, [])
 
   const handleValidSubmit = useCallback(
@@ -101,7 +89,7 @@ export function App() {
   }, [])
 
   if (view === 'home') {
-    return <HomePlaceholder username={user?.username} onLogout={handleLogout} />
+    return <HomePage />
   }
 
   return (

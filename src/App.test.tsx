@@ -99,8 +99,8 @@ describe('App', () => {
     expect(carousel).toHaveAttribute('data-phase', 'hold')
   })
 
-  it('pauses one transition and mounts the home placeholder only after it ends', async () => {
-    render(<App />)
+  it('pauses one transition and mounts the homepage only after it ends', async () => {
+    const { container } = render(<App />)
 
     fillValidSignupForm()
 
@@ -132,21 +132,25 @@ describe('App', () => {
       'rgb(23, 23, 23)',
     )
     expect(
-      screen.queryByRole('heading', { name: 'Your journey starts here.' }),
+      screen.queryByRole('heading', { name: 'Explore the World' }),
     ).not.toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(2999))
     expect(
-      screen.queryByRole('heading', { name: 'Your journey starts here.' }),
+      screen.queryByRole('heading', { name: 'Explore the World' }),
     ).not.toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(1))
 
     expect(
-      screen.getByRole('heading', { name: 'Your journey starts here.' }),
+      screen.getByRole('heading', { name: 'Explore the World' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: 'Travel destinations' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Your journey starts here.')).not.toBeInTheDocument()
     expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Travel destinations')).not.toBeInTheDocument()
+    expect(container.querySelector('.travel-carousel')).toBeNull()
   })
 
   it('keeps the login label while the login transition collapses', async () => {
