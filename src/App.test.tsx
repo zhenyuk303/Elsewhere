@@ -104,7 +104,7 @@ describe('App', () => {
 
     fillValidSignupForm()
 
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Sign Up' })
     const card = screen.getByTestId('auth-journey')
     const authShell = screen
       .getByRole('heading', { name: 'Create your account' })
@@ -147,7 +147,7 @@ describe('App', () => {
 
     const card = screen.getByTestId('auth-journey')
     const carousel = screen.getByLabelText('Travel destinations')
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Sign Up' })
 
     vi.spyOn(card, 'getBoundingClientRect').mockReturnValue(
       rect({ left: 40, top: 28, width: 1180, height: 760 }),
@@ -190,7 +190,7 @@ describe('App', () => {
     render(<App />)
 
     const card = screen.getByTestId('auth-journey')
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Sign Up' })
     vi.spyOn(card, 'getBoundingClientRect').mockReturnValue(
       rect({ left: 12, top: 0, width: 360, height: 720 }),
     )
