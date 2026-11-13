@@ -118,6 +118,7 @@ describe('HomePage', () => {
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(window.location.href).toBe(initialUrl)
+    expect(screen.getByRole('button', { name: 'User profile' })).toHaveFocus()
   })
 
   it('dismisses the profile menu outside and with Escape', () => {
@@ -132,6 +133,29 @@ describe('HomePage', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     expect(profile).toHaveFocus()
+  })
+
+  it('supports keyboard opening, navigation, and Tab dismissal', () => {
+    renderHomePage()
+    const profile = screen.getByRole('button', { name: 'User profile' })
+
+    profile.focus()
+    fireEvent.keyDown(profile, { key: 'ArrowDown' })
+    const personalHomepage = screen.getByRole('menuitem', {
+      name: 'Personal homepage',
+    })
+    const logout = screen.getByRole('menuitem', { name: 'Log out' })
+    expect(personalHomepage).toHaveFocus()
+
+    fireEvent.keyDown(personalHomepage, { key: 'ArrowDown' })
+    expect(logout).toHaveFocus()
+    fireEvent.keyDown(logout, { key: 'ArrowDown' })
+    expect(personalHomepage).toHaveFocus()
+    fireEvent.keyDown(personalHomepage, { key: 'ArrowUp' })
+    expect(logout).toHaveFocus()
+
+    fireEvent.keyDown(logout, { key: 'Tab' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
   it('blocks duplicate logout submissions while one is pending', async () => {

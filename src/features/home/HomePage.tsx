@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react'
 import './home.css'
 
 type HomePageProps = {
@@ -20,6 +25,7 @@ export function HomePage({ onLogout }: HomePageProps) {
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
   const logoutPendingRef = useRef(false)
+  const menuFocusTargetRef = useRef<'first' | 'last'>('first')
 
   useEffect(() => {
     document.body.classList.add('home-view')
@@ -28,6 +34,13 @@ export function HomePage({ onLogout }: HomePageProps) {
 
   useEffect(() => {
     if (!isProfileMenuOpen) return
+
+    const menuItems = getMenuItems()
+    const initialItem =
+      menuFocusTargetRef.current === 'last'
+        ? menuItems.at(-1)
+        : menuItems[0]
+    initialItem?.focus()
 
     function handlePointerDown(event: PointerEvent) {
       if (
@@ -40,8 +53,7 @@ export function HomePage({ onLogout }: HomePageProps) {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return
-      setIsProfileMenuOpen(false)
-      profileButtonRef.current?.focus()
+      closeProfileMenu(true)
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
@@ -52,13 +64,63 @@ export function HomePage({ onLogout }: HomePageProps) {
     }
   }, [isProfileMenuOpen])
 
+  function getMenuItems() {
+    return Array.from(
+      profileMenuRef.current?.querySelectorAll<HTMLButtonElement>(
+        '[role="menuitem"]:not(:disabled)',
+      ) ?? [],
+    )
+  }
+
+  function openProfileMenu(focusTarget: 'first' | 'last' = 'first') {
+    menuFocusTargetRef.current = focusTarget
+    setIsProfileMenuOpen(true)
+  }
+
+  function closeProfileMenu(restoreFocus = false) {
+    setIsProfileMenuOpen(false)
+    if (restoreFocus) profileButtonRef.current?.focus()
+  }
+
+  function handleProfileClick() {
+    if (isProfileMenuOpen) {
+      closeProfileMenu()
+      return
+    }
+    openProfileMenu()
+  }
+
+  function handleProfileKeyDown(event: ReactKeyboardEvent) {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+    event.preventDefault()
+    openProfileMenu(event.key === 'ArrowUp' ? 'last' : 'first')
+  }
+
+  function handleMenuKeyDown(event: ReactKeyboardEvent) {
+    if (event.key === 'Tab') {
+      closeProfileMenu()
+      return
+    }
+
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+    event.preventDefault()
+    const menuItems = getMenuItems()
+    const currentIndex = menuItems.indexOf(
+      document.activeElement as HTMLButtonElement,
+    )
+    const direction = event.key === 'ArrowDown' ? 1 : -1
+    const nextIndex =
+      (currentIndex + direction + menuItems.length) % menuItems.length
+    menuItems[nextIndex]?.focus()
+  }
+
   async function handleLogout() {
     if (logoutPendingRef.current) return
     logoutPendingRef.current = true
     setIsLogoutPending(true)
     try {
       await onLogout()
-      setIsProfileMenuOpen(false)
+      closeProfileMenu(true)
     } catch {
       // Keep the menu open so a failed logout can be retried.
     } finally {
@@ -90,7 +152,8 @@ export function HomePage({ onLogout }: HomePageProps) {
               aria-expanded={isProfileMenuOpen}
               aria-controls="homepage-profile-menu"
               ref={profileButtonRef}
-              onClick={() => setIsProfileMenuOpen((open) => !open)}
+              onClick={handleProfileClick}
+              onKeyDown={handleProfileKeyDown}
             >
               <ProfileIcon />
             </button>
@@ -100,12 +163,13 @@ export function HomePage({ onLogout }: HomePageProps) {
                 id="homepage-profile-menu"
                 role="menu"
                 aria-label="User menu"
+                onKeyDown={handleMenuKeyDown}
               >
                 <button
                   className="homepage-profile-menu-item"
                   type="button"
                   role="menuitem"
-                  onClick={() => setIsProfileMenuOpen(false)}
+                  onClick={() => closeProfileMenu(true)}
                 >
                   Personal homepage
                 </button>
