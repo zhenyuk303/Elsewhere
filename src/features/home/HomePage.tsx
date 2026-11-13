@@ -1,4 +1,4 @@
-import { useEffect, useState, type TransitionEvent } from 'react'
+import { useEffect, useRef, useState, type TransitionEvent } from 'react'
 import { travelSlides } from '../carousel/carouselData'
 import './home.css'
 
@@ -22,6 +22,7 @@ function ProfileIcon() {
 export function HomePage() {
   const [layerIndexes, setLayerIndexes] = useState<[number, number]>([0, 1])
   const [activeSlot, setActiveSlot] = useState<LayerSlot>(0)
+  const layerReadyRef = useRef<[boolean, boolean]>([false, false])
 
   useEffect(() => {
     document.body.classList.add('home-view')
@@ -30,7 +31,10 @@ export function HomePage() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveSlot((slot) => (slot === 0 ? 1 : 0))
+      setActiveSlot((slot) => {
+        const preparedSlot: LayerSlot = slot === 0 ? 1 : 0
+        return layerReadyRef.current[preparedSlot] ? preparedSlot : slot
+      })
     }, HOME_ROTATION_MS)
 
     return () => window.clearInterval(timer)
@@ -45,6 +49,7 @@ export function HomePage() {
     const hiddenSlot: LayerSlot = activeSlot === 0 ? 1 : 0
     const followingIndex =
       (layerIndexes[activeSlot] + 1) % travelSlides.length
+    layerReadyRef.current[hiddenSlot] = false
     setLayerIndexes((indexes) => {
       if (indexes[hiddenSlot] === followingIndex) return indexes
       const nextIndexes: [number, number] = [...indexes]
@@ -66,11 +71,22 @@ export function HomePage() {
             <div
               className={`homepage-slide ${activeSlot === layerSlot ? 'is-active' : ''}`}
               key={layerSlot}
+              aria-hidden={activeSlot !== layerSlot}
               onTransitionEnd={(event) =>
                 handleFadeComplete(layerSlot, event)
               }
             >
-              <img src={slide.src} alt="" aria-hidden="true" />
+              <img
+                src={slide.src}
+                alt=""
+                aria-hidden="true"
+                onLoad={() => {
+                  layerReadyRef.current[layerSlot] = true
+                }}
+                onError={() => {
+                  layerReadyRef.current[layerSlot] = false
+                }}
+              />
               <p className="homepage-location">{placeLabel(slide.location)}</p>
             </div>
           )

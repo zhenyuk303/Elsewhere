@@ -60,6 +60,8 @@ describe('HomePage', () => {
 
   it('crossfades to the prepared slide at exact ten-second boundaries', () => {
     const { container } = render(<HomePage />)
+    const initialImages = container.querySelectorAll('.homepage-slide img')
+    initialImages.forEach((image) => fireEvent.load(image))
 
     act(() => vi.advanceTimersByTime(9_999))
     expect(
@@ -78,11 +80,48 @@ describe('HomePage', () => {
         '.homepage-slide:not(.is-active) .homepage-location',
       ),
     ).toHaveTextContent('BEIJING, CHINA')
+    fireEvent.load(
+      container.querySelector('.homepage-slide:not(.is-active) img')!,
+    )
 
     act(() => vi.advanceTimersByTime(10_000))
     expect(
       container.querySelector('.homepage-slide.is-active .homepage-location'),
     ).toHaveTextContent('BEIJING, CHINA')
+  })
+
+  it('keeps the current slide visible until the prepared image is ready', () => {
+    const { container } = render(<HomePage />)
+
+    fireEvent.load(container.querySelector('.homepage-slide.is-active img')!)
+    act(() => vi.advanceTimersByTime(10_000))
+    expect(
+      container.querySelector('.homepage-slide.is-active .homepage-location'),
+    ).toHaveTextContent('ANHUI, CHINA')
+
+    fireEvent.load(
+      container.querySelector('.homepage-slide:not(.is-active) img')!,
+    )
+    act(() => vi.advanceTimersByTime(9_999))
+    expect(
+      container.querySelector('.homepage-slide.is-active .homepage-location'),
+    ).toHaveTextContent('ANHUI, CHINA')
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(
+      container.querySelector('.homepage-slide.is-active .homepage-location'),
+    ).toHaveTextContent('MACAU, CHINA')
+  })
+
+  it('hides the prepared destination from assistive technology', () => {
+    const { container } = render(<HomePage />)
+    const activeLayer = container.querySelector('.homepage-slide.is-active')
+    const preparedLayer = container.querySelector(
+      '.homepage-slide:not(.is-active)',
+    )
+
+    expect(activeLayer).toHaveAttribute('aria-hidden', 'false')
+    expect(preparedLayer).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('keeps the editorial layer mounted while the background rotates', () => {

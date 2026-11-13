@@ -357,6 +357,72 @@ body.home-view {
   }
 }
 
+@media (max-height: 430px) and (orientation: landscape) {
+  .homepage-nav {
+    top: max(14px, env(safe-area-inset-top));
+    right: 22px;
+    left: 22px;
+  }
+
+  .homepage-brand {
+    font-size: 0.68rem;
+  }
+
+  .homepage-nav-links {
+    gap: 16px;
+    font-size: 0.68rem;
+  }
+
+  .homepage-profile {
+    width: 34px;
+  }
+
+  .homepage-copy {
+    top: 72px;
+    left: 22px;
+    width: min(54vw, 360px);
+  }
+
+  .homepage-kicker {
+    margin-bottom: 12px;
+    font-size: 0.52rem;
+  }
+
+  .homepage-copy h1 {
+    font-size: clamp(2.75rem, 16vh, 3.4rem);
+    line-height: 0.78;
+  }
+
+  .homepage-title-light {
+    margin-top: 0.15em;
+  }
+
+  .homepage-divider {
+    width: min(46vw, 300px);
+    margin-top: 14px;
+  }
+
+  .homepage-intro {
+    gap: 0.15em;
+    margin-top: 12px;
+    font-size: 0.68rem;
+    line-height: 1.2;
+  }
+
+  .homepage-section-marker,
+  .homepage-location {
+    bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .homepage-section-marker {
+    left: 22px;
+  }
+
+  .homepage-location {
+    right: 22px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .homepage-slide {
     transition-duration: 1ms;
