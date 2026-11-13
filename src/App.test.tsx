@@ -116,6 +116,10 @@ describe('App', () => {
     expect(screen.getByTestId('transition-shape')).toHaveTextContent(
       /^Sign Up$/,
     )
+    fireEvent.click(screen.getByRole('link', { name: 'Login' }))
+    expect(screen.getByTestId('transition-shape')).toHaveTextContent(
+      /^Sign Up$/,
+    )
     expect(carousel).toHaveClass('is-paused')
     expect(card).toHaveClass('is-transitioning')
     expect(card).toBeInTheDocument()

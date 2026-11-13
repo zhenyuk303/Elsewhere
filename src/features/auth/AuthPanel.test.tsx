@@ -197,12 +197,15 @@ describe('AuthPanel', () => {
     )
     await user.click(submit)
 
-    expect(onValidSubmit).toHaveBeenCalledWith({
-      left: 120,
-      top: 480,
-      width: 340,
-      height: 54,
-    })
+    expect(onValidSubmit).toHaveBeenCalledWith(
+      {
+        left: 120,
+        top: 480,
+        width: 340,
+        height: 54,
+      },
+      'signup',
+    )
   })
 
   it('places login social actions in the same form slot as signup', () => {
