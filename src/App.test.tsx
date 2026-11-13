@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
+import { currentUser, logout } from './features/auth/authApi'
 
 vi.mock('./features/auth/authApi', () => ({
   authenticate: vi.fn().mockResolvedValue({ id: 1, username: 'traveler' }),
@@ -8,6 +9,9 @@ vi.mock('./features/auth/authApi', () => ({
   currentUser: vi.fn().mockResolvedValue(null),
   logout: vi.fn().mockResolvedValue(undefined),
 }))
+
+const mockedCurrentUser = vi.mocked(currentUser)
+const mockedLogout = vi.mocked(logout)
 
 function rect({
   left,
@@ -47,8 +51,19 @@ function fillValidSignupForm() {
   )
 }
 
+async function renderRestoredHomepage() {
+  mockedCurrentUser.mockResolvedValueOnce({ id: 1, username: 'traveler' })
+  await act(async () => {
+    render(<App />)
+    await Promise.resolve()
+  })
+}
+
 describe('App', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
+    mockedCurrentUser.mockResolvedValue(null)
+    mockedLogout.mockResolvedValue(undefined)
     vi.useFakeTimers()
     vi.stubGlobal(
       'matchMedia',
@@ -236,5 +251,41 @@ describe('App', () => {
       '--card-top': '0px',
       '--card-height': '720px',
     })
+  })
+
+  it('logs out from the profile menu and returns to Login', async () => {
+    await renderRestoredHomepage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Log out' }))
+      await Promise.resolve()
+    })
+
+    expect(mockedLogout).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('heading', { name: 'Welcome' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Explore the World' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps the homepage retryable when logout fails', async () => {
+    mockedLogout.mockRejectedValueOnce(new Error('offline'))
+    await renderRestoredHomepage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Log out' }))
+      await Promise.resolve()
+    })
+
+    expect(mockedLogout).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByRole('heading', { name: 'Explore the World' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Welcome' }),
+    ).not.toBeInTheDocument()
   })
 })

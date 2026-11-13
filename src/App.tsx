@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthPanel } from './features/auth/AuthPanel'
-import { authenticate, beginSocialLogin, currentUser, type SocialProvider } from './features/auth/authApi'
+import {
+  authenticate,
+  beginSocialLogin,
+  currentUser,
+  logout,
+  type SocialProvider,
+} from './features/auth/authApi'
 import type {
   AuthMode,
   ButtonRect,
@@ -88,8 +94,16 @@ export function App() {
     setView('home')
   }, [])
 
+  const handleLogout = useCallback(async () => {
+    await logout()
+    setTransitionOrigin(null)
+    setTransitionActionLabel(null)
+    setAuthMode('login')
+    setView('auth')
+  }, [])
+
   if (view === 'home') {
-    return <HomePage />
+    return <HomePage onLogout={handleLogout} />
   }
 
   return (

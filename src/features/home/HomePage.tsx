@@ -7,7 +7,7 @@ export const HOME_ROTATION_MS = 10_000
 type LayerSlot = 0 | 1
 
 type HomePageProps = {
-  onLogout?: () => Promise<void>
+  onLogout: () => Promise<void>
 }
 
 function placeLabel(location: string) {
@@ -23,7 +23,7 @@ function ProfileIcon() {
   )
 }
 
-export function HomePage({ onLogout = async () => {} }: HomePageProps) {
+export function HomePage({ onLogout }: HomePageProps) {
   const [layerIndexes, setLayerIndexes] = useState<[number, number]>([0, 1])
   const [activeSlot, setActiveSlot] = useState<LayerSlot>(0)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
