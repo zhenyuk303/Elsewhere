@@ -6,6 +6,7 @@ import {
 } from 'react'
 import { BrandLogo } from '../brand/BrandLogo'
 import { HOME_GALLERY_MS, homeIntroSlides, type HomePhase } from './homeIntro'
+import { WalkerParade } from './WalkerParade'
 import './home.css'
 
 type HomePageProps = {
@@ -190,16 +191,59 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           aria-label="Primary navigation"
           aria-hidden={isInteractionLocked ? true : undefined}
         >
-          <div className="homepage-nav-left">
-            <button className="homepage-nav-action" type="button">
-              Footprints
-            </button>
-          </div>
           <BrandLogo className="homepage-brand" />
           <div className="homepage-nav-right">
             <button className="homepage-nav-action" type="button">
+              Footprints
+            </button>
+            <button className="homepage-nav-action" type="button">
+              Guides
+            </button>
+            <button className="homepage-nav-action" type="button">
               Community
             </button>
+          </div>
+          <div className="homepage-profile-wrap" ref={profileMenuRef}>
+            <button
+              className="homepage-profile"
+              type="button"
+              aria-label="User profile"
+              aria-haspopup="menu"
+              aria-expanded={isProfileMenuOpen}
+              aria-controls="homepage-profile-menu"
+              ref={profileButtonRef}
+              onClick={handleProfileClick}
+              onKeyDown={handleProfileKeyDown}
+            >
+              <ProfileIcon />
+            </button>
+            {isProfileMenuOpen ? (
+              <div
+                className="homepage-profile-menu"
+                id="homepage-profile-menu"
+                role="menu"
+                aria-label="User menu"
+                onKeyDown={handleMenuKeyDown}
+              >
+                <button
+                  className="homepage-profile-menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => closeProfileMenu(true)}
+                >
+                  Personal homepage
+                </button>
+                <button
+                  className="homepage-profile-menu-item"
+                  type="button"
+                  role="menuitem"
+                  disabled={isLogoutPending}
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
+              </div>
+            ) : null}
           </div>
         </nav>
 
@@ -210,6 +254,8 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
             <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
           </span>
         </h1>
+
+        {phase === 'ready' ? <WalkerParade /> : null}
 
         <section
           className="homepage-final-copy"
@@ -226,56 +272,6 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
 
         <footer className="homepage-footer">
           <p className="homepage-credit"><BrandLogo /><span>· 2026</span></p>
-          <div className="homepage-footer-actions">
-            <button className="homepage-footer-guide" type="button">
-              Guides
-              <span className="homepage-guide-symbol" aria-hidden="true">
-                <i /><i /><i /><i />
-              </span>
-            </button>
-            <div className="homepage-profile-wrap" ref={profileMenuRef}>
-              <button
-                className="homepage-profile"
-                type="button"
-                aria-label="User profile"
-                aria-haspopup="menu"
-                aria-expanded={isProfileMenuOpen}
-                aria-controls="homepage-profile-menu"
-                ref={profileButtonRef}
-                onClick={handleProfileClick}
-                onKeyDown={handleProfileKeyDown}
-              >
-                <ProfileIcon />
-              </button>
-              {isProfileMenuOpen ? (
-                <div
-                  className="homepage-profile-menu"
-                  id="homepage-profile-menu"
-                  role="menu"
-                  aria-label="User menu"
-                  onKeyDown={handleMenuKeyDown}
-                >
-                  <button
-                    className="homepage-profile-menu-item"
-                    type="button"
-                    role="menuitem"
-                    onClick={() => closeProfileMenu(true)}
-                  >
-                    Personal homepage
-                  </button>
-                  <button
-                    className="homepage-profile-menu-item"
-                    type="button"
-                    role="menuitem"
-                    disabled={isLogoutPending}
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>
         </footer>
       </div>
 

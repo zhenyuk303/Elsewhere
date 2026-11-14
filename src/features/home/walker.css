@@ -1,0 +1,66 @@
+.walker-lane {
+  --walker-height: clamp(132px, 20svh, 246px);
+  --walker-width: calc(var(--walker-height) * 0.6911447);
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: clamp(185px, 18svh, 270px);
+  left: 0;
+  height: var(--walker-height);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.walker-crossing {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--walker-width);
+  height: var(--walker-height);
+  animation: walker-cross var(--cross-ms) linear both;
+  will-change: transform;
+}
+
+.walker-frame {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.walker-strip {
+  display: block;
+  max-width: none;
+  height: 100%;
+  animation: walker-cycle var(--cycle-ms) steps(var(--frame-steps), end) infinite;
+  will-change: transform;
+}
+
+@keyframes walker-cross {
+  from { transform: translateX(calc(-1 * var(--walker-width))); }
+  to { transform: translateX(100vw); }
+}
+
+@keyframes walker-cycle {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% + var(--walker-width))); }
+}
+
+@media (max-width: 760px) {
+  .walker-lane {
+    --walker-height: clamp(95px, 15svh, 136px);
+    bottom: 198px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .walker-lane {
+    --walker-height: clamp(38px, 14svh, 56px);
+    bottom: clamp(90px, 28svh, 110px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walker-lane { display: none; }
+  .walker-crossing,
+  .walker-strip { animation: none !important; }
+}

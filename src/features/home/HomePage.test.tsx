@@ -136,19 +136,26 @@ describe('HomePage', () => {
     expect(screen.getByRole('menu')).toBeInTheDocument()
   })
 
-  it('renders the final editorial navigation and content', () => {
+  it('places the logo left and all four navigation controls right', () => {
     const { container } = renderHomePage()
 
     const navigation = screen.getByRole('navigation', {
       name: 'Primary navigation',
     })
-    expect(within(navigation).getByRole('img', { name: 'ELSEWHERE' })).toBeInTheDocument()
-    expect(within(navigation).getByText('Footprints')).toBeInTheDocument()
-    expect(within(navigation).getByText('Community')).toBeInTheDocument()
-    expect(within(navigation).queryByText('Guides')).not.toBeInTheDocument()
+    const logo = within(navigation).getByRole('img', { name: 'ELSEWHERE' })
+    expect(navigation.firstElementChild).toContainElement(logo)
+    expect(
+      within(navigation)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim()),
+    ).toEqual(['Footprints', 'Guides', 'Community', 'User profile'])
     const footer = container.querySelector('.homepage-footer')
-    expect(footer).toContainElement(screen.getByRole('button', { name: 'Guides' }))
-    expect(footer).toContainElement(screen.getByRole('button', { name: 'User profile' }))
+    expect(footer).not.toContainElement(
+      screen.getByRole('button', { name: 'Guides' }),
+    )
+    expect(footer).not.toContainElement(
+      screen.getByRole('button', { name: 'User profile' }),
+    )
     expect(
       screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).toBeInTheDocument()
@@ -171,6 +178,23 @@ describe('HomePage', () => {
     expect(vi.getTimerCount()).toBe(0)
     unmount()
     expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('starts the walking parade only after App enters ready', () => {
+    const onLogout = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender } = render(
+      <HomePage phase="primed" onLogout={onLogout} />,
+    )
+    for (const phase of ['primed', 'gallery', 'lifting'] as HomePhase[]) {
+      rerender(<HomePage phase={phase} onLogout={onLogout} />)
+      expect(container.querySelector('.walker-lane')).toBeNull()
+    }
+    rerender(<HomePage phase="ready" onLogout={onLogout} />)
+    const lane = container.querySelector('.walker-lane')
+    expect(lane).toBeInTheDocument()
+    expect(lane).toHaveAttribute('aria-hidden', 'true')
+    expect(lane?.querySelectorAll('.walker-crossing')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'User profile' })).toBeEnabled()
   })
 
   it('keeps profile and navigation hooks static', () => {
@@ -320,14 +344,15 @@ describe('HomePage', () => {
   })
 
   it('disables the persistent marquee for reduced motion', () => {
-    const reducedMotionRule = Array.from(document.styleSheets)
+    const marqueeRule = Array.from(document.styleSheets)
       .flatMap((sheet) => Array.from(sheet.cssRules))
-      .find(
+      .filter(
         (rule): rule is CSSMediaRule =>
           rule instanceof CSSMediaRule &&
           rule.conditionText === '(prefers-reduced-motion: reduce)',
       )
-    const marqueeRule = Array.from(reducedMotionRule?.cssRules ?? []).find(
+      .flatMap((rule) => Array.from(rule.cssRules))
+      .find(
       (rule): rule is CSSStyleRule =>
         rule instanceof CSSStyleRule &&
         rule.selectorText.includes('.homepage-marquee-track'),
