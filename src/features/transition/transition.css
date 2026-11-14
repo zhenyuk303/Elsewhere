@@ -7,7 +7,6 @@
   --bar-width: 44px;
   --dot-size: 10px;
   --plane-size: 64px;
-  --page-background: #f3f1ed;
 }
 
 .transition-shape {
@@ -105,7 +104,7 @@
   left: 0;
   width: 100vw;
   height: 300vh;
-  background: var(--page-background);
+  background: var(--elsewhere-indigo);
   clip-path: polygon(
     var(--tail-left-x) var(--tail-y),
     var(--tail-right-x) var(--tail-y),

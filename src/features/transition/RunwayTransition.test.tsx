@@ -5,6 +5,7 @@ import {
   RunwayTransition,
   TRANSITION_MS,
 } from './RunwayTransition'
+import '../../styles/global.css'
 
 const origin = {
   left: 96,
@@ -118,6 +119,19 @@ describe('RunwayTransition', () => {
     expect(flightAssembly).toContainElement(pageWipe)
     expect(flightAssembly).toContainElement(leftGuide)
     expect(flightAssembly).toContainElement(rightGuide)
+    expect(
+      window
+        .getComputedStyle(document.documentElement)
+        .getPropertyValue('--elsewhere-indigo')
+        .trim(),
+    ).toBe('#233068')
+    const wipeRule = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .find(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule && rule.selectorText === '.page-wipe',
+      )
+    expect(wipeRule?.style.background).toBe('var(--elsewhere-indigo)')
     expect(window.getComputedStyle(leftGuide).transform).toBe('rotate(74.86deg)')
     expect(window.getComputedStyle(rightGuide).transform).toBe(
       'rotate(-74.86deg)',
