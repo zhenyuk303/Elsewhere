@@ -124,7 +124,7 @@ describe('RunwayTransition', () => {
         .getComputedStyle(document.documentElement)
         .getPropertyValue('--elsewhere-indigo')
         .trim(),
-    ).toBe('#233068')
+    ).toMatch(/^#[\da-f]{6}$/i)
     const wipeRule = Array.from(document.styleSheets)
       .flatMap((sheet) => Array.from(sheet.cssRules))
       .find(

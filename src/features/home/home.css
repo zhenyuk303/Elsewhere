@@ -1,5 +1,6 @@
 body.home-view {
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 .homepage {
@@ -154,10 +155,12 @@ body.home-view {
   min-width: 184px;
   padding: 7px;
   overflow: hidden;
-  border: 1px solid rgb(35 48 104 / 16%);
+  border: 1px solid
+    color-mix(in srgb, var(--elsewhere-indigo) 16%, transparent);
   border-radius: 10px;
   background: var(--elsewhere-warm);
-  box-shadow: 0 12px 32px rgb(35 48 104 / 12%);
+  box-shadow: 0 12px 32px
+    color-mix(in srgb, var(--elsewhere-indigo) 12%, transparent);
 }
 
 .homepage-profile-menu-item {
@@ -176,7 +179,11 @@ body.home-view {
 
 .homepage-profile-menu-item:hover,
 .homepage-profile-menu-item:focus-visible {
-  background: rgb(35 48 104 / 8%);
+  background: color-mix(
+    in srgb,
+    var(--elsewhere-indigo) 8%,
+    transparent
+  );
   outline: none;
 }
 

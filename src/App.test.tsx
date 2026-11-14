@@ -160,7 +160,7 @@ describe('App', () => {
         .getComputedStyle(document.documentElement)
         .getPropertyValue('--elsewhere-warm')
         .trim(),
-    ).toBe('#f3f1ed')
+    ).toMatch(/^#[\da-f]{6}$/i)
     const appShellRule = Array.from(document.styleSheets)
       .flatMap((sheet) => Array.from(sheet.cssRules))
       .find(

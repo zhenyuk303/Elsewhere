@@ -261,8 +261,27 @@ describe('HomePage', () => {
 
     expect(document.body).toHaveClass('home-view')
     expect(window.getComputedStyle(document.body).overflow).toBe('hidden')
+    expect(window.getComputedStyle(document.body).overflowX).toBe('hidden')
 
     unmount()
     expect(document.body).not.toHaveClass('home-view')
+  })
+
+  it('disables the persistent marquee for reduced motion', () => {
+    const reducedMotionRule = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .find(
+        (rule): rule is CSSMediaRule =>
+          rule instanceof CSSMediaRule &&
+          rule.conditionText === '(prefers-reduced-motion: reduce)',
+      )
+    const marqueeRule = Array.from(reducedMotionRule?.cssRules ?? []).find(
+      (rule): rule is CSSStyleRule =>
+        rule instanceof CSSStyleRule &&
+        rule.selectorText.includes('.homepage-marquee span'),
+    )
+
+    expect(marqueeRule?.style.animation).toBe('none')
+    expect(marqueeRule?.style.getPropertyPriority('animation')).toBe('important')
   })
 })
