@@ -13,13 +13,13 @@ describe('home intro assets', () => {
 
   it('prepares a five-scene travel sequence before the page lifts', () => {
     expect(HOME_GALLERY_MS).toBe(2700)
-    expect(HOME_LIFT_MS).toBe(850)
-    expect(homeIntroSlides.map((slide) => slide.copy)).toEqual([
-      '01 / GO WHERE CURIOSITY LEADS',
-      '02 / FOLLOW THE OPEN ROAD',
-      '03 / SEE CITIES IN A NEW LIGHT',
-      '04 / COLLECT WHAT STAYS WITH YOU',
-      '05 / FIND YOUR OWN ELSEWHERE',
+    expect(HOME_LIFT_MS).toBe(1400)
+    expect(homeIntroSlides.map((slide) => slide.id)).toEqual([
+      'curiosity',
+      'road',
+      'city',
+      'memory',
+      'elsewhere',
     ])
     expect(homeIntroSlides).toHaveLength(5)
     expect(new Set(homeIntroSlides.map((slide) => slide.src))).toHaveProperty(

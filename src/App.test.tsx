@@ -293,7 +293,9 @@ describe('App', () => {
     act(() => vi.advanceTimersByTime(1))
     expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
 
-    act(() => vi.advanceTimersByTime(HOME_LIFT_MS - 1))
+    act(() => vi.advanceTimersByTime(850))
+    expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
+    act(() => vi.advanceTimersByTime(HOME_LIFT_MS - 851))
     expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
     act(() => vi.advanceTimersByTime(1))
     expect(homepage).toHaveAttribute('data-home-phase', 'ready')

@@ -4,7 +4,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
-import { homeIntroSlides, type HomePhase } from './homeIntro'
+import { HOME_GALLERY_MS, homeIntroSlides, type HomePhase } from './homeIntro'
 import './home.css'
 
 type HomePageProps = {
@@ -18,6 +18,35 @@ function ProfileIcon() {
       <circle cx="12" cy="8" r="3.25" />
       <path d="M5.7 19c.8-3.5 3-5.3 6.3-5.3s5.5 1.8 6.3 5.3" />
     </svg>
+  )
+}
+
+function IntroCounter({ phase }: { phase: HomePhase }) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (phase !== 'gallery') return
+
+    const startedAt = performance.now()
+    let frame = 0
+    const advance = (now: number) => {
+      const progress = Math.min(1, Math.max(0, (now - startedAt) / HOME_GALLERY_MS))
+      setCount(Math.floor(100 * (1 - (1 - progress) ** 2)))
+      if (progress < 1) frame = window.requestAnimationFrame(advance)
+    }
+
+    frame = window.requestAnimationFrame(advance)
+    return () => window.cancelAnimationFrame(frame)
+  }, [phase])
+
+  const visibleCount = phase === 'gallery' ? count : phase === 'primed' ? 0 : 100
+
+  return (
+    <div className="homepage-intro-counter" aria-hidden="true">
+      <span className="homepage-intro-counter-value">
+        {String(visibleCount).padStart(2, '0')}
+      </span>
+    </div>
   )
 }
 
@@ -168,10 +197,40 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           <span className="homepage-brand">ELSEWHERE</span>
           <div className="homepage-nav-right">
             <button className="homepage-nav-action" type="button">
-              Guides
-            </button>
-            <button className="homepage-nav-action" type="button">
               Community
+            </button>
+          </div>
+        </nav>
+
+        <h1 className="homepage-marquee" id="homepage-title">
+          <span className="homepage-marquee-track">
+            <span>FIND YOUR ELSEWHERE</span>
+            <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
+            <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
+          </span>
+        </h1>
+
+        <section
+          className="homepage-final-copy"
+          aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
+        >
+          <p>
+            <span>Follow the places that move you.</span>
+            <span>Keep the moments that stay.</span>
+          </p>
+          <button className="homepage-primary-action" type="button">
+            BEGIN THE JOURNEY
+          </button>
+        </section>
+
+        <footer className="homepage-footer">
+          <p className="homepage-credit">ELSEWHERE · 2026</p>
+          <div className="homepage-footer-actions">
+            <button className="homepage-footer-guide" type="button">
+              Guides
+              <span className="homepage-guide-symbol" aria-hidden="true">
+                <i /><i /><i /><i />
+              </span>
             </button>
             <div className="homepage-profile-wrap" ref={profileMenuRef}>
               <button
@@ -216,26 +275,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
               ) : null}
             </div>
           </div>
-        </nav>
-
-        <h1 className="homepage-marquee" id="homepage-title">
-          <span>FIND YOUR ELSEWHERE</span>
-        </h1>
-
-        <section
-          className="homepage-final-copy"
-          aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
-        >
-          <p>
-            <span>Follow the places that move you.</span>
-            <span>Keep the moments that stay.</span>
-          </p>
-          <button className="homepage-primary-action" type="button">
-            BEGIN THE JOURNEY
-          </button>
-        </section>
-
-        <p className="homepage-credit">ELSEWHERE · 2026</p>
+        </footer>
       </div>
 
       <div className="homepage-intro-visual">
@@ -256,17 +296,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
         ))}
       </div>
 
-      <div className="homepage-intro-copies" aria-hidden={phase === 'ready'}>
-        {homeIntroSlides.map((slide, index) => (
-          <p
-            className="homepage-intro-copy"
-            data-slide-index={index}
-            key={slide.id}
-          >
-            {slide.copy}
-          </p>
-        ))}
-      </div>
+      <IntroCounter phase={phase} />
     </main>
   )
 }

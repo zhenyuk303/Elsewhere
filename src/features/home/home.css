@@ -43,13 +43,22 @@ body.home-view {
 .homepage-nav {
   position: absolute;
   z-index: 7;
-  top: clamp(28px, 5vh, 56px);
+  top: clamp(24px, 4vh, 48px);
   right: clamp(24px, 4.4vw, 72px);
   left: clamp(24px, 4.4vw, 72px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   color: var(--elsewhere-indigo);
+  opacity: 0;
+}
+
+.homepage--lifting .homepage-nav {
+  animation: homepage-nav-arrive 350ms 500ms cubic-bezier(0.7, 0.6, 0, 1) both;
+}
+
+.homepage--ready .homepage-nav {
+  opacity: 1;
 }
 
 .homepage-nav-left {
@@ -58,9 +67,9 @@ body.home-view {
 
 .homepage-brand {
   justify-self: center;
-  font-size: clamp(0.78rem, 1vw, 1rem);
-  font-weight: 800;
-  letter-spacing: 0.26em;
+  font-size: clamp(1rem, 2vw, 2.5rem);
+  font-weight: 650;
+  letter-spacing: 0.3em;
   line-height: 1;
   white-space: nowrap;
 }
@@ -80,7 +89,7 @@ body.home-view {
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: clamp(0.75rem, 0.95vw, 0.95rem);
+  font-size: clamp(0.78rem, 1.15vw, 1.5rem);
   line-height: 1;
   cursor: pointer;
 }
@@ -114,15 +123,15 @@ body.home-view {
 }
 
 .homepage-profile {
-  width: clamp(42px, 3.6vw, 56px);
+  width: clamp(36px, 3.5vw, 68px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--elsewhere-indigo);
+  border: 1px solid var(--elsewhere-indigo);
+  border-radius: 0;
+  background: var(--elsewhere-indigo);
+  color: var(--elsewhere-warm);
   cursor: pointer;
 }
 
@@ -138,7 +147,7 @@ body.home-view {
 .homepage-profile-menu {
   position: absolute;
   z-index: 12;
-  top: calc(100% + 12px);
+  bottom: calc(100% + 12px);
   right: 0;
   display: grid;
   min-width: 184px;
@@ -184,29 +193,47 @@ body.home-view {
 .homepage-marquee {
   position: absolute;
   z-index: 2;
-  top: 50%;
+  top: 41%;
   left: 0;
   width: 100%;
   margin: 0;
   overflow: visible;
   color: var(--elsewhere-indigo);
-  font-size: clamp(7rem, 14vw, 15rem);
-  font-weight: 760;
-  letter-spacing: -0.07em;
-  line-height: 0.78;
+  font-size: clamp(6.5rem, 13.5vw, 19rem);
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  line-height: 0.85;
   white-space: nowrap;
+  opacity: 0;
+  clip-path: inset(100% 0 0 0);
+  transform: translateY(calc(-50% + 16svh));
+}
+
+.homepage--lifting .homepage-marquee {
+  animation: homepage-title-arrive 520ms 560ms cubic-bezier(0.7, 0.6, 0, 1) both;
+}
+
+.homepage--ready .homepage-marquee {
+  opacity: 1;
+  clip-path: inset(0);
   transform: translateY(-50%);
 }
 
-.homepage-marquee span {
-  display: block;
+.homepage-marquee-track {
+  display: flex;
   width: max-content;
-  transform: translateX(5vw);
+  margin-left: -23vw;
 }
 
-.homepage--lifting .homepage-marquee span,
-.homepage--ready .homepage-marquee span {
-  animation: homepage-marquee-drift 18s linear infinite;
+.homepage-marquee-track > span {
+  display: block;
+  flex: none;
+  padding-right: 0.35em;
+}
+
+.homepage--lifting .homepage-marquee-track,
+.homepage--ready .homepage-marquee-track {
+  animation: homepage-marquee-drift 24s linear infinite;
 }
 
 .homepage-intro-visual {
@@ -214,8 +241,8 @@ body.home-view {
   z-index: 5;
   top: 50%;
   left: 50%;
-  width: 180px;
-  height: 230px;
+  width: clamp(166px, 19vw, 400px);
+  aspect-ratio: 1;
   overflow: hidden;
   transform: translate(-50%, -50%);
   will-change: transform;
@@ -296,65 +323,41 @@ body.home-view {
   transform: none;
 }
 
-.homepage-intro-copies {
+.homepage-intro-counter {
   position: absolute;
   z-index: 6;
-  right: 24px;
+  right: 0;
   bottom: clamp(32px, 6vh, 64px);
-  left: 24px;
-  height: 1.2em;
-  color: rgb(255 255 255 / 94%);
-  font-size: clamp(0.62rem, 0.74vw, 0.76rem);
-  font-weight: 580;
-  letter-spacing: 0.22em;
-  line-height: 1.2;
+  left: 0;
+  color: var(--elsewhere-warm);
+  font-size: clamp(1rem, 1.7vw, 2rem);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
   text-align: center;
-  will-change: transform;
-}
-
-.homepage-intro-copy {
-  position: absolute;
-  inset: 0;
-  margin: 0;
   opacity: 0;
-  transform: translateY(8px);
-  will-change: opacity, transform;
+  pointer-events: none;
 }
 
-.homepage--gallery .homepage-intro-copy[data-slide-index='0'] {
-  animation: homepage-gallery-copy 550ms 0ms ease-in-out forwards;
+.homepage-intro-counter-value {
+  display: inline-block;
+  min-width: 3ch;
 }
 
-.homepage--gallery .homepage-intro-copy[data-slide-index='1'] {
-  animation: homepage-gallery-copy 500ms 550ms ease-in-out forwards;
+.homepage--gallery .homepage-intro-counter {
+  animation: homepage-counter-enter 300ms cubic-bezier(0.7, 0.6, 0, 1) both;
 }
 
-.homepage--gallery .homepage-intro-copy[data-slide-index='2'] {
-  animation: homepage-gallery-copy 500ms 1050ms ease-in-out forwards;
-}
-
-.homepage--gallery .homepage-intro-copy[data-slide-index='3'] {
-  animation: homepage-gallery-copy 500ms 1550ms ease-in-out forwards;
-}
-
-.homepage--gallery .homepage-intro-copy[data-slide-index='4'] {
-  animation: homepage-gallery-copy-final 650ms 2050ms ease-in-out forwards;
-}
-
-.homepage--lifting .homepage-intro-copies {
+.homepage--lifting .homepage-intro-counter {
   opacity: 0;
   transform: translateY(-100svh);
   transition:
     transform 850ms cubic-bezier(0.72, 0, 0.2, 1),
-    opacity 220ms ease-out;
+    opacity 240ms 180ms ease-out;
 }
 
-.homepage--lifting .homepage-intro-copy[data-slide-index='4'] {
-  opacity: 1;
-  transform: none;
-}
-
-.homepage--ready .homepage-intro-copies {
+.homepage--ready .homepage-intro-counter {
   opacity: 0;
   visibility: hidden;
 }
@@ -363,11 +366,11 @@ body.home-view {
   position: absolute;
   z-index: 4;
   right: 24px;
-  bottom: clamp(72px, 10vh, 112px);
+  bottom: clamp(60px, 7vh, 100px);
   left: 24px;
   display: grid;
   justify-items: center;
-  gap: 22px;
+  gap: clamp(16px, 2.2vh, 28px);
   color: var(--elsewhere-indigo);
 }
 
@@ -379,15 +382,15 @@ body.home-view {
 }
 
 .homepage--lifting .homepage-final-copy p span:first-child {
-  animation: homepage-line-unveil 300ms 510ms ease-out both;
+  animation: homepage-line-unveil 350ms 830ms cubic-bezier(0.7, 0.6, 0, 1) both;
 }
 
 .homepage--lifting .homepage-final-copy p span:last-child {
-  animation: homepage-line-unveil 260ms 570ms ease-out both;
+  animation: homepage-line-unveil 350ms 930ms cubic-bezier(0.7, 0.6, 0, 1) both;
 }
 
 .homepage--lifting .homepage-primary-action {
-  animation: homepage-line-unveil 270ms 560ms ease-out both;
+  animation: homepage-line-unveil 340ms 1040ms cubic-bezier(0.7, 0.6, 0, 1) both;
 }
 
 .homepage--ready .homepage-final-copy p span,
@@ -401,20 +404,21 @@ body.home-view {
   display: grid;
   gap: 0.24em;
   margin: 0;
-  font-size: clamp(0.9rem, 1.1vw, 1.08rem);
+  font-size: clamp(0.9rem, 1.45vw, 2rem);
   line-height: 1.38;
   text-align: center;
 }
 
 .homepage-primary-action {
   width: fit-content;
-  padding: 13px 20px;
+  min-height: 30px;
+  padding: 5px clamp(12px, 1.3vw, 24px);
   border: 1px solid currentColor;
   background: transparent;
   color: inherit;
-  font-size: 0.72rem;
-  font-weight: 720;
-  letter-spacing: 0.18em;
+  font-size: clamp(0.66rem, 1vw, 1.35rem);
+  font-weight: 520;
+  letter-spacing: 0.12em;
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease;
 }
@@ -426,25 +430,72 @@ body.home-view {
   outline: none;
 }
 
-.homepage-credit {
+.homepage-footer {
   position: absolute;
-  z-index: 4;
-  bottom: clamp(26px, 4vh, 44px);
-  left: clamp(24px, 5vw, 80px);
-  margin: 0;
-  color: var(--elsewhere-indigo);
-  font-size: 0.64rem;
-  font-weight: 650;
-  letter-spacing: 0.16em;
+  z-index: 8;
+  right: clamp(24px, 4.4vw, 90px);
+  bottom: clamp(26px, 4vh, 48px);
+  left: clamp(24px, 4.4vw, 90px);
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
   opacity: 0;
 }
 
-.homepage--lifting .homepage-credit {
-  animation: homepage-nav-rise 200ms 600ms ease-out both;
+.homepage--lifting .homepage-footer {
+  animation: homepage-nav-arrive 350ms 570ms cubic-bezier(0.7, 0.6, 0, 1) both;
 }
 
-.homepage--ready .homepage-credit {
+.homepage--ready .homepage-footer {
   opacity: 1;
+}
+
+.homepage-credit {
+  margin: 0;
+  color: var(--elsewhere-indigo);
+  font-size: clamp(0.64rem, 1vw, 1.3rem);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.homepage-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.homepage-footer-guide {
+  min-height: clamp(36px, 3.5vw, 68px);
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 28px);
+  padding: 0 clamp(12px, 1.5vw, 28px);
+  border: 1px solid var(--elsewhere-indigo);
+  background: transparent;
+  color: var(--elsewhere-indigo);
+  font-size: clamp(0.72rem, 1.05vw, 1.45rem);
+  cursor: pointer;
+}
+
+.homepage-guide-symbol {
+  display: grid;
+  grid-template-columns: repeat(2, 3px);
+  gap: 3px;
+}
+
+.homepage-guide-symbol i {
+  width: 3px;
+  height: 3px;
+  background: currentColor;
+}
+
+.homepage-footer-guide:hover,
+.homepage-footer-guide:focus-visible {
+  background: var(--elsewhere-indigo);
+  color: var(--elsewhere-warm);
+  outline: none;
 }
 
 @keyframes homepage-frame-open {
@@ -480,44 +531,41 @@ body.home-view {
   }
 }
 
-@keyframes homepage-gallery-copy {
-  0%,
-  100% {
+@keyframes homepage-counter-enter {
+  from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(1em);
   }
 
-  20%,
-  78% {
+  to {
     opacity: 1;
     transform: none;
   }
 }
 
-@keyframes homepage-gallery-copy-final {
-  0% {
+@keyframes homepage-nav-arrive {
+  from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px);
   }
 
-  24%,
-  100% {
+  to {
     opacity: 1;
     transform: none;
   }
 }
 
-@keyframes homepage-nav-rise {
+@keyframes homepage-title-arrive {
   from {
     opacity: 0;
     clip-path: inset(100% 0 0 0);
-    transform: translateY(12px);
+    transform: translateY(calc(-50% + 16svh));
   }
 
   to {
     opacity: 1;
     clip-path: inset(0);
-    transform: none;
+    transform: translateY(-50%);
   }
 }
 
@@ -537,11 +585,11 @@ body.home-view {
 
 @keyframes homepage-marquee-drift {
   from {
-    transform: translateX(5vw);
+    transform: translateX(0);
   }
 
   to {
-    transform: translateX(-22vw);
+    transform: translateX(-33.333333%);
   }
 }
 
@@ -558,8 +606,8 @@ body.home-view {
   }
 
   .homepage-brand {
-    font-size: 0.72rem;
-    letter-spacing: 0.2em;
+    font-size: 0.78rem;
+    letter-spacing: 0.24em;
   }
 
   .homepage-profile {
@@ -568,8 +616,7 @@ body.home-view {
 
   .homepage-intro-visual {
     width: clamp(132px, 38vw, 184px);
-    height: auto;
-    aspect-ratio: 18 / 23;
+    aspect-ratio: 1;
   }
 
   .homepage-marquee {
@@ -578,7 +625,7 @@ body.home-view {
 
   .homepage-final-copy {
     right: 20px;
-    bottom: 84px;
+    bottom: 96px;
     left: 20px;
   }
 
@@ -586,9 +633,14 @@ body.home-view {
     font-size: 0.86rem;
   }
 
-  .homepage-credit {
+  .homepage-footer {
+    right: 20px;
     bottom: 24px;
     left: 20px;
+  }
+
+  .homepage-footer-guide {
+    display: none;
   }
 }
 
@@ -605,16 +657,16 @@ body.home-view {
 
   .homepage-intro-visual {
     width: 116px;
-    height: 148px;
+    aspect-ratio: 1;
   }
 
-  .homepage-intro-copies {
+  .homepage-intro-counter {
     bottom: 18px;
-    font-size: 0.54rem;
+    font-size: 0.88rem;
   }
 
   .homepage-final-copy {
-    bottom: 24px;
+    bottom: 70px;
     left: 20px;
     gap: 10px;
   }
@@ -624,8 +676,13 @@ body.home-view {
   }
 
   .homepage-primary-action {
-    padding: 10px 15px;
+    min-height: 34px;
+    padding: 8px 15px;
     font-size: 0.62rem;
+  }
+
+  .homepage-footer {
+    bottom: 14px;
   }
 
   .homepage-credit {
@@ -633,7 +690,7 @@ body.home-view {
   }
 
   .homepage-profile-menu {
-    top: calc(100% + 6px);
+    bottom: calc(100% + 6px);
   }
 }
 
@@ -641,12 +698,12 @@ body.home-view {
   .homepage-warm-reveal,
   .homepage-nav,
   .homepage-marquee,
-  .homepage-marquee span,
+  .homepage-marquee-track,
   .homepage-intro-frame,
   .homepage-intro-image,
-  .homepage-intro-copy,
+  .homepage-intro-counter,
   .homepage-final-copy,
-  .homepage-credit {
+  .homepage-footer {
     animation: none !important;
     transition: none !important;
   }

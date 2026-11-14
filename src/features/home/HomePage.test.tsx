@@ -50,17 +50,7 @@ describe('HomePage', () => {
       'Colorful prayer flags radiating around a golden center in Tibet.',
       'Turquoise desert lakes winding between pale dunes in Xinjiang.',
     ])
-    expect(
-      Array.from(container.querySelectorAll('.homepage-intro-copy')).map(
-        (node) => node.textContent,
-      ),
-    ).toEqual([
-      '01 / GO WHERE CURIOSITY LEADS',
-      '02 / FOLLOW THE OPEN ROAD',
-      '03 / SEE CITIES IN A NEW LIGHT',
-      '04 / COLLECT WHAT STAYS WITH YOU',
-      '05 / FIND YOUR OWN ELSEWHERE',
-    ])
+    expect(container.querySelector('.homepage-intro-counter')).toBeInTheDocument()
 
     for (const phase of ['gallery', 'lifting', 'ready'] as HomePhase[]) {
       rerender(<HomePage phase={phase} onLogout={onLogout} />)
@@ -90,34 +80,30 @@ describe('HomePage', () => {
     expect(surface).not.toContainElement(picture)
   })
 
-  it('shows only one gallery caption at a time while pictures overlap', () => {
-    const { container } = renderHomePage(undefined, 'gallery')
-    const copies = Array.from(
-      container.querySelectorAll<HTMLElement>('.homepage-intro-copy'),
+  it('runs the intro counter only during gallery and cleans up its animation frame', () => {
+    const requestSpy = vi.spyOn(window, 'requestAnimationFrame')
+    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame')
+    const onLogout = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender, unmount } = render(
+      <HomePage phase="primed" onLogout={onLogout} />,
     )
-    const rules = Array.from(document.styleSheets)
-      .flatMap((sheet) => Array.from(sheet.cssRules))
-    const timing = copies.map((_, index) => {
-      const rule = rules.find(
-        (candidate): candidate is CSSStyleRule =>
-          candidate instanceof CSSStyleRule &&
-          candidate.selectorText ===
-            `.homepage--gallery .homepage-intro-copy[data-slide-index='${index}']`,
-      )
-      const times = Array.from(
-        rule?.style.animation.matchAll(/(\d+)ms/g) ?? [],
-      ).map((match) => Number(match[1]))
-      return {
-        start: times[1] ?? 0,
-        duration: times[0],
-      }
-    })
+    const counter = container.querySelector('.homepage-intro-counter-value')
 
-    for (let index = 1; index < timing.length; index += 1) {
-      expect(timing[index].start).toBeGreaterThanOrEqual(
-        timing[index - 1].start + timing[index - 1].duration,
-      )
-    }
+    expect(counter).toHaveTextContent('00')
+    expect(requestSpy).not.toHaveBeenCalled()
+
+    rerender(<HomePage phase="gallery" onLogout={onLogout} />)
+    expect(requestSpy).toHaveBeenCalled()
+    act(() => vi.advanceTimersByTime(1000))
+    expect(Number(counter?.textContent)).toBeGreaterThan(0)
+
+    rerender(<HomePage phase="lifting" onLogout={onLogout} />)
+    expect(counter).toHaveTextContent('100')
+    expect(cancelSpy).toHaveBeenCalled()
+    const requestsAfterGallery = requestSpy.mock.calls.length
+    act(() => vi.advanceTimersByTime(1000))
+    expect(requestSpy).toHaveBeenCalledTimes(requestsAfterGallery)
+    unmount()
   })
 
   it('locks primed and gallery states and unlocks interaction while lifting', () => {
@@ -151,15 +137,18 @@ describe('HomePage', () => {
   })
 
   it('renders the final editorial navigation and content', () => {
-    renderHomePage()
+    const { container } = renderHomePage()
 
     const navigation = screen.getByRole('navigation', {
       name: 'Primary navigation',
     })
     expect(within(navigation).getByText('ELSEWHERE')).toBeInTheDocument()
     expect(within(navigation).getByText('Footprints')).toBeInTheDocument()
-    expect(within(navigation).getByText('Guides')).toBeInTheDocument()
     expect(within(navigation).getByText('Community')).toBeInTheDocument()
+    expect(within(navigation).queryByText('Guides')).not.toBeInTheDocument()
+    const footer = container.querySelector('.homepage-footer')
+    expect(footer).toContainElement(screen.getByRole('button', { name: 'Guides' }))
+    expect(footer).toContainElement(screen.getByRole('button', { name: 'User profile' }))
     expect(
       screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).toBeInTheDocument()
@@ -338,7 +327,7 @@ describe('HomePage', () => {
     const marqueeRule = Array.from(reducedMotionRule?.cssRules ?? []).find(
       (rule): rule is CSSStyleRule =>
         rule instanceof CSSStyleRule &&
-        rule.selectorText.includes('.homepage-marquee span'),
+        rule.selectorText.includes('.homepage-marquee-track'),
     )
 
     expect(marqueeRule?.style.animation).toBe('none')
