@@ -1,6 +1,8 @@
 :root {
+  --elsewhere-warm: #f3f1ed;
+  --elsewhere-indigo: #233068;
   color: #171717;
-  background: #f3f1ed;
+  background: var(--elsewhere-warm);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
