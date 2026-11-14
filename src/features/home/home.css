@@ -230,46 +230,69 @@ body.home-view {
   transform: translate(-50%, calc(-50% - 9svh));
 }
 
-.homepage-intro-image {
+.homepage-intro-frame {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  will-change: clip-path;
+}
+
+.homepage-intro-image {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transform: scale(0.18);
+  transform: scale(1.28);
   transform-origin: center;
-  will-change: opacity, transform;
+  will-change: transform;
 }
 
-.homepage--gallery .homepage-intro-image[data-slide-index='0'] {
+.homepage--gallery .homepage-intro-frame {
+  animation: homepage-frame-open var(--frame-duration) var(--frame-delay) forwards;
+}
+
+.homepage--gallery .homepage-intro-frame .homepage-intro-image {
+  animation: homepage-image-settle var(--frame-duration) var(--frame-delay) forwards;
+}
+
+.homepage-intro-frame[data-slide-index='0'] {
   z-index: 1;
-  animation: homepage-picture-enter 760ms 0ms forwards;
+  --frame-duration: 760ms;
+  --frame-delay: 0ms;
 }
 
-.homepage--gallery .homepage-intro-image[data-slide-index='1'] {
+.homepage-intro-frame[data-slide-index='1'] {
   z-index: 2;
-  animation: homepage-picture-enter 870ms 410ms forwards;
+  --frame-duration: 870ms;
+  --frame-delay: 410ms;
 }
 
-.homepage--gallery .homepage-intro-image[data-slide-index='2'] {
+.homepage-intro-frame[data-slide-index='2'] {
   z-index: 3;
-  animation: homepage-picture-enter 930ms 850ms forwards;
+  --frame-duration: 930ms;
+  --frame-delay: 850ms;
 }
 
-.homepage--gallery .homepage-intro-image[data-slide-index='3'] {
+.homepage-intro-frame[data-slide-index='3'] {
   z-index: 4;
-  animation: homepage-picture-enter 840ms 1370ms forwards;
+  --frame-duration: 840ms;
+  --frame-delay: 1370ms;
 }
 
-.homepage--gallery .homepage-intro-image[data-slide-index='4'] {
+.homepage-intro-frame[data-slide-index='4'] {
   z-index: 5;
-  animation: homepage-picture-enter 840ms 1860ms forwards;
+  --frame-duration: 840ms;
+  --frame-delay: 1860ms;
 }
 
-.homepage--lifting .homepage-intro-image[data-slide-index='4'],
-.homepage--ready .homepage-intro-image[data-slide-index='4'] {
-  opacity: 1;
+.homepage--lifting .homepage-intro-frame[data-slide-index='4'],
+.homepage--ready .homepage-intro-frame[data-slide-index='4'] {
+  clip-path: inset(0);
+}
+
+.homepage--lifting .homepage-intro-frame[data-slide-index='4'] .homepage-intro-image,
+.homepage--ready .homepage-intro-frame[data-slide-index='4'] .homepage-intro-image {
   transform: none;
 }
 
@@ -424,27 +447,35 @@ body.home-view {
   opacity: 1;
 }
 
-@keyframes homepage-picture-enter {
+@keyframes homepage-frame-open {
   0% {
-    opacity: 0;
-    transform: scale(0.18);
-    animation-timing-function: cubic-bezier(0.22, 0.5, 0.26, 1);
+    clip-path: inset(50%);
+    animation-timing-function: cubic-bezier(0.28, 0.02, 0.44, 0.88);
   }
 
-  12% {
-    opacity: 1;
-    transform: scale(0.34);
-    animation-timing-function: cubic-bezier(0.28, 0.04, 0.5, 0.95);
+  22% {
+    clip-path: inset(30% 32%);
+    animation-timing-function: cubic-bezier(0.16, 0.72, 0.18, 1);
+  }
+
+  78%,
+  100% {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes homepage-image-settle {
+  0% {
+    transform: scale(1.28);
+    animation-timing-function: cubic-bezier(0.16, 0.18, 0.44, 0.95);
   }
 
   62% {
-    opacity: 1;
-    transform: scale(1.035);
+    transform: scale(1.045);
     animation-timing-function: cubic-bezier(0.18, 0.75, 0.3, 1);
   }
 
   100% {
-    opacity: 1;
     transform: scale(1);
   }
 }
@@ -611,6 +642,7 @@ body.home-view {
   .homepage-nav,
   .homepage-marquee,
   .homepage-marquee span,
+  .homepage-intro-frame,
   .homepage-intro-image,
   .homepage-intro-copy,
   .homepage-final-copy,
@@ -619,8 +651,11 @@ body.home-view {
     transition: none !important;
   }
 
-  .homepage--ready .homepage-intro-image[data-slide-index='4'] {
-    opacity: 1;
+  .homepage--ready .homepage-intro-frame[data-slide-index='4'] {
+    clip-path: inset(0);
+  }
+
+  .homepage--ready .homepage-intro-frame[data-slide-index='4'] .homepage-intro-image {
     transform: none;
   }
 }

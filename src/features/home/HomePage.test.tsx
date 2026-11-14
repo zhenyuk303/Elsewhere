@@ -34,8 +34,15 @@ describe('HomePage', () => {
     const originalImages = Array.from(
       container.querySelectorAll<HTMLImageElement>('.homepage-intro-image'),
     )
+    const originalFrames = Array.from(
+      container.querySelectorAll<HTMLElement>('.homepage-intro-frame'),
+    )
 
     expect(originalImages).toHaveLength(5)
+    expect(originalFrames).toHaveLength(5)
+    expect(originalFrames.map((frame) => frame.querySelector('img'))).toEqual(
+      originalImages,
+    )
     expect(originalImages.map((image) => image.alt)).toEqual([
       'White magnolia blossoms against a deep red wall in Beijing.',
       'A road crossing red and tan desert terrain in Qinghai.',
@@ -61,6 +68,9 @@ describe('HomePage', () => {
         container.querySelectorAll<HTMLImageElement>('.homepage-intro-image'),
       )
       expect(currentImages).toEqual(originalImages)
+      expect(
+        Array.from(container.querySelectorAll('.homepage-intro-frame')),
+      ).toEqual(originalFrames)
     }
   })
 

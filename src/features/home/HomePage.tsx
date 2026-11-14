@@ -240,15 +240,19 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
 
       <div className="homepage-intro-visual">
         {homeIntroSlides.map((slide, index) => (
-          <img
-            className="homepage-intro-image"
+          <div
+            className="homepage-intro-frame"
             data-slide-index={index}
             key={slide.id}
-            src={slide.src}
-            alt={slide.alt}
-            decoding="async"
-            loading="eager"
-          />
+          >
+            <img
+              className="homepage-intro-image"
+              src={slide.src}
+              alt={slide.alt}
+              decoding="async"
+              loading="eager"
+            />
+          </div>
         ))}
       </div>
 
