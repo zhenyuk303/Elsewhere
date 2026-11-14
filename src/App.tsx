@@ -115,7 +115,7 @@ export function App() {
   }, [])
 
   if (view === 'home') {
-    return <HomePage onLogout={handleLogout} />
+    return <HomePage phase="ready" onLogout={handleLogout} />
   }
 
   return (

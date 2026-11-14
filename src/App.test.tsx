@@ -129,7 +129,7 @@ describe('App', () => {
 
     expect(mockedCurrentUser).toHaveBeenCalledTimes(1)
     expect(
-      screen.getByRole('heading', { name: 'Explore the World' }),
+      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).toBeInTheDocument()
     expect(window.location.search).toBe('')
   })
@@ -185,18 +185,18 @@ describe('App', () => {
       'rgb(23, 23, 23)',
     )
     expect(
-      screen.queryByRole('heading', { name: 'Explore the World' }),
+      screen.queryByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).not.toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(2999))
     expect(
-      screen.queryByRole('heading', { name: 'Explore the World' }),
+      screen.queryByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).not.toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(1))
 
     expect(
-      screen.getByRole('heading', { name: 'Explore the World' }),
+      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('navigation', { name: 'Primary navigation' }),
@@ -299,7 +299,7 @@ describe('App', () => {
     expect(mockedLogout).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('heading', { name: 'Welcome' })).toBeInTheDocument()
     expect(
-      screen.queryByRole('heading', { name: 'Explore the World' }),
+      screen.queryByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).not.toBeInTheDocument()
   })
 
@@ -318,7 +318,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Welcome' }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('heading', { name: 'Explore the World' }),
+      screen.queryByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).not.toBeInTheDocument()
   })
 

@@ -7,11 +7,13 @@ import {
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HomePage } from './HomePage'
+import type { HomePhase } from './homeIntro'
 
 function renderHomePage(
   onLogout: () => Promise<void> = vi.fn().mockResolvedValue(undefined),
+  phase: HomePhase = 'ready',
 ) {
-  return render(<HomePage onLogout={onLogout} />)
+  return render(<HomePage phase={phase} onLogout={onLogout} />)
 }
 
 describe('HomePage', () => {
@@ -21,9 +23,74 @@ describe('HomePage', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
   })
 
-  it('renders the fixed navigation and editorial content', () => {
+  it('keeps the same three image nodes through every controlled phase', () => {
+    const onLogout = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender } = render(
+      <HomePage phase="primed" onLogout={onLogout} />,
+    )
+    const originalImages = Array.from(
+      container.querySelectorAll<HTMLImageElement>('.homepage-intro-image'),
+    )
+
+    expect(originalImages).toHaveLength(3)
+    expect(originalImages.map((image) => image.alt)).toEqual([
+      'White magnolia blossoms against a deep red wall in Beijing.',
+      'Colorful prayer flags radiating around a golden center in Tibet.',
+      'Turquoise desert lakes winding between pale dunes in Xinjiang.',
+    ])
+    expect(
+      Array.from(container.querySelectorAll('.homepage-intro-copy')).map(
+        (node) => node.textContent,
+      ),
+    ).toEqual([
+      '01 / GO WHERE CURIOSITY LEADS',
+      '02 / COLLECT WHAT STAYS WITH YOU',
+      '03 / FIND YOUR OWN ELSEWHERE',
+    ])
+
+    for (const phase of ['gallery', 'lifting', 'ready'] as HomePhase[]) {
+      rerender(<HomePage phase={phase} onLogout={onLogout} />)
+      const currentImages = Array.from(
+        container.querySelectorAll<HTMLImageElement>('.homepage-intro-image'),
+      )
+      expect(currentImages).toEqual(originalImages)
+    }
+  })
+
+  it('locks primed and gallery states and unlocks interaction while lifting', () => {
+    const onLogout = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender } = render(
+      <HomePage phase="primed" onLogout={onLogout} />,
+    )
+    const homepage = container.querySelector('.homepage') as HTMLElement
+    const profile = screen.getByRole('button', {
+      name: 'User profile',
+      hidden: true,
+    })
+
+    expect(homepage).toHaveAttribute('inert')
+    expect(homepage).toHaveAttribute('aria-hidden', 'true')
+    expect(window.getComputedStyle(homepage).pointerEvents).toBe('none')
+    fireEvent.click(profile)
+    expect(screen.queryByRole('menu', { hidden: true })).not.toBeInTheDocument()
+
+    rerender(<HomePage phase="gallery" onLogout={onLogout} />)
+    expect(homepage).toHaveAttribute('inert')
+    expect(homepage).not.toHaveAttribute('aria-hidden')
+    expect(window.getComputedStyle(homepage).pointerEvents).toBe('none')
+
+    rerender(<HomePage phase="lifting" onLogout={onLogout} />)
+    expect(homepage).not.toHaveAttribute('inert')
+    expect(homepage).not.toHaveAttribute('aria-hidden')
+    expect(window.getComputedStyle(homepage).pointerEvents).toBe('auto')
+    fireEvent.click(profile)
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+  })
+
+  it('renders the final editorial navigation and content', () => {
     renderHomePage()
 
     const navigation = screen.getByRole('navigation', {
@@ -34,38 +101,19 @@ describe('HomePage', () => {
     expect(within(navigation).getByText('Guides')).toBeInTheDocument()
     expect(within(navigation).getByText('Community')).toBeInTheDocument()
     expect(
-      screen.getByText('A WORLD WAITING FOR YOU'),
+      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Explore the World' }),
+      screen.getByText('Follow the places that move you.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Take the road less traveled.')).toBeInTheDocument()
+    expect(screen.getByText('Keep the moments that stay.')).toBeInTheDocument()
     expect(
-      screen.getByText('Collect moments, leave footprints,'),
+      screen.getByRole('button', { name: 'BEGIN THE JOURNEY' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText('and find your own elsewhere.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('ELSEWHERE · 2026')).toBeInTheDocument()
   })
 
-  it('renders a solid login-page background without province media', () => {
-    const { container } = renderHomePage()
-    const homepage = container.querySelector('.homepage')
-    const style = window.getComputedStyle(homepage!)
-
-    expect(style.backgroundColor).toBe('rgb(243, 241, 237)')
-    expect(style.color).toBe('rgb(23, 23, 23)')
-    expect(container.querySelector('.homepage-background')).toBeNull()
-    expect(container.querySelector('.homepage-slide')).toBeNull()
-    expect(container.querySelector('.homepage-location')).toBeNull()
-    expect(container.querySelector('img')).toBeNull()
-    expect(screen.queryByText('ANHUI, CHINA')).not.toBeInTheDocument()
-    expect(
-      screen.queryByText('01 / A NEW PERSPECTIVE'),
-    ).not.toBeInTheDocument()
-  })
-
-  it('does not schedule background work', () => {
+  it('does not schedule phase work from inside the component', () => {
     const { unmount } = renderHomePage()
 
     expect(vi.getTimerCount()).toBe(0)
@@ -193,18 +241,22 @@ describe('HomePage', () => {
     ).toBeEnabled()
     expect(screen.getByRole('menu')).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Explore the World' }),
+      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
     ).toBeInTheDocument()
   })
 
-  it('has no homepage entrance animation', () => {
-    const { container } = renderHomePage()
-    const homepage = container.querySelector('.homepage')
+  it('removes document menu listeners when closed or unmounted', () => {
+    const removeSpy = vi.spyOn(document, 'removeEventListener')
+    const { unmount } = renderHomePage()
 
-    expect(window.getComputedStyle(homepage!).animationName).toBe('none')
+    fireEvent.click(screen.getByRole('button', { name: 'User profile' }))
+    unmount()
+
+    expect(removeSpy).toHaveBeenCalledWith('pointerdown', expect.any(Function))
+    expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
   })
 
-  it('locks document scrolling only while mounted', () => {
+  it('locks document scrolling only while an active homepage is mounted', () => {
     const { unmount } = renderHomePage()
 
     expect(document.body).toHaveClass('home-view')
