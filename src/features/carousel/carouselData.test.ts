@@ -7,6 +7,11 @@ describe('carouselData', () => {
     expect(new Set(travelSlides.map((slide) => slide.src)).size).toBe(34)
     expect(
       travelSlides.every((slide) =>
+        slide.src.startsWith('/images/carousel/') && slide.src.endsWith('.webp'),
+      ),
+    ).toBe(true)
+    expect(
+      travelSlides.every((slide) =>
         slide.labelSrc.startsWith('/images/province-labels/'),
       ),
     ).toBe(true)

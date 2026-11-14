@@ -108,11 +108,52 @@ function TravelSlide({ slide, index, phase, active, slot }: SlideProps) {
 
 export function TravelCarousel({ paused }: TravelCarouselProps) {
   const carouselRef = useRef<HTMLElement>(null)
+  const preparedImagesRef = useRef(new Map<string, {
+    ready: boolean
+    done: Promise<void>
+  }>())
+  const [readyIndex, setReadyIndex] = useState(-1)
   const [slides] = useState(() => shuffleTravelSlides(travelSlides))
   const { currentIndex, nextIndex, phase } = useCarousel(
     slides.length,
     paused,
+    readyIndex,
   )
+
+  useEffect(() => {
+    const prepare = (src: string) => {
+      const existing = preparedImagesRef.current.get(src)
+      if (existing) return existing
+      const image = new Image()
+      image.decoding = 'async'
+      image.src = src
+      const prepared = { ready: false, done: Promise.resolve() }
+      if (typeof image.decode === 'function') {
+        prepared.done = image.decode().catch(() => {}).then(() => {
+          prepared.ready = true
+        })
+      } else {
+        prepared.ready = true
+      }
+      preparedImagesRef.current.set(src, prepared)
+      return prepared
+    }
+
+    const current = prepare(slides[currentIndex].src)
+    prepare(slides[nextIndex].src)
+    if (current.ready) {
+      setReadyIndex(currentIndex)
+      return
+    }
+
+    let active = true
+    void current.done.then(() => {
+      if (active) setReadyIndex(currentIndex)
+    })
+    return () => { active = false }
+  }, [currentIndex, nextIndex, slides])
+
+  const animationPaused = paused || (phase === 'reveal' && readyIndex !== currentIndex)
 
   useEffect(() => {
     const carousel = carouselRef.current
@@ -145,7 +186,7 @@ export function TravelCarousel({ paused }: TravelCarouselProps) {
   return (
     <section
       ref={carouselRef}
-      className={`travel-carousel ${paused ? 'is-paused' : ''}`}
+      className={`travel-carousel ${animationPaused ? 'is-paused' : ''}`}
       aria-label="Travel destinations"
       data-index={currentIndex}
       data-phase={phase}

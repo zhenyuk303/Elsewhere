@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "assets:carousel": "node scripts/optimize-carousel-images.mjs",
     "assets:province-labels": "node scripts/generate-province-labels.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",

@@ -4,6 +4,68 @@ import { TravelCarousel } from './TravelCarousel'
 import { travelSlides } from './carouselData'
 
 describe('TravelCarousel', () => {
+  it('waits for the current photo to decode before starting the first reveal', async () => {
+    vi.useFakeTimers()
+    const resolvers: Array<() => void> = []
+    class ImageMock {
+      src = ''
+      decode() {
+        return new Promise<void>((resolve) => resolvers.push(resolve))
+      }
+    }
+    vi.stubGlobal('Image', ImageMock)
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+      const carousel = container.querySelector('.travel-carousel')
+      expect(carousel).toHaveClass('is-paused')
+
+      act(() => vi.advanceTimersByTime(2500))
+      expect(carousel).toHaveAttribute('data-phase', 'reveal')
+
+      await act(async () => resolvers[0]?.())
+      expect(carousel).not.toHaveClass('is-paused')
+      act(() => vi.advanceTimersByTime(2500))
+      expect(carousel).toHaveAttribute('data-phase', 'hold')
+    } finally {
+      resolvers.forEach((resolve) => resolve())
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+  })
+
+  it('decodes only the visible and upcoming photos before each reveal', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const decoded: string[] = []
+    class ImageMock {
+      src = ''
+      decode() {
+        decoded.push(this.src)
+        return Promise.resolve()
+      }
+    }
+    vi.stubGlobal('Image', ImageMock)
+
+    try {
+      render(<TravelCarousel paused={false} />)
+      expect(decoded).toEqual([travelSlides[1].src, travelSlides[2].src])
+
+      await act(async () => { await Promise.resolve() })
+
+      act(() => vi.advanceTimersByTime(2500))
+      act(() => vi.advanceTimersByTime(3000))
+      act(() => vi.advanceTimersByTime(1200))
+
+      expect(decoded).toContain(travelSlides[3].src)
+      expect(decoded).toHaveLength(3)
+    } finally {
+      vi.unstubAllGlobals()
+      vi.restoreAllMocks()
+      vi.useRealTimers()
+    }
+  })
+
   it('renders location-only travel slides and starts in grayscale reveal', () => {
     const { container } = render(<TravelCarousel paused={false} />)
 
