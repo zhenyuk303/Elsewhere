@@ -26,7 +26,7 @@ describe('HomePage', () => {
     vi.restoreAllMocks()
   })
 
-  it('keeps the same three image nodes through every controlled phase', () => {
+  it('keeps the same five image nodes through every controlled phase', () => {
     const onLogout = vi.fn().mockResolvedValue(undefined)
     const { container, rerender } = render(
       <HomePage phase="primed" onLogout={onLogout} />,
@@ -35,9 +35,11 @@ describe('HomePage', () => {
       container.querySelectorAll<HTMLImageElement>('.homepage-intro-image'),
     )
 
-    expect(originalImages).toHaveLength(3)
+    expect(originalImages).toHaveLength(5)
     expect(originalImages.map((image) => image.alt)).toEqual([
       'White magnolia blossoms against a deep red wall in Beijing.',
+      'A road crossing red and tan desert terrain in Qinghai.',
+      'An aerial night view of illuminated streets and towers in Shanghai.',
       'Colorful prayer flags radiating around a golden center in Tibet.',
       'Turquoise desert lakes winding between pale dunes in Xinjiang.',
     ])
@@ -47,8 +49,10 @@ describe('HomePage', () => {
       ),
     ).toEqual([
       '01 / GO WHERE CURIOSITY LEADS',
-      '02 / COLLECT WHAT STAYS WITH YOU',
-      '03 / FIND YOUR OWN ELSEWHERE',
+      '02 / FOLLOW THE OPEN ROAD',
+      '03 / SEE CITIES IN A NEW LIGHT',
+      '04 / COLLECT WHAT STAYS WITH YOU',
+      '05 / FIND YOUR OWN ELSEWHERE',
     ])
 
     for (const phase of ['gallery', 'lifting', 'ready'] as HomePhase[]) {
@@ -57,6 +61,52 @@ describe('HomePage', () => {
         container.querySelectorAll<HTMLImageElement>('.homepage-intro-image'),
       )
       expect(currentImages).toEqual(originalImages)
+    }
+  })
+
+  it('moves the complete final page as one surface beneath the persistent picture', () => {
+    const { container } = renderHomePage()
+    const surface = container.querySelector('.homepage-warm-reveal')
+    const picture = container.querySelector<HTMLElement>('.homepage-intro-visual')
+
+    expect(surface).toContainElement(screen.getByRole('navigation'))
+    expect(surface).toContainElement(
+      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
+    )
+    expect(surface).toContainElement(
+      screen.getByRole('button', { name: 'BEGIN THE JOURNEY' }),
+    )
+    expect(surface).toContainElement(screen.getByText('ELSEWHERE · 2026'))
+    expect(surface).not.toContainElement(picture)
+  })
+
+  it('shows only one gallery caption at a time while pictures overlap', () => {
+    const { container } = renderHomePage(undefined, 'gallery')
+    const copies = Array.from(
+      container.querySelectorAll<HTMLElement>('.homepage-intro-copy'),
+    )
+    const rules = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+    const timing = copies.map((_, index) => {
+      const rule = rules.find(
+        (candidate): candidate is CSSStyleRule =>
+          candidate instanceof CSSStyleRule &&
+          candidate.selectorText ===
+            `.homepage--gallery .homepage-intro-copy[data-slide-index='${index}']`,
+      )
+      const times = Array.from(
+        rule?.style.animation.matchAll(/(\d+)ms/g) ?? [],
+      ).map((match) => Number(match[1]))
+      return {
+        start: times[1] ?? 0,
+        duration: times[0],
+      }
+    })
+
+    for (let index = 1; index < timing.length; index += 1) {
+      expect(timing[index].start).toBeGreaterThanOrEqual(
+        timing[index - 1].start + timing[index - 1].duration,
+      )
     }
   })
 

@@ -1,10 +1,12 @@
 import beijingImage from '../../assets/travel/beijing.jpg'
+import qinghaiImage from '../../assets/travel/qinghai.jpg'
+import shanghaiImage from '../../assets/travel/shanghai.jpg'
 import tibetImage from '../../assets/travel/tibet.jpg'
 import xinjiangImage from '../../assets/travel/xinjiang.jpg'
 
 export type HomePhase = 'primed' | 'gallery' | 'lifting' | 'ready'
 
-export const HOME_GALLERY_MS = 2100
+export const HOME_GALLERY_MS = 2700
 export const HOME_LIFT_MS = 850
 
 export type HomeIntroSlide = {
@@ -22,15 +24,27 @@ export const homeIntroSlides: readonly HomeIntroSlide[] = [
     alt: 'White magnolia blossoms against a deep red wall in Beijing.',
   },
   {
+    id: 'road',
+    src: qinghaiImage,
+    copy: '02 / FOLLOW THE OPEN ROAD',
+    alt: 'A road crossing red and tan desert terrain in Qinghai.',
+  },
+  {
+    id: 'city',
+    src: shanghaiImage,
+    copy: '03 / SEE CITIES IN A NEW LIGHT',
+    alt: 'An aerial night view of illuminated streets and towers in Shanghai.',
+  },
+  {
     id: 'memory',
     src: tibetImage,
-    copy: '02 / COLLECT WHAT STAYS WITH YOU',
+    copy: '04 / COLLECT WHAT STAYS WITH YOU',
     alt: 'Colorful prayer flags radiating around a golden center in Tibet.',
   },
   {
     id: 'elsewhere',
     src: xinjiangImage,
-    copy: '03 / FIND YOUR OWN ELSEWHERE',
+    copy: '05 / FIND YOUR OWN ELSEWHERE',
     alt: 'Turquoise desert lakes winding between pale dunes in Xinjiang.',
   },
 ]

@@ -151,74 +151,92 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
       aria-hidden={isHidden ? true : undefined}
       inert={isInteractionLocked ? true : undefined}
     >
-      <div className="homepage-warm-reveal" aria-hidden="true" />
-
-      <nav
-        className="homepage-nav"
-        aria-label="Primary navigation"
+      <div
+        className="homepage-warm-reveal"
         aria-hidden={isInteractionLocked ? true : undefined}
       >
-        <div className="homepage-nav-left">
-          <button className="homepage-nav-action" type="button">
-            Footprints
-          </button>
-        </div>
-        <span className="homepage-brand">ELSEWHERE</span>
-        <div className="homepage-nav-right">
-          <button className="homepage-nav-action" type="button">
-            Guides
-          </button>
-          <button className="homepage-nav-action" type="button">
-            Community
-          </button>
-          <div className="homepage-profile-wrap" ref={profileMenuRef}>
-            <button
-              className="homepage-profile"
-              type="button"
-              aria-label="User profile"
-              aria-haspopup="menu"
-              aria-expanded={isProfileMenuOpen}
-              aria-controls="homepage-profile-menu"
-              ref={profileButtonRef}
-              onClick={handleProfileClick}
-              onKeyDown={handleProfileKeyDown}
-            >
-              <ProfileIcon />
+        <nav
+          className="homepage-nav"
+          aria-label="Primary navigation"
+          aria-hidden={isInteractionLocked ? true : undefined}
+        >
+          <div className="homepage-nav-left">
+            <button className="homepage-nav-action" type="button">
+              Footprints
             </button>
-            {isProfileMenuOpen ? (
-              <div
-                className="homepage-profile-menu"
-                id="homepage-profile-menu"
-                role="menu"
-                aria-label="User menu"
-                onKeyDown={handleMenuKeyDown}
-              >
-                <button
-                  className="homepage-profile-menu-item"
-                  type="button"
-                  role="menuitem"
-                  onClick={() => closeProfileMenu(true)}
-                >
-                  Personal homepage
-                </button>
-                <button
-                  className="homepage-profile-menu-item"
-                  type="button"
-                  role="menuitem"
-                  disabled={isLogoutPending}
-                  onClick={handleLogout}
-                >
-                  Log out
-                </button>
-              </div>
-            ) : null}
           </div>
-        </div>
-      </nav>
+          <span className="homepage-brand">ELSEWHERE</span>
+          <div className="homepage-nav-right">
+            <button className="homepage-nav-action" type="button">
+              Guides
+            </button>
+            <button className="homepage-nav-action" type="button">
+              Community
+            </button>
+            <div className="homepage-profile-wrap" ref={profileMenuRef}>
+              <button
+                className="homepage-profile"
+                type="button"
+                aria-label="User profile"
+                aria-haspopup="menu"
+                aria-expanded={isProfileMenuOpen}
+                aria-controls="homepage-profile-menu"
+                ref={profileButtonRef}
+                onClick={handleProfileClick}
+                onKeyDown={handleProfileKeyDown}
+              >
+                <ProfileIcon />
+              </button>
+              {isProfileMenuOpen ? (
+                <div
+                  className="homepage-profile-menu"
+                  id="homepage-profile-menu"
+                  role="menu"
+                  aria-label="User menu"
+                  onKeyDown={handleMenuKeyDown}
+                >
+                  <button
+                    className="homepage-profile-menu-item"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => closeProfileMenu(true)}
+                  >
+                    Personal homepage
+                  </button>
+                  <button
+                    className="homepage-profile-menu-item"
+                    type="button"
+                    role="menuitem"
+                    disabled={isLogoutPending}
+                    onClick={handleLogout}
+                  >
+                    Log out
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </nav>
 
-      <h1 className="homepage-marquee" id="homepage-title">
-        <span>FIND YOUR ELSEWHERE</span>
-      </h1>
+        <h1 className="homepage-marquee" id="homepage-title">
+          <span>FIND YOUR ELSEWHERE</span>
+        </h1>
+
+        <section
+          className="homepage-final-copy"
+          aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
+        >
+          <p>
+            <span>Follow the places that move you.</span>
+            <span>Keep the moments that stay.</span>
+          </p>
+          <button className="homepage-primary-action" type="button">
+            BEGIN THE JOURNEY
+          </button>
+        </section>
+
+        <p className="homepage-credit">ELSEWHERE · 2026</p>
+      </div>
 
       <div className="homepage-intro-visual">
         {homeIntroSlides.map((slide, index) => (
@@ -245,21 +263,6 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           </p>
         ))}
       </div>
-
-      <section
-        className="homepage-final-copy"
-        aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
-      >
-        <p>
-          <span>Follow the places that move you.</span>
-          <span>Keep the moments that stay.</span>
-        </p>
-        <button className="homepage-primary-action" type="button">
-          BEGIN THE JOURNEY
-        </button>
-      </section>
-
-      <p className="homepage-credit">ELSEWHERE · 2026</p>
     </main>
   )
 }

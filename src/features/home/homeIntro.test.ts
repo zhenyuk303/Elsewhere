@@ -11,18 +11,20 @@ describe('home intro assets', () => {
     vi.unstubAllGlobals()
   })
 
-  it('defines the three requested moments in order', () => {
-    expect(HOME_GALLERY_MS).toBe(2100)
+  it('prepares a five-scene travel sequence before the page lifts', () => {
+    expect(HOME_GALLERY_MS).toBe(2700)
     expect(HOME_LIFT_MS).toBe(850)
     expect(homeIntroSlides.map((slide) => slide.copy)).toEqual([
       '01 / GO WHERE CURIOSITY LEADS',
-      '02 / COLLECT WHAT STAYS WITH YOU',
-      '03 / FIND YOUR OWN ELSEWHERE',
+      '02 / FOLLOW THE OPEN ROAD',
+      '03 / SEE CITIES IN A NEW LIGHT',
+      '04 / COLLECT WHAT STAYS WITH YOU',
+      '05 / FIND YOUR OWN ELSEWHERE',
     ])
-    expect(homeIntroSlides).toHaveLength(3)
+    expect(homeIntroSlides).toHaveLength(5)
     expect(new Set(homeIntroSlides.map((slide) => slide.src))).toHaveProperty(
       'size',
-      3,
+      5,
     )
     expect(homeIntroSlides.every((slide) => slide.alt.trim().length > 12)).toBe(
       true,
