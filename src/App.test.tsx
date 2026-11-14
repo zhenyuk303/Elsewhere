@@ -129,7 +129,7 @@ describe('App', () => {
       await Promise.resolve()
     })
 
-    expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Elsewhere home' }).querySelector('.brand-logo')).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Welcome' }),
     ).toBeInTheDocument()

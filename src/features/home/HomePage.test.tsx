@@ -76,7 +76,7 @@ describe('HomePage', () => {
     expect(surface).toContainElement(
       screen.getByRole('button', { name: 'BEGIN THE JOURNEY' }),
     )
-    expect(surface).toContainElement(screen.getByText('ELSEWHERE · 2026'))
+    expect(surface).toContainElement(screen.getByText('· 2026'))
     expect(surface).not.toContainElement(picture)
   })
 
@@ -142,7 +142,7 @@ describe('HomePage', () => {
     const navigation = screen.getByRole('navigation', {
       name: 'Primary navigation',
     })
-    expect(within(navigation).getByText('ELSEWHERE')).toBeInTheDocument()
+    expect(within(navigation).getByRole('img', { name: 'ELSEWHERE' })).toBeInTheDocument()
     expect(within(navigation).getByText('Footprints')).toBeInTheDocument()
     expect(within(navigation).getByText('Community')).toBeInTheDocument()
     expect(within(navigation).queryByText('Guides')).not.toBeInTheDocument()
@@ -159,7 +159,10 @@ describe('HomePage', () => {
     expect(
       screen.getByRole('button', { name: 'BEGIN THE JOURNEY' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('ELSEWHERE · 2026')).toBeInTheDocument()
+    const credit = container.querySelector('.homepage-credit') as HTMLElement
+    expect(within(credit).getByRole('img', { name: 'ELSEWHERE' })).toBeInTheDocument()
+    expect(within(credit).getByText('· 2026')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }).querySelector('.brand-logo')).toBeNull()
   })
 
   it('does not schedule phase work from inside the component', () => {

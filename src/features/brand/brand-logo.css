@@ -1,0 +1,15 @@
+.brand-logo {
+  display: inline-block;
+  width: var(--brand-logo-width, 13rem);
+  aspect-ratio: 5.47;
+  flex: none;
+  background: currentColor;
+  -webkit-mask-image: url('../../assets/brand/elsewhere-logo.png');
+  mask-image: url('../../assets/brand/elsewhere-logo.png');
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 108% auto;
+  mask-size: 108% auto;
+}

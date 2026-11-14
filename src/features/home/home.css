@@ -1,3 +1,13 @@
+/* Match the reference site's main type without changing the login page. */
+@font-face {
+  font-family: 'Google Sans Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url('@fontsource-variable/google-sans/files/google-sans-latin-wght-normal.woff2')
+    format('woff2');
+}
+
 body.home-view {
   overflow: hidden;
   overflow-x: hidden;
@@ -14,6 +24,7 @@ body.home-view {
   isolation: isolate;
   background: var(--elsewhere-indigo);
   color: var(--elsewhere-indigo);
+  font-family: 'Google Sans Variable', Arial, sans-serif;
   pointer-events: auto;
 }
 
@@ -66,12 +77,8 @@ body.home-view {
 }
 
 .homepage-brand {
+  --brand-logo-width: clamp(155px, 18vw, 300px);
   justify-self: center;
-  font-size: clamp(1rem, 2vw, 2.5rem);
-  font-weight: 650;
-  letter-spacing: 0.3em;
-  line-height: 1;
-  white-space: nowrap;
 }
 
 .homepage-nav-right {
@@ -201,7 +208,7 @@ body.home-view {
   color: var(--elsewhere-indigo);
   font-size: clamp(6.5rem, 13.5vw, 19rem);
   font-weight: 500;
-  letter-spacing: -0.065em;
+  letter-spacing: -0.02em;
   line-height: 0.85;
   white-space: nowrap;
   opacity: 0;
@@ -452,11 +459,18 @@ body.home-view {
 }
 
 .homepage-credit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   color: var(--elsewhere-indigo);
   font-size: clamp(0.64rem, 1vw, 1.3rem);
   font-weight: 500;
   letter-spacing: 0;
+}
+
+.homepage-credit .brand-logo {
+  --brand-logo-width: clamp(88px, 8vw, 150px);
 }
 
 .homepage-footer-actions {
@@ -606,8 +620,7 @@ body.home-view {
   }
 
   .homepage-brand {
-    font-size: 0.78rem;
-    letter-spacing: 0.24em;
+    --brand-logo-width: clamp(110px, 34vw, 155px);
   }
 
   .homepage-profile {

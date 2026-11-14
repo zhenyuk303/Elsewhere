@@ -4,6 +4,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
+import { BrandLogo } from '../brand/BrandLogo'
 import { HOME_GALLERY_MS, homeIntroSlides, type HomePhase } from './homeIntro'
 import './home.css'
 
@@ -194,7 +195,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
               Footprints
             </button>
           </div>
-          <span className="homepage-brand">ELSEWHERE</span>
+          <BrandLogo className="homepage-brand" />
           <div className="homepage-nav-right">
             <button className="homepage-nav-action" type="button">
               Community
@@ -224,7 +225,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
         </section>
 
         <footer className="homepage-footer">
-          <p className="homepage-credit">ELSEWHERE · 2026</p>
+          <p className="homepage-credit"><BrandLogo /><span>· 2026</span></p>
           <div className="homepage-footer-actions">
             <button className="homepage-footer-guide" type="button">
               Guides

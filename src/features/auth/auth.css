@@ -18,10 +18,11 @@
   width: fit-content;
   margin: 0 auto clamp(32px, 5vh, 48px);
   color: #121212;
-  font-size: 1.3rem;
-  font-weight: 850;
-  letter-spacing: 0.14em;
   text-decoration: none;
+}
+
+.brand .brand-logo {
+  --brand-logo-width: clamp(170px, 15vw, 240px);
 }
 
 .title-block {

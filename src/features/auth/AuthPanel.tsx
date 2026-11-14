@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react'
+import { BrandLogo } from '../brand/BrandLogo'
 import type { SocialProvider } from './authApi'
 import type { AuthMode, ButtonRect } from './types'
 import './auth.css'
@@ -111,7 +112,7 @@ export function AuthPanel({
     <div className="auth-panel">
       <header className="auth-header">
         <a className="brand" href="#top" aria-label="Elsewhere home">
-          ELSEWHERE
+          <BrandLogo decorative />
         </a>
         <div className="title-block" key={mode}>
           <h1 id="auth-title">

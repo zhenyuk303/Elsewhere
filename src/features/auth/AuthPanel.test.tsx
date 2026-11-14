@@ -27,7 +27,9 @@ describe('AuthPanel', () => {
   it('renders the exact signup experience without an email field', () => {
     renderPanel()
 
-    expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
+    const brand = screen.getByRole('link', { name: 'Elsewhere home' })
+    expect(brand.querySelector('.brand-logo')).toBeInTheDocument()
+    expect(brand).not.toHaveTextContent('ELSEWHERE')
     expect(screen.queryByText('YOUR NEXT CHAPTER')).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Create your account' }),
