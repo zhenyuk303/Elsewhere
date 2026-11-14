@@ -55,7 +55,7 @@ body.home-view {
 }
 
 .homepage--lifting .homepage-nav {
-  animation: homepage-content-in 340ms 420ms ease-out both;
+  animation: homepage-nav-rise 350ms 250ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .homepage--ready .homepage-nav {
@@ -217,7 +217,7 @@ body.home-view {
 }
 
 .homepage--lifting .homepage-marquee {
-  animation: homepage-title-in 340ms 510ms ease-out both;
+  animation: homepage-title-unveil 420ms 350ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .homepage--lifting .homepage-marquee span,
@@ -237,8 +237,17 @@ body.home-view {
   width: 180px;
   height: 230px;
   overflow: hidden;
-  background: rgb(255 255 255 / 8%);
   transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.homepage--lifting .homepage-intro-visual {
+  transform: translate(-50%, calc(-50% - 9svh));
+  transition: transform 850ms cubic-bezier(0.72, 0, 0.2, 1);
+}
+
+.homepage--ready .homepage-intro-visual {
+  transform: translate(-50%, calc(-50% - 9svh));
 }
 
 .homepage-intro-image {
@@ -248,25 +257,32 @@ body.home-view {
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transform: translateY(8px) scale(1.025);
-  will-change: opacity, transform;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(14px) scale(1.04);
+  will-change: opacity, clip-path, transform;
 }
 
 .homepage--gallery .homepage-intro-image[data-slide-index='0'] {
-  animation: homepage-gallery-image 700ms ease-in-out both;
+  z-index: 1;
+  opacity: 1;
+  clip-path: inset(0);
+  animation: homepage-picture-arrive 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .homepage--gallery .homepage-intro-image[data-slide-index='1'] {
-  animation: homepage-gallery-image 700ms 700ms ease-in-out both;
+  z-index: 2;
+  animation: homepage-gallery-panel 600ms 700ms cubic-bezier(0.22, 0.65, 0.2, 1) both;
 }
 
 .homepage--gallery .homepage-intro-image[data-slide-index='2'] {
-  animation: homepage-gallery-final 700ms 1400ms ease-in-out both;
+  z-index: 3;
+  animation: homepage-gallery-panel 600ms 1400ms cubic-bezier(0.22, 0.65, 0.2, 1) both;
 }
 
 .homepage--lifting .homepage-intro-image[data-slide-index='2'],
 .homepage--ready .homepage-intro-image[data-slide-index='2'] {
   opacity: 1;
+  clip-path: inset(0);
   transform: none;
 }
 
@@ -315,21 +331,38 @@ body.home-view {
 .homepage-final-copy {
   position: absolute;
   z-index: 4;
+  right: 24px;
   bottom: clamp(72px, 10vh, 112px);
-  left: clamp(24px, 5vw, 80px);
+  left: 24px;
   display: grid;
-  gap: 24px;
+  justify-items: center;
+  gap: 22px;
   color: var(--elsewhere-indigo);
+}
+
+.homepage-final-copy p span,
+.homepage-primary-action {
   opacity: 0;
-  transform: translateY(12px);
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(18px);
 }
 
-.homepage--lifting .homepage-final-copy {
-  animation: homepage-content-in 300ms 510ms ease-out both;
+.homepage--lifting .homepage-final-copy p span:first-child {
+  animation: homepage-line-unveil 300ms 510ms ease-out both;
 }
 
-.homepage--ready .homepage-final-copy {
+.homepage--lifting .homepage-final-copy p span:last-child {
+  animation: homepage-line-unveil 260ms 570ms ease-out both;
+}
+
+.homepage--lifting .homepage-primary-action {
+  animation: homepage-line-unveil 270ms 560ms ease-out both;
+}
+
+.homepage--ready .homepage-final-copy p span,
+.homepage--ready .homepage-primary-action {
   opacity: 1;
+  clip-path: inset(0);
   transform: none;
 }
 
@@ -339,6 +372,7 @@ body.home-view {
   margin: 0;
   font-size: clamp(0.9rem, 1.1vw, 1.08rem);
   line-height: 1.38;
+  text-align: center;
 }
 
 .homepage-primary-action {
@@ -375,40 +409,33 @@ body.home-view {
 }
 
 .homepage--lifting .homepage-credit {
-  animation: homepage-content-in 300ms 600ms ease-out both;
+  animation: homepage-nav-rise 200ms 600ms ease-out both;
 }
 
 .homepage--ready .homepage-credit {
   opacity: 1;
 }
 
-@keyframes homepage-gallery-image {
-  0% {
-    opacity: 0;
-    transform: translateY(8px) scale(1.025);
+@keyframes homepage-picture-arrive {
+  from {
+    transform: scale(0.52);
   }
 
-  18%,
-  78% {
-    opacity: 1;
+  to {
     transform: none;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateY(-7px) scale(0.995);
   }
 }
 
-@keyframes homepage-gallery-final {
-  0% {
-    opacity: 0;
-    transform: translateY(8px) scale(1.025);
+@keyframes homepage-gallery-panel {
+  from {
+    opacity: 1;
+    clip-path: inset(0 48% 0 48%);
+    transform: translateY(14px) scale(1.04);
   }
 
-  24%,
-  100% {
+  to {
     opacity: 1;
+    clip-path: inset(0);
     transform: none;
   }
 }
@@ -440,20 +467,45 @@ body.home-view {
   }
 }
 
-@keyframes homepage-content-in {
+@keyframes homepage-nav-rise {
+  from {
+    opacity: 0;
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(12px);
+  }
+
   to {
     opacity: 1;
+    clip-path: inset(0);
     transform: none;
   }
 }
 
-@keyframes homepage-title-in {
+@keyframes homepage-title-unveil {
   from {
     opacity: 0;
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(calc(-50% + 36px));
   }
 
   to {
     opacity: 1;
+    clip-path: inset(0);
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes homepage-line-unveil {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+    transform: none;
   }
 }
 
@@ -574,6 +626,7 @@ body.home-view {
 
   .homepage--ready .homepage-intro-image[data-slide-index='2'] {
     opacity: 1;
+    clip-path: inset(0);
     transform: none;
   }
 }
