@@ -1,7 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
-import { currentUser, logout } from './features/auth/authApi'
+import { authenticate, currentUser, logout } from './features/auth/authApi'
+import {
+  HOME_GALLERY_MS,
+  HOME_LIFT_MS,
+  homeIntroSlides,
+  preloadHomeImage,
+} from './features/home/homeIntro'
+import { REDUCED_TRANSITION_MS } from './features/transition/RunwayTransition'
+import './styles/global.css'
 
 vi.mock('./features/auth/authApi', () => ({
   authenticate: vi.fn().mockResolvedValue({ id: 1, username: 'traveler' }),
@@ -10,8 +18,18 @@ vi.mock('./features/auth/authApi', () => ({
   logout: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('./features/home/homeIntro', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./features/home/homeIntro')>()
+  return {
+    ...actual,
+    preloadHomeImage: vi.fn().mockResolvedValue(undefined),
+  }
+})
+
+const mockedAuthenticate = vi.mocked(authenticate)
 const mockedCurrentUser = vi.mocked(currentUser)
 const mockedLogout = vi.mocked(logout)
+const mockedPreloadHomeImage = vi.mocked(preloadHomeImage)
 
 function rect({
   left,
@@ -72,6 +90,7 @@ async function renderAuthenticatedHomepage() {
     await Promise.resolve()
   })
   act(() => vi.advanceTimersByTime(3000))
+  act(() => vi.advanceTimersByTime(HOME_GALLERY_MS + HOME_LIFT_MS))
 }
 
 describe('App', () => {
@@ -80,6 +99,8 @@ describe('App', () => {
     window.history.replaceState(null, '', '/')
     mockedCurrentUser.mockResolvedValue(null)
     mockedLogout.mockResolvedValue(undefined)
+    mockedAuthenticate.mockResolvedValue({ id: 1, username: 'traveler' })
+    mockedPreloadHomeImage.mockResolvedValue(undefined)
     vi.useFakeTimers()
     vi.stubGlobal(
       'matchMedia',
@@ -116,6 +137,52 @@ describe('App', () => {
     expect(
       screen.queryByText('A wonderful journey begins now.'),
     ).not.toBeInTheDocument()
+    expect(document.querySelector('.homepage')).toBeNull()
+  })
+
+  it('prepares only the first homepage image while Login is idle', () => {
+    render(<App />)
+
+    expect(document.querySelector('.homepage')).toBeNull()
+    expect(mockedPreloadHomeImage).not.toHaveBeenCalled()
+
+    act(() => vi.advanceTimersByTime(0))
+
+    expect(mockedPreloadHomeImage).toHaveBeenCalledOnce()
+    expect(mockedPreloadHomeImage).toHaveBeenCalledWith(homeIntroSlides[0].src)
+  })
+
+  it('keeps the login layer on the shared warm background', () => {
+    render(<App />)
+
+    expect(
+      window
+        .getComputedStyle(document.documentElement)
+        .getPropertyValue('--elsewhere-warm')
+        .trim(),
+    ).toBe('#f3f1ed')
+    const appShellRule = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .find(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule && rule.selectorText === '.app-shell',
+      )
+    expect(appShellRule?.style.background).toBe('var(--elsewhere-warm)')
+  })
+
+  it('does not mount the homepage when authentication fails', async () => {
+    mockedAuthenticate.mockRejectedValueOnce(new Error('invalid credentials'))
+    render(<App />)
+    fillValidLoginForm()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }))
+      await Promise.resolve()
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('invalid credentials')
+    expect(document.querySelector('.homepage')).toBeNull()
+    expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
   })
 
   it('restores the Homepage only after a successful OAuth callback', async () => {
@@ -128,9 +195,11 @@ describe('App', () => {
     })
 
     expect(mockedCurrentUser).toHaveBeenCalledTimes(1)
-    expect(
-      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
-    ).toBeInTheDocument()
+    expect(document.querySelector('.homepage')).toHaveAttribute(
+      'data-home-phase',
+      'gallery',
+    )
+    expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
     expect(window.location.search).toBe('')
   })
 
@@ -151,7 +220,7 @@ describe('App', () => {
     expect(carousel).toHaveAttribute('data-phase', 'hold')
   })
 
-  it('pauses one transition and mounts the homepage only after it ends', async () => {
+  it('primes one homepage beneath the paused auth view and swaps layers atomically', async () => {
     const { container } = render(<App />)
 
     switchToSignup()
@@ -184,26 +253,92 @@ describe('App', () => {
     expect(window.getComputedStyle(transitionShape).backgroundColor).toBe(
       'rgb(23, 23, 23)',
     )
-    expect(
-      screen.queryByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
-    ).not.toBeInTheDocument()
+    const primedHomepage = container.querySelector('.homepage') as HTMLElement
+    expect(primedHomepage).toHaveAttribute('data-home-phase', 'primed')
+    expect(primedHomepage).toHaveAttribute('inert')
+    expect(primedHomepage).toHaveAttribute('aria-hidden', 'true')
+    expect(window.getComputedStyle(primedHomepage).pointerEvents).toBe('none')
 
     act(() => vi.advanceTimersByTime(2999))
-    expect(
-      screen.queryByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
-    ).not.toBeInTheDocument()
+    expect(container.querySelector('.homepage')).toBe(primedHomepage)
+    expect(primedHomepage).toHaveAttribute('data-home-phase', 'primed')
+    expect(screen.getByTestId('auth-journey')).toBeInTheDocument()
+    expect(screen.getByTestId('runway-transition')).toBeInTheDocument()
 
     act(() => vi.advanceTimersByTime(1))
 
-    expect(
-      screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('navigation', { name: 'Primary navigation' }),
-    ).toBeInTheDocument()
-    expect(screen.queryByText('Your journey starts here.')).not.toBeInTheDocument()
+    expect(container.querySelector('.homepage')).toBe(primedHomepage)
+    expect(primedHomepage).toHaveAttribute('data-home-phase', 'gallery')
+    expect(screen.queryByTestId('auth-journey')).not.toBeInTheDocument()
     expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
     expect(container.querySelector('.travel-carousel')).toBeNull()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(primedHomepage).toHaveAttribute('data-home-phase', 'gallery')
+  })
+
+  it('advances the homepage phases from App-owned timers', async () => {
+    const { container } = render(<App />)
+    fillValidLoginForm()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }))
+    })
+
+    act(() => vi.advanceTimersByTime(3000))
+    const homepage = container.querySelector('.homepage') as HTMLElement
+    expect(homepage).toHaveAttribute('data-home-phase', 'gallery')
+
+    act(() => vi.advanceTimersByTime(HOME_GALLERY_MS - 1))
+    expect(homepage).toHaveAttribute('data-home-phase', 'gallery')
+    act(() => vi.advanceTimersByTime(1))
+    expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
+
+    act(() => vi.advanceTimersByTime(HOME_LIFT_MS - 1))
+    expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
+    act(() => vi.advanceTimersByTime(1))
+    expect(homepage).toHaveAttribute('data-home-phase', 'ready')
+  })
+
+  it('cleans up App-owned idle and homepage timers on unmount', async () => {
+    const { unmount } = render(<App />)
+    fillValidLoginForm()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }))
+    })
+    act(() => vi.advanceTimersByTime(3000))
+
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('enters the final homepage directly after the reduced-motion airplane', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    )
+    const { container } = render(<App />)
+    fillValidLoginForm()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }))
+    })
+
+    act(() => vi.advanceTimersByTime(REDUCED_TRANSITION_MS))
+
+    expect(container.querySelector('.homepage')).toHaveAttribute(
+      'data-home-phase',
+      'ready',
+    )
+    expect(screen.queryByTestId('runway-transition')).not.toBeInTheDocument()
   })
 
   it('keeps the login label while the login transition collapses', async () => {

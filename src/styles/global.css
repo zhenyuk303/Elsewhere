@@ -32,10 +32,13 @@ input {
 }
 
 .app-shell {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: clamp(16px, 3vw, 44px);
+  background: var(--elsewhere-warm);
 }
 
 .journey-card {
