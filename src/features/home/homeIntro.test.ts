@@ -12,8 +12,8 @@ describe('home intro assets', () => {
   })
 
   it('prepares a five-scene travel sequence before the page lifts', () => {
-    expect(HOME_GALLERY_MS).toBe(2700)
-    expect(HOME_LIFT_MS).toBe(1400)
+    expect(HOME_GALLERY_MS).toBe(2500)
+    expect(HOME_LIFT_MS).toBeGreaterThan(2180)
     expect(homeIntroSlides.map((slide) => slide.id)).toEqual([
       'curiosity',
       'road',

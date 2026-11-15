@@ -2,12 +2,33 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { BrandLogo } from '../brand/BrandLogo'
-import { HOME_GALLERY_MS, homeIntroSlides, type HomePhase } from './homeIntro'
+import {
+  HOME_ACTION_DELAY_MS,
+  HOME_CONTENT_DELAY_MS,
+  HOME_COUNTER_EXIT_AT_MS,
+  HOME_COUNTER_STOPS,
+  HOME_LINE_REVEAL_MS,
+  HOME_SLIDE_INTERVAL_MS,
+  homeIntroSlides,
+  type HomePhase,
+} from './homeIntro'
+import { useHomeMarquee } from './useHomeMarquee'
 import { WalkerParade } from './WalkerParade'
 import './home.css'
+
+const introStyle = {
+  '--home-counter-exit-at': `${HOME_COUNTER_EXIT_AT_MS}ms`,
+  '--home-content-delay': `${HOME_CONTENT_DELAY_MS}ms`,
+  '--home-action-delay': `${HOME_ACTION_DELAY_MS}ms`,
+  '--home-line-duration': `${HOME_LINE_REVEAL_MS}ms`,
+} as CSSProperties
+
+const digits = Array.from({ length: 10 }, (_, digit) => digit)
+const actionEdges = ['top', 'right', 'bottom', 'left'] as const
 
 type HomePageProps = {
   phase: HomePhase
@@ -24,31 +45,55 @@ function ProfileIcon() {
 }
 
 function IntroCounter({ phase }: { phase: HomePhase }) {
-  const [count, setCount] = useState(0)
+  const isRunning = phase === 'gallery' || phase === 'lifting'
+  const [target, setTarget] = useState<number>(HOME_COUNTER_STOPS[0])
 
   useEffect(() => {
-    if (phase !== 'gallery') return
+    if (!isRunning) return
 
-    const startedAt = performance.now()
-    let frame = 0
-    const advance = (now: number) => {
-      const progress = Math.min(1, Math.max(0, (now - startedAt) / HOME_GALLERY_MS))
-      setCount(Math.floor(100 * (1 - (1 - progress) ** 2)))
-      if (progress < 1) frame = window.requestAnimationFrame(advance)
-    }
+    setTarget(HOME_COUNTER_STOPS[0])
+    const timers = HOME_COUNTER_STOPS.slice(1).map((stop, index) =>
+      window.setTimeout(() => setTarget(stop), (index + 1) * HOME_SLIDE_INTERVAL_MS),
+    )
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [isRunning])
 
-    frame = window.requestAnimationFrame(advance)
-    return () => window.cancelAnimationFrame(frame)
-  }, [phase])
-
-  const visibleCount = phase === 'gallery' ? count : phase === 'primed' ? 0 : 100
+  const count = isRunning ? target : HOME_COUNTER_STOPS[0]
 
   return (
     <div className="homepage-intro-counter" aria-hidden="true">
-      <span className="homepage-intro-counter-value">
-        {String(visibleCount).padStart(2, '0')}
-      </span>
+      <div className="homepage-counter-window">
+        <div className="homepage-counter-reels">
+          {[Math.floor(count / 10), count % 10].map((digit, column) => (
+            <span className="homepage-counter-column" key={column}>
+              <span className="homepage-counter-strip" style={{ '--digit': digit } as CSSProperties}>
+                {digits.map((value) => <span key={value}>{value}</span>)}
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
+  )
+}
+
+function HomepageMarquee({ phase }: { phase: HomePhase }) {
+  const trackRef = useRef<HTMLSpanElement>(null)
+  const [hasEntered, setHasEntered] = useState(false)
+  useHomeMarquee(trackRef, phase === 'ready' || (phase === 'lifting' && hasEntered))
+
+  return (
+    <h1 className="homepage-marquee" id="homepage-title">
+      <span className="homepage-marquee-reveal" onAnimationStart={(event) => {
+        if (event.target === event.currentTarget) setHasEntered(true)
+      }}>
+        <span className="homepage-marquee-track" ref={trackRef}>
+          <span>FIND YOUR ELSEWHERE</span>
+          <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
+          <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
+        </span>
+      </span>
+    </h1>
   )
 }
 
@@ -177,6 +222,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
   return (
     <main
       className={`homepage homepage--${phase}`}
+      style={introStyle}
       data-home-phase={phase}
       aria-labelledby="homepage-title"
       aria-hidden={isHidden ? true : undefined}
@@ -191,16 +237,16 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           aria-label="Primary navigation"
           aria-hidden={isInteractionLocked ? true : undefined}
         >
-          <BrandLogo className="homepage-brand" />
+          <BrandLogo className="homepage-brand homepage-reveal-line" />
           <div className="homepage-nav-right">
             <button className="homepage-nav-action" type="button">
-              Footprints
+              <span className="homepage-reveal-line">Footprints</span>
             </button>
             <button className="homepage-nav-action" type="button">
-              Guides
+              <span className="homepage-reveal-line">Guides</span>
             </button>
             <button className="homepage-nav-action" type="button">
-              Community
+              <span className="homepage-reveal-line">Community</span>
             </button>
           </div>
           <div className="homepage-profile-wrap" ref={profileMenuRef}>
@@ -247,13 +293,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           </div>
         </nav>
 
-        <h1 className="homepage-marquee" id="homepage-title">
-          <span className="homepage-marquee-track">
-            <span>FIND YOUR ELSEWHERE</span>
-            <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
-            <span aria-hidden="true">FIND YOUR ELSEWHERE</span>
-          </span>
-        </h1>
+        <HomepageMarquee phase={phase} />
 
         {phase === 'ready' ? <WalkerParade /> : null}
 
@@ -262,18 +302,23 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
         >
           <p>
-            <span>Follow the places that move you.</span>
-            <span>Keep the moments that stay.</span>
+            <span className="homepage-reveal-line">Follow the places that move you.</span>
+            <span className="homepage-reveal-line">Keep the moments that stay.</span>
           </p>
           <button className="homepage-primary-action" type="button">
-            BEGIN THE JOURNEY
+            <span className="homepage-action-outline" aria-hidden="true">
+              {actionEdges.map((edge) => <span data-edge={edge} key={edge} />)}
+            </span>
+            <span className="homepage-action-label homepage-reveal-line">BEGIN THE JOURNEY</span>
           </button>
         </section>
 
         <footer className="homepage-footer">
-          <p className="homepage-credit"><BrandLogo /><span>· 2026</span></p>
+          <p className="homepage-credit homepage-reveal-line"><BrandLogo /><span>· 2026</span></p>
         </footer>
       </div>
+
+      <div className="homepage-indigo-curtain" aria-hidden="true" />
 
       <div className="homepage-intro-visual">
         {homeIntroSlides.map((slide, index) => (
@@ -281,6 +326,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
             className="homepage-intro-frame"
             data-slide-index={index}
             key={slide.id}
+            style={{ '--frame-delay': `${index * HOME_SLIDE_INTERVAL_MS}ms` } as CSSProperties}
           >
             <img
               className="homepage-intro-image"

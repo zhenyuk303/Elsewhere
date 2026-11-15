@@ -24,6 +24,7 @@ describe('HomePage', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('keeps the same five image nodes through every controlled phase', () => {
@@ -64,10 +65,11 @@ describe('HomePage', () => {
     }
   })
 
-  it('moves the complete final page as one surface beneath the persistent picture', () => {
+  it('keeps the indigo curtain separate from the warm page and the persistent picture', () => {
     const { container } = renderHomePage()
     const surface = container.querySelector('.homepage-warm-reveal')
     const picture = container.querySelector<HTMLElement>('.homepage-intro-visual')
+    const curtain = container.querySelector('.homepage-indigo-curtain')
 
     expect(surface).toContainElement(screen.getByRole('navigation'))
     expect(surface).toContainElement(
@@ -78,32 +80,51 @@ describe('HomePage', () => {
     )
     expect(surface).toContainElement(screen.getByText('· 2026'))
     expect(surface).not.toContainElement(picture)
+    expect(curtain).toBeInTheDocument()
+    expect(curtain).toHaveAttribute('aria-hidden', 'true')
+    expect(curtain?.parentElement).toBe(surface?.parentElement)
+    expect(curtain).not.toContainElement(picture)
   })
 
-  it('runs the intro counter only during gallery and cleans up its animation frame', () => {
-    const requestSpy = vi.spyOn(window, 'requestAnimationFrame')
-    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame')
+  it('rolls fixed digit columns to the five scene targets and cleans up on unmount', () => {
     const onLogout = vi.fn().mockResolvedValue(undefined)
     const { container, rerender, unmount } = render(
       <HomePage phase="primed" onLogout={onLogout} />,
     )
-    const counter = container.querySelector('.homepage-intro-counter-value')
+    const counter = container.querySelector('.homepage-intro-counter')
+    const columns = Array.from(counter?.querySelectorAll<HTMLElement>('.homepage-counter-strip') ?? [])
+    const targetDigits = () => columns.map((column) => column.style.getPropertyValue('--digit')).join('')
 
-    expect(counter).toHaveTextContent('00')
-    expect(requestSpy).not.toHaveBeenCalled()
+    expect(columns.map((column) => column.textContent)).toEqual([
+      '0123456789', '0123456789',
+    ])
+    expect(targetDigits()).toBe('27')
+    expect(vi.getTimerCount()).toBe(0)
 
     rerender(<HomePage phase="gallery" onLogout={onLogout} />)
-    expect(requestSpy).toHaveBeenCalled()
-    act(() => vi.advanceTimersByTime(1000))
-    expect(Number(counter?.textContent)).toBeGreaterThan(0)
+    for (const target of ['42', '68', '92', '99']) {
+      act(() => vi.advanceTimersByTime(500))
+      expect(targetDigits()).toBe(target)
+    }
 
     rerender(<HomePage phase="lifting" onLogout={onLogout} />)
-    expect(counter).toHaveTextContent('100')
-    expect(cancelSpy).toHaveBeenCalled()
-    const requestsAfterGallery = requestSpy.mock.calls.length
-    act(() => vi.advanceTimersByTime(1000))
-    expect(requestSpy).toHaveBeenCalledTimes(requestsAfterGallery)
+    expect(targetDigits()).toBe('99')
+    expect(Array.from(counter!.querySelectorAll('.homepage-counter-strip'))).toEqual(columns)
+
+    rerender(<HomePage phase="primed" onLogout={onLogout} />)
+    rerender(<HomePage phase="gallery" onLogout={onLogout} />)
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
     unmount()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('gives the journey button four decorative edges and an independent accessible label', () => {
+    renderHomePage()
+    const button = screen.getByRole('button', { name: 'BEGIN THE JOURNEY' })
+    expect(button.querySelector('.homepage-action-label')).toHaveTextContent('BEGIN THE JOURNEY')
+    expect(Array.from(button.querySelectorAll('[aria-hidden="true"] [data-edge]'),
+      (edge) => edge.getAttribute('data-edge'),
+    )).toEqual(['top', 'right', 'bottom', 'left'])
   })
 
   it('locks primed and gallery states and unlocks interaction while lifting', () => {
@@ -344,21 +365,43 @@ describe('HomePage', () => {
   })
 
   it('disables the persistent marquee for reduced motion', () => {
-    const marqueeRule = Array.from(document.styleSheets)
-      .flatMap((sheet) => Array.from(sheet.cssRules))
-      .filter(
-        (rule): rule is CSSMediaRule =>
-          rule instanceof CSSMediaRule &&
-          rule.conditionText === '(prefers-reduced-motion: reduce)',
-      )
-      .flatMap((rule) => Array.from(rule.cssRules))
-      .find(
-      (rule): rule is CSSStyleRule =>
-        rule instanceof CSSStyleRule &&
-        rule.selectorText.includes('.homepage-marquee-track'),
-    )
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    const onLogout = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender } = renderHomePage(onLogout, 'primed')
+    const track = container.querySelector<HTMLElement>('.homepage-marquee-track')!
+    const phrase = track.firstElementChild!
+    vi.spyOn(phrase, 'getBoundingClientRect').mockReturnValue({ width: 2400 } as DOMRect)
+    track.animate = vi.fn()
 
-    expect(marqueeRule?.style.animation).toBe('none')
-    expect(marqueeRule?.style.getPropertyPriority('animation')).toBe('important')
+    rerender(<HomePage phase="ready" onLogout={onLogout} />)
+
+    expect(track.animate).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeVisible()
+  })
+
+  it('preserves the marquee position within its repeat when resizing', () => {
+    vi.stubGlobal('innerWidth', 1200)
+    const onLogout = vi.fn().mockResolvedValue(undefined)
+    const { container, rerender, unmount } = renderHomePage(onLogout, 'primed')
+    const track = container.querySelector<HTMLElement>('.homepage-marquee-track')!
+    const phrase = track.firstElementChild!
+    const measure = vi.spyOn(phrase, 'getBoundingClientRect').mockReturnValue({ width: 2400 } as DOMRect)
+    const firstLoop = { cancel: vi.fn(), currentTime: 37_500 }
+    const nextLoop = { cancel: vi.fn(), currentTime: 0 }
+    track.animate = vi.fn().mockReturnValueOnce(firstLoop).mockReturnValueOnce(nextLoop)
+
+    rerender(<HomePage phase="ready" onLogout={onLogout} />)
+    expect(track.animate).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({ duration: 30_000 }))
+
+    firstLoop.currentTime = 37_500
+    vi.stubGlobal('innerWidth', 800)
+    measure.mockReturnValue({ width: 1600 } as DOMRect)
+    fireEvent(window, new Event('resize'))
+
+    expect(track.animate).toHaveBeenLastCalledWith(expect.any(Array), expect.objectContaining({ duration: 15_000 }))
+    expect(firstLoop.cancel).toHaveBeenCalledOnce()
+    expect(nextLoop.currentTime).toBe(3750)
+    unmount()
+    expect(nextLoop.cancel).toHaveBeenCalledOnce()
   })
 })

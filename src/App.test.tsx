@@ -293,12 +293,14 @@ describe('App', () => {
     act(() => vi.advanceTimersByTime(1))
     expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
 
-    act(() => vi.advanceTimersByTime(850))
+    act(() => vi.advanceTimersByTime(1200))
     expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
-    act(() => vi.advanceTimersByTime(HOME_LIFT_MS - 851))
+    expect(homepage.querySelector('.walker-lane')).toBeNull()
+    act(() => vi.advanceTimersByTime(HOME_LIFT_MS - 1201))
     expect(homepage).toHaveAttribute('data-home-phase', 'lifting')
     act(() => vi.advanceTimersByTime(1))
     expect(homepage).toHaveAttribute('data-home-phase', 'ready')
+    expect(homepage.querySelector('.walker-lane')).toBeInTheDocument()
   })
 
   it('cleans up App-owned idle and homepage timers on unmount', async () => {
