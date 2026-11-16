@@ -5,6 +5,7 @@ import {
   beginSocialLogin,
   currentUser,
   logout,
+  type AuthUser,
   type SocialProvider,
 } from './features/auth/authApi'
 import type {
@@ -13,6 +14,7 @@ import type {
   TransitionOrigin,
 } from './features/auth/types'
 import { TravelCarousel } from './features/carousel/TravelCarousel'
+import { FootprintsPage } from './features/footprints/FootprintsPage'
 import { HomePage } from './features/home/HomePage'
 import {
   HOME_GALLERY_MS,
@@ -111,7 +113,10 @@ export function App() {
   const cardRef = useRef<HTMLDivElement>(null)
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [screen, dispatch] = useReducer(screenReducer, initialScreenState)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [showFootprints, setShowFootprints] = useState(false)
   const [isLogoutPending, setIsLogoutPending] = useState(false)
+  const signInRevision = useRef(0)
   const [oauthError] = useState(() => {
     const error = new URLSearchParams(window.location.search).get('oauthError')
     return error === 'cancelled' ? 'Third-party login was cancelled.'
@@ -140,8 +145,10 @@ export function App() {
     if (!oauthSucceeded) return
 
     let active = true
+    const revision = signInRevision.current
     currentUser().then((restored) => {
-      if (active && restored) {
+      if (active && restored && revision === signInRevision.current) {
+        setUser(restored)
         dispatch({
           type: 'restore-oauth',
           reducedMotion: prefersReducedMotion(),
@@ -177,7 +184,9 @@ export function App() {
   }, [screen])
 
   const handleAuthenticate = useCallback(async (username: string, password: string, agreementAccepted: boolean) => {
-    await authenticate(authMode, username, password, agreementAccepted)
+    const revision = ++signInRevision.current
+    const authenticated = await authenticate(authMode, username, password, agreementAccepted)
+    if (revision === signInRevision.current) setUser(authenticated)
   }, [authMode])
 
   const handleSocialLogin = useCallback(async (provider: SocialProvider) => {
@@ -223,8 +232,11 @@ export function App() {
   }, [])
 
   const handleLogout = useCallback(async () => {
+    signInRevision.current += 1
     setIsLogoutPending(true)
     setAuthMode('login')
+    setShowFootprints(false)
+    setUser(null)
     dispatch({ type: 'return-to-auth' })
     try {
       await logout()
@@ -238,7 +250,15 @@ export function App() {
   return (
     <>
       {screen.view !== 'auth' ? (
-        <HomePage phase={screen.homePhase} onLogout={handleLogout} />
+        <HomePage
+          phase={screen.homePhase}
+          onLogout={handleLogout}
+          onOpenFootprints={user ? () => setShowFootprints(true) : undefined}
+          onReturnHome={() => setShowFootprints(false)}
+          footprints={screen.view === 'home' && showFootprints && user
+            ? <FootprintsPage key={user.id} ownerId={user.id} />
+            : undefined}
+        />
       ) : null}
 
       {screen.view !== 'home' ? (

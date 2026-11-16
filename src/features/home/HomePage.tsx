@@ -4,6 +4,7 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from 'react'
 import { BrandLogo } from '../brand/BrandLogo'
 import {
@@ -33,6 +34,9 @@ const actionEdges = ['top', 'right', 'bottom', 'left'] as const
 type HomePageProps = {
   phase: HomePhase
   onLogout: () => Promise<void>
+  onOpenFootprints?: () => void
+  onReturnHome?: () => void
+  footprints?: ReactNode
 }
 
 function ProfileIcon() {
@@ -97,22 +101,28 @@ function HomepageMarquee({ phase }: { phase: HomePhase }) {
   )
 }
 
-export function HomePage({ phase, onLogout }: HomePageProps) {
+export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, footprints }: HomePageProps) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isLogoutPending, setIsLogoutPending] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
   const logoutPendingRef = useRef(false)
   const menuFocusTargetRef = useRef<'first' | 'last'>('first')
+  const footprintsButtonRef = useRef<HTMLButtonElement>(null)
   const isInteractive = phase === 'lifting' || phase === 'ready'
   const isHidden = phase === 'primed'
   const isInteractionLocked = !isInteractive
 
   useEffect(() => {
-    if (isHidden) return
+    if (isHidden || footprints) return
     document.body.classList.add('home-view')
     return () => document.body.classList.remove('home-view')
-  }, [isHidden])
+  }, [isHidden, footprints])
+
+  function returnHome() {
+    onReturnHome?.()
+    footprintsButtonRef.current?.focus()
+  }
 
   useEffect(() => {
     if (isInteractive || !isProfileMenuOpen) return
@@ -221,10 +231,10 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
 
   return (
     <main
-      className={`homepage homepage--${phase}`}
+      className={`homepage ${footprints ? 'homepage--footprints' : `homepage--${phase}`}`}
       style={introStyle}
       data-home-phase={phase}
-      aria-labelledby="homepage-title"
+      aria-labelledby={footprints ? 'footprints-title' : 'homepage-title'}
       aria-hidden={isHidden ? true : undefined}
       inert={isInteractionLocked ? true : undefined}
     >
@@ -237,9 +247,14 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           aria-label="Primary navigation"
           aria-hidden={isInteractionLocked ? true : undefined}
         >
-          <BrandLogo className="homepage-brand homepage-reveal-line" />
+          {footprints ? (
+            <button type="button" className="homepage-brand-home" aria-label="Elsewhere home" onClick={returnHome}>
+              <BrandLogo className="homepage-brand" decorative />
+            </button>
+          ) : <BrandLogo className="homepage-brand homepage-reveal-line" />}
           <div className="homepage-nav-right">
-            <button className="homepage-nav-action" type="button">
+            <button className="homepage-nav-action" type="button" ref={footprintsButtonRef}
+              aria-current={footprints ? 'page' : undefined} onClick={onOpenFootprints}>
               <span className="homepage-reveal-line">Footprints</span>
             </button>
             <button className="homepage-nav-action" type="button">
@@ -275,7 +290,10 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
                   className="homepage-profile-menu-item"
                   type="button"
                   role="menuitem"
-                  onClick={() => closeProfileMenu(true)}
+                  onClick={() => {
+                    closeProfileMenu(true)
+                    if (footprints) returnHome()
+                  }}
                 >
                   Personal homepage
                 </button>
@@ -293,6 +311,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
           </div>
         </nav>
 
+        {footprints ?? <>
         <HomepageMarquee phase={phase} />
 
         {phase === 'ready' ? <WalkerParade /> : null}
@@ -316,8 +335,10 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
         <footer className="homepage-footer">
           <p className="homepage-credit homepage-reveal-line"><BrandLogo /><span>· 2026</span></p>
         </footer>
+        </>}
       </div>
 
+      {!footprints && <>
       <div className="homepage-indigo-curtain" aria-hidden="true" />
 
       <div className="homepage-intro-visual">
@@ -340,6 +361,7 @@ export function HomePage({ phase, onLogout }: HomePageProps) {
       </div>
 
       <IntroCounter phase={phase} />
+      </>}
     </main>
   )
 }

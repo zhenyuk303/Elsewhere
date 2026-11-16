@@ -44,6 +44,20 @@ npm run typecheck
 npm run build
 ```
 
+## Footprints frontend demo
+
+After logging in, choose **Footprints** in the primary navigation. Every account starts with one photo for each of the 34 destinations in `travelSlides`. Edits and additions are saved in this browser, indexed by the authenticated account ID; they are not sent to the server. Photo and province are required. City, date, note and theme are optional. `COAST` and other filters match only the labels saved on each photo.
+
+Use the wheel, drag the photos, or press the arrow keys to browse an endless loop of photos matching the current filters. Selecting a photo scrolls the reel to bring it to the right and opens its details.
+
+The gallery uses derived WebP thumbnails stored in `public/images/footprint-thumbs`. If the login carousel assets change, run `node scripts/generate-footprint-thumbnails.mjs` from this directory with FFmpeg installed and verify the one-to-one asset pairing. This command does not replace the login carousel files.
+
+In local development, set `FOOTPRINTS_LOCAL_DIRECTORY` and `FOOTPRINTS_LOCAL_USERNAME` in `.env.local` to use a private folder of province-named JPGs for that account. The dev server checks the active session before serving the directory listing or an image. The files stay outside the production bundle.
+
+Generate private thumbnails with `node scripts/generate-footprint-thumbnails.mjs <photo-folder> <thumbnail-folder>` and set `FOOTPRINTS_LOCAL_THUMBNAILS` to the destination in `.env.local`. Use a destination outside the project and rerun the command when its source photos change.
+
+For backend integration, replace the `FootprintsRepository` used by `FootprintsPage`. The backend still needs to supply the account library, photo uploads and thumbnail URLs, saved metadata, and server-side ownership checks. `Footprint.suggestedThemes` reserves a theme and a confidence ratio (0–1) for future suggestions; filtering continues to use the user's saved `themes` only.
+
 ## Project scope
 
 - React + TypeScript + Vite

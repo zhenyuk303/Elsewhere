@@ -426,6 +426,179 @@ describe('App', () => {
     })
   })
 
+  it('opens Footprints from home and returns through the shared brand navigation', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    expect(screen.getByRole('heading', { name: 'Footprints' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Province')).toBeInTheDocument()
+    expect(screen.queryByText(/demo collection|elsewhere \/ footprints/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'User profile' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Elsewhere home' }))
+    expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeInTheDocument()
+  })
+
+  it('settles on the last gallery click and keeps missing info tied to the lead photo', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const [first, latest] = screen.getAllByRole('button', { name: /^View photo from / })
+    const province = latest.getAttribute('aria-label')!.replace('View photo from ', '')
+    fireEvent.click(first, { detail: 1 })
+    act(() => vi.advanceTimersByTime(80))
+    fireEvent.click(latest, { detail: 1 })
+    act(() => vi.advanceTimersByTime(2800))
+    expect(screen.getByRole('heading', { name: province })).toBeInTheDocument()
+    const selectedName = `View photo from ${province}`
+    expect(screen.getByRole('button', { name: selectedName, pressed: true })).toBeInTheDocument()
+    const galleryPhotos = screen.getAllByRole('button', { name: /^View photo from / })
+    expect(galleryPhotos.some(button => button.getAttribute('aria-label') !== selectedName)).toBe(true)
+    expect(screen.getByText('City to be added')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'COAST' } })
+    act(() => vi.advanceTimersByTime(2800))
+    expect(screen.getByRole('heading', { name: 'Footprints' })).toBeInTheDocument()
+    expect(screen.getByText('No footprints match these filters.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^View photo from / })).not.toBeInTheDocument()
+  })
+
+  it('moves the clicked photo with its neighbor on the reel into the rightmost lead slot', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const region = screen.getByRole('region', { name: 'Photo composition' })
+    const [neighbor, selected] = screen.getAllByRole<HTMLButtonElement>('button', { name: /^View photo from / })
+    const selectedName = selected.getAttribute('aria-label')!
+    const { left, width } = selected.style
+    const baseWidth = window.innerWidth * .30
+    const logicalX = (button: HTMLButtonElement) => {
+      const scale = Number.parseFloat(button.style.width) / baseWidth
+      return Number.parseFloat(button.style.left) / scale
+    }
+    const neighborStart = logicalX(neighbor)
+    const selectedStart = logicalX(selected)
+
+    fireEvent.click(selected, { detail: 1 })
+    expect(selected).toBeInTheDocument()
+    expect(region).not.toHaveClass('fp-gallery--out')
+
+    act(() => vi.advanceTimersByTime(80))
+    expect(neighbor).toBeInTheDocument()
+    expect(selected).toBeInTheDocument()
+    expect(selected.style.left).not.toBe(left)
+    expect(selected.style.width).not.toBe(width)
+    const mediaWidth = Number.parseFloat(region.style.getPropertyValue('--fp-photo-media-width'))
+    const mediaHeight = Number.parseFloat(region.style.getPropertyValue('--fp-photo-media-height'))
+    const mediaScale = Number.parseFloat(selected.style.getPropertyValue('--fp-photo-media-scale'))
+    expect(mediaWidth * mediaScale).toBeCloseTo(Number.parseFloat(selected.style.width))
+    expect(mediaHeight * mediaScale).toBeCloseTo(Number.parseFloat(selected.style.height))
+    const neighborX = logicalX(neighbor)
+    const selectedX = logicalX(selected)
+    expect(selectedX).toBeGreaterThan(neighborX)
+    expect(selectedX - selectedStart).toBeCloseTo(neighborX - neighborStart, 4)
+    expect(getComputedStyle(selected).zIndex).toBe(getComputedStyle(neighbor).zIndex)
+    expect(region).not.toHaveClass('fp-gallery--in')
+
+    act(() => vi.advanceTimersByTime(1900))
+    const trailing = selected.nextElementSibling as HTMLButtonElement
+    expect(trailing).toHaveClass('fp-photo')
+    const visibleStrip = window.innerWidth - Number.parseFloat(trailing.style.left)
+    expect(visibleStrip).toBeGreaterThan(0)
+    expect(visibleStrip).toBeLessThan(2)
+
+    act(() => vi.advanceTimersByTime(900))
+    expect(trailing).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: selectedName, pressed: true })).toBe(selected)
+    const settled = screen.getAllByRole<HTMLButtonElement>('button', { name: /^View photo from / })
+    const rightmostLeft = Math.max(...settled.map(button => Number.parseFloat(button.style.left)))
+    expect(Number.parseFloat(selected.style.left)).toBe(rightmostLeft)
+    const selectedRight = Number.parseFloat(selected.style.left) + Number.parseFloat(selected.style.width)
+    expect(selectedRight).toBeCloseTo(window.innerWidth, 2)
+  })
+
+  it('moves the outgoing photos continuously before settling on the selected province', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const region = screen.getByRole('region', { name: 'Photo composition' })
+    const [match, , outgoing] = screen.getAllByRole<HTMLButtonElement>('button', { name: /^View photo from / })
+    const matchingName = match.getAttribute('aria-label')!
+    const province = matchingName.replace('View photo from ', '')
+    const { left, width } = outgoing.style
+
+    fireEvent.change(screen.getByLabelText('Province'), { target: { value: province } })
+    expect(outgoing).toBeInTheDocument()
+    expect(region).not.toHaveClass('fp-gallery--out')
+
+    act(() => vi.advanceTimersByTime(80))
+    expect(outgoing).toBeInTheDocument()
+    expect(outgoing.style.left).not.toBe(left)
+    expect(outgoing.style.width).not.toBe(width)
+    expect(region).not.toHaveClass('fp-gallery--in')
+
+    act(() => vi.advanceTimersByTime(2500))
+    const settled = screen.getAllByRole('button', { name: /^View photo from / })
+    expect(settled.length).toBeGreaterThan(1)
+    for (const button of settled) expect(button).toHaveAccessibleName(matchingName)
+    expect(outgoing).not.toBeInTheDocument()
+  })
+
+  it('waits for mouse movement after the wheel settles before restoring hover', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const region = screen.getByRole('region', { name: 'Photo composition' })
+    const movePointer = (clientX: number) =>
+      fireEvent.pointerMove(region, { pointerType: 'mouse', clientX, clientY: 500 })
+
+    fireEvent.wheel(region, { deltaY: 120, clientX: 400, clientY: 500 })
+    expect(region).toHaveAttribute('data-wheel-hover-paused', 'true')
+    movePointer(410)
+    act(() => vi.advanceTimersByTime(2800))
+    expect(region).toHaveAttribute('data-moving', 'false')
+    movePointer(410)
+    expect(region).toHaveAttribute('data-wheel-hover-paused', 'true')
+    movePointer(411)
+    expect(region).toHaveAttribute('data-wheel-hover-paused', 'true')
+    movePointer(415)
+    expect(region).toHaveAttribute('data-wheel-hover-paused', 'false')
+  })
+
+  it('keeps the filtered reel moving and wrapping after selecting a photo', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const region = screen.getByRole('region', { name: 'Photo composition' })
+    const matchingName = 'View photo from Anhui'
+    fireEvent.change(screen.getByLabelText('Province'), { target: { value: 'Anhui' } })
+    act(() => vi.advanceTimersByTime(2500))
+
+    const [, selected] = screen.getAllByRole<HTMLButtonElement>('button', { name: matchingName })
+    fireEvent.click(selected, { detail: 1 })
+    act(() => vi.advanceTimersByTime(2800))
+    expect(screen.getByRole('button', { name: matchingName, pressed: true })).toBe(selected)
+    const leadLeft = Number.parseFloat(selected.style.left)
+    const visible = screen.getAllByRole<HTMLButtonElement>('button', { name: /^View photo from / })
+    expect(leadLeft).toBe(Math.max(...visible.map(button => Number.parseFloat(button.style.left))))
+
+    fireEvent.wheel(region, { deltaY: -120 })
+    act(() => vi.advanceTimersByTime(100))
+    expect(selected).toBeInTheDocument()
+    expect(Number.parseFloat(selected.style.left)).toBeLessThan(leadLeft)
+
+    fireEvent.wheel(region, { deltaY: -100_000 })
+    act(() => vi.advanceTimersByTime(5000))
+    const wrapped = screen.getAllByRole('button', { name: /^View photo from / })
+    expect(wrapped.length).toBeGreaterThan(1)
+    for (const button of wrapped) expect(button).toHaveAccessibleName(matchingName)
+  })
+
+  it('advances the reel with the keyboard without replacing its introduction', async () => {
+    await renderAuthenticatedHomepage()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const names = () => screen.getAllByRole('button', { name: /^View photo from / }).map(button => button.getAttribute('aria-label'))
+    const initial = names()
+    fireEvent.keyDown(screen.getAllByRole('button', { name: /^View photo from / })[0], { key: 'ArrowRight' })
+    act(() => vi.advanceTimersByTime(2400))
+    expect(names().slice(1)).toEqual(initial.slice(0, 4))
+    expect(initial).not.toContain(names()[0])
+    expect(screen.getByRole('heading', { name: 'Footprints' })).toBeInTheDocument()
+  })
+
   it('logs out from the profile menu and returns to Login', async () => {
     await renderAuthenticatedHomepage()
 
