@@ -7,8 +7,9 @@ const outputDir = join(sourceDir, 'carousel')
 const files = (await readdir(sourceDir)).filter((name) => name.endsWith('.jpg'))
 // Preserve the square framing approved for the portrait photographs.
 const cropFilters = {
+  '湖南.jpg': 'crop=1080:1080:0:0:exact=1',
   '陕西.jpg': 'crop=1875:1875:0:419:exact=1',
-  '河南.jpg': "crop='min(iw,ih)':'min(iw,ih)':(iw-ow)*0.68:(ih-oh)*0.4",
+  '河南.jpg': 'crop=1441:1441:240:0:exact=1',
 }
 
 await mkdir(outputDir, { recursive: true })
