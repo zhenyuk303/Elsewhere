@@ -4,7 +4,7 @@ import {
   allFilters, demoFootprints, filterPhotos, provinces, shufflePhotoIds, themes,
   type Filters, type Footprint, type FootprintsRepository, type PhotoDraft,
 } from './footprintsData'
-import { photoSize, reelFrame, reelSlideDistance, reelStride, rightmostPhotoX, shiftReelCard, trailingPhotoOffset, wheelTravel } from './reelGeometry'
+import { mobileBreakpoint, photoSize, reelFrame, reelSlideDistance, reelStride, rightmostPhotoX, shiftReelCard, trailingPhotoOffset, wheelTravel } from './reelGeometry'
 import { useReelMotion } from './useReelMotion'
 import './footprints.css'
 
@@ -13,17 +13,21 @@ const introduction = {
   secondLine: 'Journal',
   lines: ['Some places stay with us.', 'A photo journal of the places you carry home.'],
 }
+const titleLetterDuration = 1200
+const titleLetterStagger = 50
+const titleOpeningDuration = titleLetterDuration +
+  (Math.max(introduction.title.length, introduction.secondLine.length) - 1) * titleLetterStagger
 type Gallery = { ids: string[]; lead?: Footprint; leadKey?: string; version?: number }
 
 function galleryCardKey(version: number, index: number, id: string) {
   return `${version}:${index}:${id}`
 }
 
-function galleryLayout(width: number, gallery: Gallery, position: number) {
+function galleryLayout(width: number, gallery: Gallery, position: number, openingScale = 1) {
   const { ids, leadKey, version = 0 } = gallery
   // Eight slots cover the full scrolling range, including partially visible cards.
   const slotCount = ids.length ? ids.length * Math.ceil(8 / ids.length) : 0
-  const frame = reelFrame(width, slotCount, position)
+  const frame = reelFrame(width, slotCount, position, openingScale)
   const seen = new Set<string>()
   const cards = frame.map(card => {
     const { index } = card
@@ -60,6 +64,8 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
   const [attempt, setAttempt] = useState(0)
   const [notice, setNotice] = useState('')
   const [wheelHoverPaused, setWheelHoverPaused] = useState(false)
+  const [animateOpening] = useState(() => !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+  const [opening, setOpening] = useState(animateOpening)
   const galleryVersion = useRef(0)
   const chosenFilters = useRef(allFilters)
   const sceneElement = useRef<HTMLElement>(null)
@@ -72,14 +78,21 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
   const reel = useReelMotion()
   const resetReel = reel.reset
   const move = reel.move
+  const openReel = reel.open
 
   useEffect(() => {
     mounted.current = true
-    heading.current?.focus()
+    heading.current?.focus({ preventScroll: true })
     return () => {
       mounted.current = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!opening) return
+    const timer = window.setTimeout(() => setOpening(false), titleOpeningDuration)
+    return () => window.clearTimeout(timer)
+  }, [opening])
 
   useEffect(() => {
     let active = true
@@ -88,13 +101,14 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
       setPhotos(records)
       setGallery({ ids: shufflePhotoIds(records) })
       setLoading(false)
+      if (animateOpening && records.length) openReel()
     }).catch(() => {
       if (!active) return
       setLoadFailed(true)
       setLoading(false)
     })
     return () => { active = false }
-  }, [ownerId, repository, attempt])
+  }, [ownerId, repository, attempt, animateOpening, openReel])
 
   useEffect(() => {
     if (!filterSlide) return
@@ -185,7 +199,8 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
   const mediaSize = photoSize(reel.width)
   const byId = new Map(photos.map(photo => [photo.id, photo]))
   const slide = filterSlide?.width === reel.width ? filterSlide : null
-  const restingCards = galleryLayout(reel.width, gallery, filterSlide ? 0 : reel.position)
+  const openingScale = reel.width > mobileBreakpoint ? reel.openingProgress : 1
+  const restingCards = galleryLayout(reel.width, gallery, filterSlide ? 0 : reel.position, openingScale)
   const cards = slide ? [
     ...slide.outgoing.map(card => shiftReelCard(reel.width, { ...card, selected: false }, -reel.position))
       .filter(isVisible),
@@ -197,7 +212,8 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
   }
 
   return (
-    <section ref={sceneElement} className="footprints">
+    <section ref={sceneElement} className="footprints" data-opening={opening && gallery.version === undefined}
+      style={{ '--fp-title-letter-duration': `${titleLetterDuration}ms` } as CSSProperties}>
       <div className="fp-tools">
         <div className="fp-filter"><label htmlFor="fp-filter-province">Province</label>
           <select id="fp-filter-province" value={filters.province} onChange={event => changeFilters({ province: event.target.value })} disabled={controlsDisabled}>
@@ -219,9 +235,16 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
 
       <header className="fp-intro" data-selected={!!lead}>
         <div className="fp-intro-content">
-          <h1 id="footprints-title" tabIndex={-1} ref={heading} className={lead ? 'fp-title fp-title--province' : 'fp-title'}>
-            {lead?.province ?? introduction.title}
-            {!lead && <span aria-hidden="true">{introduction.secondLine}</span>}
+          <h1 id="footprints-title" tabIndex={-1} ref={heading} className={lead ? 'fp-title fp-title--province' : 'fp-title'}
+            aria-label={lead ? undefined : introduction.title}>
+            {lead?.province ?? [introduction.title, introduction.secondLine].map(line => (
+              <span key={line} className="fp-title-line" aria-hidden="true">
+                {[...line].map((letter, index) => (
+                  <span key={index} className="fp-title-letter"
+                    style={{ animationDelay: `${index * titleLetterStagger}ms` }}>{letter}</span>
+                ))}
+              </span>
+            ))}
           </h1>
           {lead ? (
             <div className="fp-details" aria-live="polite">
@@ -245,6 +268,7 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
         style={{
           '--fp-photo-media-width': `${mediaSize.width}px`,
           '--fp-photo-media-height': `${mediaSize.height}px`,
+          '--fp-photo-opening-opacity': reel.openingProgress,
         } as CSSProperties}
         onKeyDown={event => {
           if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return

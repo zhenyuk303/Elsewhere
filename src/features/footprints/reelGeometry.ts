@@ -1,4 +1,4 @@
-const mobileBreakpoint = 767
+export const mobileBreakpoint = 767
 const wrap = (number: number, length: number) => ((number % length) + length) % length
 
 export function reelStride(viewport: number) {
@@ -31,7 +31,7 @@ export function photoGeometry(viewport: number, x: number) {
   return { left: x * scale, width: width * scale, height: height * scale, scale }
 }
 
-export function reelFrame(viewport: number, count: number, position: number) {
+export function reelFrame(viewport: number, count: number, position: number, openingScale = 1) {
   const stride = reelStride(viewport)
   const length = stride * count
   if (!length) return []
@@ -41,7 +41,8 @@ export function reelFrame(viewport: number, count: number, position: number) {
   const frame = Array.from({ length: count }, (_, index) => {
     const base = index * stride - offset
     const x = base + Math.round((center - base) / length) * length
-    return { index, x, ...photoGeometry(viewport, x) }
+    const { left, width, height, scale } = photoGeometry(viewport, x)
+    return { index, x, left: left * openingScale, width: width * openingScale, height: height * openingScale, scale: scale * openingScale }
   }).filter(card => card.left < viewport && card.left + card.width > 0)
   const first = frame.find(card => Math.abs(card.x) < .01)
   return frame.filter(card => !first || card.x >= -.01 || card.left + card.width > first.width)

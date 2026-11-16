@@ -12,6 +12,7 @@ import {
   HOME_CONTENT_DELAY_MS,
   HOME_COUNTER_EXIT_AT_MS,
   HOME_COUNTER_STOPS,
+  HOME_FOOTPRINTS_EXIT_MS,
   HOME_LINE_REVEAL_MS,
   HOME_SLIDE_INTERVAL_MS,
   homeIntroSlides,
@@ -26,6 +27,7 @@ const introStyle = {
   '--home-content-delay': `${HOME_CONTENT_DELAY_MS}ms`,
   '--home-action-delay': `${HOME_ACTION_DELAY_MS}ms`,
   '--home-line-duration': `${HOME_LINE_REVEAL_MS}ms`,
+  '--home-footprints-exit': `${HOME_FOOTPRINTS_EXIT_MS}ms`,
 } as CSSProperties
 
 const digits = Array.from({ length: 10 }, (_, digit) => digit)
@@ -104,6 +106,7 @@ function HomepageMarquee({ phase }: { phase: HomePhase }) {
 export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, footprints }: HomePageProps) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isLogoutPending, setIsLogoutPending] = useState(false)
+  const [leavingFootprints, setLeavingFootprints] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profileButtonRef = useRef<HTMLButtonElement>(null)
   const logoutPendingRef = useRef(false)
@@ -119,9 +122,25 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, foot
     return () => document.body.classList.remove('home-view')
   }, [isHidden, footprints])
 
+  useEffect(() => {
+    if (!leavingFootprints || !onOpenFootprints) return
+    const timer = window.setTimeout(() => {
+      setLeavingFootprints(false)
+      onOpenFootprints()
+    }, HOME_FOOTPRINTS_EXIT_MS)
+    return () => window.clearTimeout(timer)
+  }, [leavingFootprints, onOpenFootprints])
+
+  function openFootprints() {
+    if (!isInteractive || !onOpenFootprints || footprints || leavingFootprints) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) onOpenFootprints()
+    else setLeavingFootprints(true)
+  }
+
   function returnHome() {
+    setLeavingFootprints(false)
     onReturnHome?.()
-    footprintsButtonRef.current?.focus()
+    footprintsButtonRef.current?.focus({ preventScroll: true })
   }
 
   useEffect(() => {
@@ -234,6 +253,7 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, foot
       className={`homepage ${footprints ? 'homepage--footprints' : `homepage--${phase}`}`}
       style={introStyle}
       data-home-phase={phase}
+      data-footprints-transition={leavingFootprints ? 'leaving' : undefined}
       aria-labelledby={footprints ? 'footprints-title' : 'homepage-title'}
       aria-hidden={isHidden ? true : undefined}
       inert={isInteractionLocked ? true : undefined}
@@ -247,14 +267,15 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, foot
           aria-label="Primary navigation"
           aria-hidden={isInteractionLocked ? true : undefined}
         >
-          {footprints ? (
-            <button type="button" className="homepage-brand-home" aria-label="Elsewhere home" onClick={returnHome}>
-              <BrandLogo className="homepage-brand" decorative />
+          {onReturnHome || footprints ? (
+            <button type="button" className="homepage-brand-home" aria-label="Elsewhere home"
+              disabled={!footprints && !leavingFootprints} onClick={returnHome}>
+              <BrandLogo className="homepage-brand homepage-reveal-line" decorative />
             </button>
           ) : <BrandLogo className="homepage-brand homepage-reveal-line" />}
           <div className="homepage-nav-right">
             <button className="homepage-nav-action" type="button" ref={footprintsButtonRef}
-              aria-current={footprints ? 'page' : undefined} onClick={onOpenFootprints}>
+              aria-current={footprints ? 'page' : undefined} onClick={openFootprints}>
               <span className="homepage-reveal-line">Footprints</span>
             </button>
             <button className="homepage-nav-action" type="button">
@@ -292,7 +313,7 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, foot
                   role="menuitem"
                   onClick={() => {
                     closeProfileMenu(true)
-                    if (footprints) returnHome()
+                    if (footprints || leavingFootprints) returnHome()
                   }}
                 >
                   Personal homepage
@@ -311,31 +332,33 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onReturnHome, foot
           </div>
         </nav>
 
-        {footprints ?? <>
-        <HomepageMarquee phase={phase} />
+        {footprints ?? (
+          <div className="homepage-route-content" inert={leavingFootprints ? true : undefined}>
+            <HomepageMarquee phase={phase} />
 
-        {phase === 'ready' ? <WalkerParade /> : null}
+            {phase === 'ready' ? <WalkerParade /> : null}
 
-        <section
-          className="homepage-final-copy"
-          aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
-        >
-          <p>
-            <span className="homepage-reveal-line">Follow the places that move you.</span>
-            <span className="homepage-reveal-line">Keep the moments that stay.</span>
-          </p>
-          <button className="homepage-primary-action" type="button">
-            <span className="homepage-action-outline" aria-hidden="true">
-              {actionEdges.map((edge) => <span data-edge={edge} key={edge} />)}
-            </span>
-            <span className="homepage-action-label homepage-reveal-line">BEGIN THE JOURNEY</span>
-          </button>
-        </section>
+            <section
+              className="homepage-final-copy"
+              aria-hidden={phase === 'gallery' || phase === 'primed' ? true : undefined}
+            >
+              <p>
+                <span className="homepage-reveal-line">Follow the places that move you.</span>
+                <span className="homepage-reveal-line">Keep the moments that stay.</span>
+              </p>
+              <button className="homepage-primary-action" type="button">
+                <span className="homepage-action-outline" aria-hidden="true">
+                  {actionEdges.map((edge) => <span data-edge={edge} key={edge} />)}
+                </span>
+                <span className="homepage-action-label homepage-reveal-line">BEGIN THE JOURNEY</span>
+              </button>
+            </section>
 
-        <footer className="homepage-footer">
-          <p className="homepage-credit homepage-reveal-line"><BrandLogo /><span>· 2026</span></p>
-        </footer>
-        </>}
+            <footer className="homepage-footer">
+              <p className="homepage-credit homepage-reveal-line"><BrandLogo /><span>· 2026</span></p>
+            </footer>
+          </div>
+        )}
       </div>
 
       {!footprints && <>

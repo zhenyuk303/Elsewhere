@@ -3,6 +3,7 @@ import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
 import { authenticate, currentUser, logout } from './features/auth/authApi'
 import {
+  HOME_FOOTPRINTS_EXIT_MS,
   HOME_GALLERY_MS,
   HOME_LIFT_MS,
   homeIntroSlides,
@@ -91,6 +92,12 @@ async function renderAuthenticatedHomepage() {
   })
   act(() => vi.advanceTimersByTime(3000))
   act(() => vi.advanceTimersByTime(HOME_GALLERY_MS + HOME_LIFT_MS))
+}
+
+async function openFootprintsFromHome() {
+  fireEvent.click(screen.getByRole('button', { name: 'Footprints' }))
+  await act(async () => { vi.advanceTimersByTime(HOME_FOOTPRINTS_EXIT_MS) })
+  await act(async () => { vi.advanceTimersByTime(1800) })
 }
 
 describe('App', () => {
@@ -426,20 +433,71 @@ describe('App', () => {
     })
   })
 
-  it('opens Footprints from home and returns through the shared brand navigation', async () => {
+  it('opens Footprints after one Home exit and preserves the shared navigation', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
-    expect(screen.getByRole('heading', { name: 'Footprints' })).toBeInTheDocument()
+    const navigation = screen.getByRole('navigation', { name: 'Primary navigation' })
+    const profile = screen.getByRole('button', { name: 'User profile' })
+    const footprints = screen.getByRole('button', { name: 'Footprints' })
+    const home = screen.getByRole('button', { name: 'Elsewhere home' })
+
+    fireEvent.click(footprints)
+    expect(navigation.closest('main')).toHaveAttribute('data-footprints-transition', 'leaving')
+    expect(document.querySelector('.footprints')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Elsewhere home' })).toBe(home)
+
+    const halfway = HOME_FOOTPRINTS_EXIT_MS / 2
+    act(() => vi.advanceTimersByTime(halfway))
+    fireEvent.click(footprints)
+    act(() => vi.advanceTimersByTime(halfway - 1))
+    expect(document.querySelector('.footprints')).not.toBeInTheDocument()
+    await act(async () => { vi.advanceTimersByTime(1) })
+
+    const opening = screen.getByRole('heading', { name: 'Footprints' }).closest('.footprints')
+    expect(opening).toHaveAttribute('data-opening', 'true')
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBe(navigation)
+    expect(screen.getByRole('button', { name: 'User profile' })).toBe(profile)
+
+    await act(async () => { vi.advanceTimersByTime(1800) })
+    expect(opening).not.toHaveAttribute('data-opening', 'true')
     expect(screen.getByLabelText('Province')).toBeInTheDocument()
     expect(screen.queryByText(/demo collection|elsewhere \/ footprints/i)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'User profile' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Elsewhere home' }))
+    fireEvent.click(home)
     expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeInTheDocument()
+  })
+
+  it('cancels the pending Footprints opening when returning Home during the exit', async () => {
+    await renderAuthenticatedHomepage()
+    const home = screen.getByRole('button', { name: 'Elsewhere home' })
+    fireEvent.click(screen.getByRole('button', { name: 'Footprints' }))
+    act(() => vi.advanceTimersByTime(HOME_FOOTPRINTS_EXIT_MS / 2))
+    fireEvent.click(home)
+    await act(async () => { vi.advanceTimersByTime(HOME_FOOTPRINTS_EXIT_MS + 1800) })
+
+    expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeInTheDocument()
+    expect(document.querySelector('.footprints')).not.toBeInTheDocument()
+    expect(home.closest('main')).not.toHaveAttribute('data-footprints-transition', 'leaving')
+  })
+
+  it('opens Footprints immediately when reduced motion is requested', async () => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    vi.mocked(window.matchMedia).mockImplementation(query => ({
+      ...media,
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+    }))
+    await renderAuthenticatedHomepage()
+    const navigation = screen.getByRole('navigation', { name: 'Primary navigation' })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+
+    const footprints = screen.getByRole('heading', { name: 'Footprints' }).closest('.footprints')
+    expect(footprints).not.toHaveAttribute('data-opening', 'true')
+    expect(navigation.closest('main')).not.toHaveAttribute('data-footprints-transition', 'leaving')
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBe(navigation)
   })
 
   it('settles on the last gallery click and keeps missing info tied to the lead photo', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    await openFootprintsFromHome()
     const [first, latest] = screen.getAllByRole('button', { name: /^View photo from / })
     const province = latest.getAttribute('aria-label')!.replace('View photo from ', '')
     fireEvent.click(first, { detail: 1 })
@@ -462,7 +520,7 @@ describe('App', () => {
 
   it('moves the clicked photo with its neighbor on the reel into the rightmost lead slot', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    await openFootprintsFromHome()
     const region = screen.getByRole('region', { name: 'Photo composition' })
     const [neighbor, selected] = screen.getAllByRole<HTMLButtonElement>('button', { name: /^View photo from / })
     const selectedName = selected.getAttribute('aria-label')!
@@ -515,7 +573,7 @@ describe('App', () => {
 
   it('moves the outgoing photos continuously before settling on the selected province', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    await openFootprintsFromHome()
     const region = screen.getByRole('region', { name: 'Photo composition' })
     const [match, , outgoing] = screen.getAllByRole<HTMLButtonElement>('button', { name: /^View photo from / })
     const matchingName = match.getAttribute('aria-label')!
@@ -541,7 +599,7 @@ describe('App', () => {
 
   it('waits for mouse movement after the wheel settles before restoring hover', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    await openFootprintsFromHome()
     const region = screen.getByRole('region', { name: 'Photo composition' })
     const movePointer = (clientX: number) =>
       fireEvent.pointerMove(region, { pointerType: 'mouse', clientX, clientY: 500 })
@@ -561,7 +619,7 @@ describe('App', () => {
 
   it('keeps the filtered reel moving and wrapping after selecting a photo', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    await openFootprintsFromHome()
     const region = screen.getByRole('region', { name: 'Photo composition' })
     const matchingName = 'View photo from Anhui'
     fireEvent.change(screen.getByLabelText('Province'), { target: { value: 'Anhui' } })
@@ -589,7 +647,7 @@ describe('App', () => {
 
   it('advances the reel with the keyboard without replacing its introduction', async () => {
     await renderAuthenticatedHomepage()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    await openFootprintsFromHome()
     const names = () => screen.getAllByRole('button', { name: /^View photo from / }).map(button => button.getAttribute('aria-label'))
     const initial = names()
     fireEvent.keyDown(screen.getAllByRole('button', { name: /^View photo from / })[0], { key: 'ArrowRight' })

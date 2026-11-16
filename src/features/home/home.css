@@ -44,6 +44,18 @@ body.home-view {
   background: var(--elsewhere-warm);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .homepage[data-footprints-transition='leaving'] :is(
+    .homepage-route-content, .homepage-intro-visual, .homepage-intro-counter, .homepage-indigo-curtain
+  ) {
+    animation: homepage-content-exit var(--home-footprints-exit) ease both;
+  }
+}
+
+@keyframes homepage-content-exit {
+  to { opacity: 0; }
+}
+
 .homepage-indigo-curtain {
   position: absolute;
   z-index: 3;

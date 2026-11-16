@@ -231,6 +231,8 @@ export function App() {
     })
   }, [])
 
+  const openFootprints = useCallback(() => setShowFootprints(true), [])
+
   const handleLogout = useCallback(async () => {
     signInRevision.current += 1
     setIsLogoutPending(true)
@@ -253,7 +255,7 @@ export function App() {
         <HomePage
           phase={screen.homePhase}
           onLogout={handleLogout}
-          onOpenFootprints={user ? () => setShowFootprints(true) : undefined}
+          onOpenFootprints={user ? openFootprints : undefined}
           onReturnHome={() => setShowFootprints(false)}
           footprints={screen.view === 'home' && showFootprints && user
             ? <FootprintsPage key={user.id} ownerId={user.id} />
