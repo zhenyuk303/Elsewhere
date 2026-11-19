@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { loadEnv, type Plugin } from 'vite'
 
-const backend = 'http://localhost:8080'
+const backend = process.env.BACKEND_URL ?? 'http://localhost:8080'
 
 function localFootprints(directory: string, account: string, thumbnails: string): Plugin {
   return {

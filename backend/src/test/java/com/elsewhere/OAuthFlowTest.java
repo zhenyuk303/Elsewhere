@@ -21,7 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:oauthtest;DB_CLOSE_DELAY=-1",
+        "spring.datasource.username=sa", "spring.datasource.password=",
+        "spring.datasource.url=jdbc:h2:mem:oauthtest;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "CLIENT_ID_GITHUB=test-github-id", "CLIENT_SECRET_GITHUB=test-github-secret",
         "CLIENT_ID_GOOGLE=test-google-id", "CLIENT_SECRET_GOOGLE=test-google-secret"
 })

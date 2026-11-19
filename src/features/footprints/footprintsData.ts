@@ -21,6 +21,7 @@ export type Footprint = PhotoDraft & {
 export type FootprintsRepository = {
   list(ownerId: number): Promise<Footprint[]>
   save(ownerId: number, draft: PhotoDraft, id?: string): Promise<Footprint>
+  remove?(ownerId: number, id: string): Promise<void>
 }
 
 const localPhotoEndpoint = '/api/local-footprints'

@@ -3,7 +3,7 @@ import { provinces, themes, type Footprint, type PhotoDraft, type PhotoImage, ty
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
 
-async function prepareImage(file: File): Promise<PhotoImage> {
+export async function prepareImage(file: File): Promise<PhotoImage> {
   if (!imageTypes.includes(file.type)) throw new Error('Choose a JPEG, PNG, WebP, AVIF or GIF photo.')
   if (file.size > 20 * 1024 * 1024) throw new Error('Choose a photo smaller than 20 MB.')
   const url = URL.createObjectURL(file)
@@ -27,10 +27,11 @@ async function prepareImage(file: File): Promise<PhotoImage> {
   }
 }
 
-export function FootprintEditor({ photo, onSave, onDismiss }: {
+export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
   photo?: Footprint
   onSave: (draft: PhotoDraft) => Promise<void>
   onDismiss: () => void
+  onDelete?: () => Promise<void>
 }) {
   const [image, setImage] = useState(photo?.image)
   const [fileName, setFileName] = useState('')
@@ -51,6 +52,16 @@ export function FootprintEditor({ photo, onSave, onDismiss }: {
   const dateInput = useRef<HTMLInputElement>(null)
   const lastFile = useRef(0)
   const savePending = useRef(false)
+
+  async function deletePhoto() {
+    if (savePending.current || !onDelete || !window.confirm('Delete this footprint?')) return
+    savePending.current = true
+    setSaving(true)
+    setSaveError('')
+    try { await onDelete() }
+    catch (error) { setSaveError(error instanceof Error ? error.message : 'Could not delete this footprint.') }
+    finally { savePending.current = false; setSaving(false) }
+  }
 
   useEffect(() => {
     const panel = dialog.current
@@ -182,6 +193,7 @@ export function FootprintEditor({ photo, onSave, onDismiss }: {
         </fieldset>
         {saveError && <p className="fp-field-message" role="alert">{saveError}</p>}
         <div className="fp-editor-actions">
+          {onDelete && <button type="button" onClick={() => void deletePhoto()} disabled={saving}>Delete footprint</button>}
           <button type="button" onClick={onDismiss} disabled={saving}>Cancel</button>
           <button type="submit" disabled={processing || saving}>{saving ? 'Saving…' : 'Save footprint'}</button>
         </div>
