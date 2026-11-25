@@ -139,10 +139,14 @@
   outline: none;
 }
 
-.field-error {
+.field-error,
+.field-hint {
   margin: 0 4px;
-  color: #a84438;
   font-size: 0.72rem;
+}
+
+.field-error {
+  color: #a84438;
 }
 
 .agreement-row {

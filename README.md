@@ -117,7 +117,13 @@ The backend defaults to MySQL Server 8.4 at `127.0.0.1:3306/elsewhere`. Docker u
 
 For a classroom demo, set `ELSEWHERE_DEMO_USERS=true` and `ELSEWHERE_DEMO_PASSWORD` to a password of at least eight characters before starting the backend. This creates four users once: `traveler`, `atlas`, `rivers`, and `skyline`. Demo users are disabled by default.
 
-Run `mvn test` from `backend/` to verify the API. `POST /api/auth/register` expects `{ "username": "traveler", "password": "at least 8 characters", "agreementAccepted": true }`. `POST /api/auth/login` expects username and password. `GET /api/auth/me` checks the session; `POST /api/auth/logout` ends it. The frontend calls these APIs and starts its existing transition only after successful authentication.
+Run `mvn test` from `backend/` to verify the API. `POST /api/auth/register` accepts `username`, `password`, and `agreementAccepted`. New passwords must be 8–72 characters and contain an uppercase letter (A–Z), a lowercase letter (a–z), a digit (0–9), and a punctuation mark or symbol. BCrypt also limits the UTF-8 representation to 72 bytes. Existing accounts keep their current BCrypt hashes and may log in with their existing passwords.
+
+`POST /api/auth/login` accepts username and password. A missing account and a wrong password both return the same 401. Within a ten-minute window, five failures for the same username and IP, or 30 failures for one IP across usernames, temporarily block further attempts in that window with 429. The counters are in memory and apply per backend process. The IP comes from the servlet request. For multiple clients behind a reverse proxy, configure the servlet container to trust only your proxy and have the proxy replace client-supplied forwarding headers.
+
+`GET /api/auth/me` checks the session. Successful authentication replaces the session token carried by the request, and `POST /api/auth/logout` revokes the current token. Cookies use `HttpOnly` and `SameSite=Lax`, with `Secure` on HTTPS. Set `ELSEWHERE_SECURE_COOKIES=true` when serving HTTPS behind a TLS terminator that leaves the backend connection on HTTP.
+
+Same-origin API writes require `X-Elsewhere-Request: 1`, including login, signup, logout, OAuth start and footprint writes. Browser clients use the Vite proxy locally. Keep API CORS restricted to trusted origins for this CSRF protection. OAuth callbacks continue to use one-time state and PKCE.
 
 ## GitHub and Google login
 

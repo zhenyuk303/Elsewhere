@@ -13,7 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static com.elsewhere.ApiTestRequests.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = {
@@ -28,7 +29,7 @@ class FootprintFlowTest {
     @Autowired ObjectMapper json;
 
     private Cookie account(String name) {
-        return new Cookie(AuthController.COOKIE, auth.register(name, "testing secret 123").token());
+        return new Cookie(AuthController.COOKIE, auth.register(name, "Aa1!" + java.util.UUID.randomUUID(), null).token());
     }
 
     private Map<String, Object> draft(String image) {
@@ -38,10 +39,10 @@ class FootprintFlowTest {
 
     @Test
     void externalIdentityIsCaseSensitive() {
-        var first = auth.loginExternal("google", "test-app", "CaseSensitiveSubject");
-        var second = auth.loginExternal("google", "test-app", "casesensitivesubject");
+        var first = auth.loginExternal("google", "test-app", "CaseSensitiveSubject", null);
+        var second = auth.loginExternal("google", "test-app", "casesensitivesubject", null);
         assertThat(first.user().id()).isNotEqualTo(second.user().id());
-        assertThat(auth.loginExternal("google", "test-app", "CaseSensitiveSubject").user().id()).isEqualTo(first.user().id());
+        assertThat(auth.loginExternal("google", "test-app", "CaseSensitiveSubject", null).user().id()).isEqualTo(first.user().id());
     }
 
     @Test

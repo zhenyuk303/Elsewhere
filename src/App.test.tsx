@@ -66,7 +66,7 @@ function fillValidSignupForm() {
     target: { value: 'traveler' },
   })
   fireEvent.change(screen.getByLabelText('Password'), {
-    target: { value: 'secret-path' },
+    target: { value: 'Fixture1!' },
   })
   fireEvent.click(
     screen.getByRole('checkbox', {

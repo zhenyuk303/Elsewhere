@@ -7,7 +7,10 @@ async function request<T>(path = '', method = 'GET', body?: unknown): Promise<T>
     response = await fetch(`/api/footprints${path}`, {
       method,
       credentials: 'same-origin',
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: {
+        ...(method === 'GET' ? {} : { 'X-Elsewhere-Request': '1' }),
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {

@@ -14,6 +14,7 @@ it('uses authenticated API requests and encodes seed identifiers', async () => {
   await serverFootprints.save(1, draft, 'seed:1:Inner Mongolia')
   expect(fetch).toHaveBeenCalledWith('/api/footprints/seed%3A1%3AInner%20Mongolia', expect.objectContaining({
     method: 'PUT', credentials: 'same-origin', body: JSON.stringify(draft),
+    headers: { 'X-Elsewhere-Request': '1', 'Content-Type': 'application/json' },
   }))
 })
 

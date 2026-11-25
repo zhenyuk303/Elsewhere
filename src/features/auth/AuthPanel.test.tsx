@@ -191,7 +191,7 @@ describe('AuthPanel', () => {
     } as DOMRect)
 
     await user.type(screen.getByLabelText('Username'), 'traveler')
-    await user.type(screen.getByLabelText('Password'), 'secret-path')
+    await user.type(screen.getByLabelText('Password'), 'Fixture1!')
     await user.click(
       screen.getByRole('checkbox', {
         name: 'I agree to all Term, Privacy Policy and Fees',
@@ -208,6 +208,18 @@ describe('AuthPanel', () => {
       },
       'signup',
     )
+  })
+
+  it('shows the signup password rules and rejects a digits-only password before submitting', async () => {
+    const user = userEvent.setup()
+    const { onAuthenticate } = renderPanel()
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/8–72 characters/)
+    await user.type(screen.getByLabelText('Username'), 'traveler')
+    await user.type(screen.getByLabelText('Password'), '12345678')
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/uppercase letter/)
+    expect(onAuthenticate).not.toHaveBeenCalled()
   })
 
   it('places login social actions in the same form slot as signup', () => {
