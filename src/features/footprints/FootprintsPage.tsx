@@ -3,7 +3,7 @@ import { FootprintEditor } from './FootprintEditor'
 import { serverFootprints } from './footprintsApi'
 import {
   allFilters, filterPhotos, provinces, shufflePhotoIds, themes,
-  type Filters, type Footprint, type FootprintsRepository, type PhotoDraft,
+  type Filters, type Footprint, type FootprintsRepository, type PhotoDraft, type PhotoUpload,
 } from './footprintsData'
 import { mobileBreakpoint, photoSize, reelFrame, reelSlideDistance, reelStride, rightmostPhotoX, shiftReelCard, trailingPhotoOffset, wheelTravel } from './reelGeometry'
 import { useReelMotion } from './useReelMotion'
@@ -178,10 +178,10 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
     })
   }
 
-  async function save(draft: PhotoDraft) {
+  async function save(draft: PhotoDraft, upload?: PhotoUpload) {
     const previous = editor !== 'add' ? editor : null
     if (!editor || (previous && previous.ownerId !== ownerId)) throw new Error('You can only edit photos you own.')
-    const record = await repository.save(ownerId, draft, previous?.id)
+    const record = await repository.save(ownerId, draft, previous?.id, upload)
     if (!mounted.current) return
     const next = previous ? photos.map(photo => photo.id === record.id ? record : photo) : [...photos, record]
     const result = filterPhotos(next, chosenFilters.current)

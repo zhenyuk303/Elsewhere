@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { provinces, themes, type Footprint, type PhotoDraft, type PhotoImage, type Theme } from './footprintsData'
+import { provinces, themes, type Footprint, type PhotoDraft, type PhotoImage, type PhotoUpload, type Theme } from './footprintsData'
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
 
@@ -29,7 +29,7 @@ export async function prepareImage(file: File): Promise<PhotoImage> {
 
 export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
   photo?: Footprint
-  onSave: (draft: PhotoDraft) => Promise<void>
+  onSave: (draft: PhotoDraft, upload?: PhotoUpload) => Promise<void>
   onDismiss: () => void
   onDelete?: () => Promise<void>
 }) {
@@ -46,12 +46,25 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
   const [saveError, setSaveError] = useState('')
   const [processing, setProcessing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [progress, setProgress] = useState<{ confirmed: number; total: number }>()
   const dialog = useRef<HTMLDialogElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const provinceInput = useRef<HTMLSelectElement>(null)
   const dateInput = useRef<HTMLInputElement>(null)
   const lastFile = useRef(0)
   const savePending = useRef(false)
+  const upload = useRef<PhotoUpload | undefined>(undefined)
+
+  function resetUpload() {
+    void upload.current?.cancel?.().catch(() => undefined)
+    upload.current = undefined
+    setProgress(undefined)
+  }
+
+  function dismiss() {
+    resetUpload()
+    onDismiss()
+  }
 
   async function deletePhoto() {
     if (savePending.current || !onDelete || !window.confirm('Delete this footprint?')) return
@@ -80,6 +93,8 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
     try {
       const preview = await prepareImage(file)
       if (revision === lastFile.current) {
+        resetUpload()
+        setSaveError('')
         setImage(preview)
         setFileName(file.name)
       }
@@ -119,7 +134,8 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
     savePending.current = true
     setSaving(true)
     try {
-      await onSave({ image, province, city: city.trim(), date: photoDate, note, themes: labels })
+      if (!photo) upload.current ??= { onProgress: (confirmed, total) => setProgress({ confirmed, total }) }
+      await onSave({ image, province, city: city.trim(), date: photoDate, note, themes: labels }, upload.current)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save this footprint. Please try again.')
     } finally {
@@ -131,11 +147,11 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
   return (
     <dialog ref={dialog} className="fp-editor" aria-labelledby="fp-editor-title" onCancel={event => {
       event.preventDefault()
-      if (!savePending.current) onDismiss()
+      if (!savePending.current) dismiss()
     }}>
       <div className="fp-editor-head">
         <p className="fp-kicker"><span aria-hidden="true" />Personal photo journal</p>
-        <button className="fp-close" type="button" onClick={onDismiss} aria-label="Close editor" disabled={saving}>×</button>
+        <button className="fp-close" type="button" onClick={dismiss} aria-label="Close editor" disabled={saving}>×</button>
         <h2 id="fp-editor-title">{photo ? 'Edit footprint' : 'Add footprint'}</h2>
         <p>Photo and province are required. Other details can wait.</p>
       </div>
@@ -191,11 +207,16 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
             </p>}
           </fieldset>
         </fieldset>
+        {progress && <div className="fp-upload-progress">
+          <label htmlFor="fp-frame-progress">Photo frames</label>
+          <progress id="fp-frame-progress" value={progress.confirmed} max={progress.total} />
+          <span role="status">{progress.confirmed} / {progress.total} confirmed{saving && progress.confirmed === progress.total && ' · Verifying and saving…'}</span>
+        </div>}
         {saveError && <p className="fp-field-message" role="alert">{saveError}</p>}
         <div className="fp-editor-actions">
           {onDelete && <button type="button" onClick={() => void deletePhoto()} disabled={saving}>Delete footprint</button>}
-          <button type="button" onClick={onDismiss} disabled={saving}>Cancel</button>
-          <button type="submit" disabled={processing || saving}>{saving ? 'Saving…' : 'Save footprint'}</button>
+          <button type="button" onClick={dismiss} disabled={saving}>Cancel</button>
+          <button type="submit" disabled={processing || saving}>{saving ? 'Saving…' : progress && saveError ? 'Retry upload' : 'Save footprint'}</button>
         </div>
       </form>
     </dialog>

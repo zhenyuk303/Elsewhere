@@ -1,5 +1,7 @@
 package com.elsewhere;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +16,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import javax.imageio.ImageIO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.http.HttpStatus;
@@ -27,10 +30,14 @@ public class FootprintService {
     public enum Theme { COAST, MOUNTAINS, CITY, COUNTRYSIDE, CULTURE, FOOD, WILDLIFE }
     public record Image(@NotBlank @Size(max = 5_600_000) String src,
                         @Size(max = 5_600_000) String thumbnailSrc) {}
-    public record Draft(@NotNull @Valid Image image, @NotBlank @Size(max = 40) String province,
+    public record Draft(@Valid Image image, @NotBlank @Size(max = 40) String province,
                         @NotNull @Size(max = 120) String city, @NotNull @Size(max = 10) String date,
                         @NotNull @Size(max = 4000) String note,
-                        @NotNull @Size(max = 7) List<@NotNull Theme> themes) {}
+                        @NotNull @Size(max = 7) List<@NotNull Theme> themes, UUID uploadId) {
+        Draft(Image image, String province, String city, String date, String note, List<Theme> themes) {
+            this(image, province, city, date, note, themes, null);
+        }
+    }
     public record Photo(String id, long ownerId, Image image, String province, String city,
                         String date, String note, List<Theme> themes) {}
     public record Legacy(@NotBlank @Size(max = 128) String id, long ownerId,
@@ -77,17 +84,30 @@ public class FootprintService {
 
     @Transactional
     public Photo create(long owner, Draft draft) {
+        requireInlineImage(draft);
         initialize(owner);
         return insert(owner, UUID.randomUUID().toString(), draft);
     }
 
+    @Transactional
+    public Photo createUploaded(long owner, String id, Draft draft, BinaryImage image) {
+        if (draft.image != null) throw invalid("Specify either an upload ID or an inline image");
+        if (!validUploadedImage(image)) throw invalid("Upload a valid JPEG, PNG, GIF or WebP photo");
+        initialize(owner);
+        return insert(owner, id, draft, null, image);
+    }
+
     private Photo insert(long owner, String id, Draft draft) {
-        validate(draft);
         var image = image(draft.image.src());
+        return insert(owner, id, draft, image == null ? draft.image.src : null, image);
+    }
+
+    private Photo insert(long owner, String id, Draft draft, String imagePath, BinaryImage image) {
+        validate(draft);
         var now = Timestamp.from(Instant.now());
         jdbc.update("INSERT INTO footprints(id,user_id,province,city,photo_date,note,themes,image_path,image_data,image_type,created_at,updated_at) "
                         + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", id, owner, draft.province, draft.city.trim(), date(draft.date), draft.note,
-                labels(draft), image == null ? draft.image.src : null, image == null ? null : image.data,
+                labels(draft), imagePath, image == null ? null : image.data,
                 image == null ? null : image.type, now, now);
         return get(owner, id);
     }
@@ -95,6 +115,7 @@ public class FootprintService {
     @Transactional
     public Photo update(long owner, String id, Draft draft) {
         Photo existing = get(owner, id);
+        requireInlineImage(draft);
         validate(draft);
         if (draft.image.src.equals(existing.image.src)) {
             jdbc.update("UPDATE footprints SET province=?,city=?,photo_date=?,note=?,themes=?,updated_at=? WHERE id=? AND user_id=?",
@@ -164,6 +185,10 @@ public class FootprintService {
         date(draft.date);
     }
 
+    private static void requireInlineImage(Draft draft) {
+        if (draft.image == null || draft.uploadId != null) throw invalid("Upload a photo or keep the current image");
+    }
+
     private static java.sql.Date date(String input) {
         if (input.isEmpty()) return null;
         try {
@@ -182,7 +207,7 @@ public class FootprintService {
         byte[] data;
         try { data = Base64.getDecoder().decode(src.substring(separator + 8)); }
         catch (IllegalArgumentException ex) { throw invalid("Invalid photo data"); }
-        if (data.length > 4 * 1024 * 1024) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Prepared photo must be smaller than 4 MB");
+        if (data.length > FootprintUploads.MAX_SIZE) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Prepared photo must be at most 4 MB");
         if (!validSignature(type, data)) throw invalid("Upload a valid JPEG, PNG, GIF or WebP photo");
         return new BinaryImage(data, type);
     }
@@ -198,6 +223,45 @@ public class FootprintService {
             case "image/gif" -> start.startsWith("GIF87a") || start.startsWith("GIF89a");
             default -> false;
         };
+    }
+
+    private static boolean validUploadedImage(BinaryImage image) {
+        if (!validSignature(image.type, image.data)) return false;
+        if (image.type.equals("image/webp")) return validWebp(image.data);
+        try (var input = new javax.imageio.stream.MemoryCacheImageInputStream(new ByteArrayInputStream(image.data))) {
+            var readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) return false;
+            var reader = readers.next();
+            try {
+                reader.setInput(input);
+                return (long) reader.getWidth(0) * reader.getHeight(0) <= 16_000_000 && reader.read(0) != null;
+            } finally { reader.dispose(); }
+        } catch (IOException ex) { return false; }
+    }
+
+    // The JDK has no built-in WebP decoder. Check the RIFF layout and the still-image bitstream header.
+    private static boolean validWebp(byte[] data) {
+        ByteBuffer bytes = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+        boolean foundImage = false;
+        int offset = 12;
+        while (offset + 8 <= data.length) {
+            String chunk = new String(data, offset, 4, StandardCharsets.US_ASCII);
+            long length = Integer.toUnsignedLong(bytes.getInt(offset + 4));
+            int start = offset + 8;
+            long next = start + length + (length % 2);
+            if (next > data.length) return false;
+            if (chunk.equals("VP8 ") || chunk.equals("VP8L")) {
+                if (foundImage) return false;
+                foundImage = chunk.equals("VP8 ")
+                        ? length > 10 && (data[start] & 1) == 0 && data[start + 3] == (byte) 0x9d && data[start + 4] == 1
+                                && data[start + 5] == 0x2a && (bytes.getShort(start + 6) & 0x3fff) != 0
+                                && (bytes.getShort(start + 8) & 0x3fff) != 0
+                        : length > 5 && data[start] == 0x2f && (data[start + 4] & 0xe0) == 0;
+                if (!foundImage) return false;
+            }
+            offset = (int) next;
+        }
+        return foundImage && offset == data.length;
     }
 
     private static ResponseStatusException invalid(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }

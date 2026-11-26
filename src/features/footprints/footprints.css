@@ -315,6 +315,8 @@
 .fp-field-message { margin: -5px 0 12px; }
 .fp-field-message[role='alert'] { color: #8f2839; }
 .fp-field-message button { background: transparent; color: inherit; cursor: pointer; }
+.fp-upload-progress { display: grid; gap: 4px; margin: 14px 0; font-size: .8rem; }
+.fp-upload-progress progress { width: 100%; accent-color: var(--elsewhere-indigo); }
 .fp-editor-actions { position: sticky; bottom: 0; display: flex; justify-content: end; gap: 8px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--fp-line); background: var(--elsewhere-warm); }
 .fp-editor-actions button { padding: 10px 13px; border: 1px solid var(--elsewhere-indigo); color: inherit; background: transparent; cursor: pointer; }
 .fp-editor-actions button[type='submit'] { background: var(--elsewhere-indigo); color: var(--elsewhere-warm); }
