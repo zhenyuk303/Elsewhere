@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
 import { AuthPanel } from './AuthPanel'
 
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
@@ -80,8 +82,8 @@ describe('AuthPanel', () => {
   it('shows GitHub and Google marks without the retired providers', () => {
     renderPanel()
 
-    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('.social-icon')).toHaveTextContent('GH')
-    expect(screen.getByRole('button', { name: 'Google' }).querySelector('.social-icon')).toHaveTextContent('G')
+    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('img')).toHaveAttribute('src', githubMark)
+    expect(screen.getByRole('button', { name: 'Google' }).querySelector('img')).toHaveAttribute('src', googleMark)
     expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '微信' })).not.toBeInTheDocument()
   })

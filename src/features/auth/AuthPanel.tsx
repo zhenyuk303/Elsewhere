@@ -1,4 +1,6 @@
 import { FormEvent, useState } from 'react'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
 import { BrandLogo } from '../brand/BrandLogo'
 import type { SocialProvider } from './authApi'
 import type { AuthMode, ButtonRect } from './types'
@@ -240,11 +242,11 @@ export function AuthPanel({
           </p>
           <div className="social-actions">
             <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('github')}>
-              <span className="social-icon social-icon--github" aria-hidden="true">GH</span>
+              <img className="social-icon" src={githubMark} alt="" width={20} height={20} />
               GitHub
             </button>
             <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('google')}>
-              <span className="social-icon social-icon--google" aria-hidden="true">G</span>
+              <img className="social-icon" src={googleMark} alt="" width={20} height={20} />
               Google
             </button>
           </div>
