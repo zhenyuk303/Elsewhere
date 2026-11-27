@@ -523,6 +523,39 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: /^View photo from / })).not.toBeInTheDocument()
   })
 
+  it('shows the selected province brush title immediately and keeps it when the theme changes', async () => {
+    await renderAuthenticatedHomepage()
+    await openFootprintsFromHome()
+    const province = screen.getByLabelText('Province')
+    fireEvent.change(province, { target: { value: 'Beijing' } })
+    expect(screen.getByRole('heading', { name: 'Beijing' }).querySelector('img')).toHaveAttribute(
+      'src', '/images/province-labels/%E5%8C%97%E4%BA%AC.png',
+    )
+    expect(screen.queryByText('City to be added')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(80))
+    fireEvent.change(province, { target: { value: 'Inner Mongolia' } })
+    const heading = screen.getByRole('heading', { name: 'Inner Mongolia' })
+    expect(heading.querySelector('img')).toHaveAttribute(
+      'src', '/images/province-labels/%E5%86%85%E8%92%99%E5%8F%A4.png',
+    )
+    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'COAST' } })
+    expect(screen.getByRole('heading', { name: 'Inner Mongolia' })).toBe(heading)
+    act(() => vi.advanceTimersByTime(2800))
+    expect(screen.getByRole('heading', { name: 'Inner Mongolia' }).querySelector('img')).toHaveAttribute(
+      'src', '/images/province-labels/%E5%86%85%E8%92%99%E5%8F%A4.png',
+    )
+    expect(screen.getByText('No footprints match these filters.')).toBeInTheDocument()
+    expect(screen.queryByText('City to be added')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+
+    fireEvent.change(province, { target: { value: '' } })
+    const introduction = screen.getByRole('heading', { name: 'Footprints' })
+    expect(introduction).toHaveTextContent('Journal')
+    expect(introduction.querySelector('img')).toBeNull()
+  })
+
   it('moves the clicked photo with its neighbor on the reel into the rightmost lead slot', async () => {
     await renderAuthenticatedHomepage()
     await openFootprintsFromHome()

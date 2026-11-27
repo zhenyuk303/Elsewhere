@@ -123,7 +123,7 @@ export function AuthPanel({
     <div className="auth-panel">
       <header className="auth-header">
         <a className="brand" href="#top" aria-label="Elsewhere home">
-          <BrandLogo decorative />
+          <BrandLogo decorative withWordmark={!isSignup} />
         </a>
         <div className="title-block" key={mode}>
           <h1 id="auth-title">
