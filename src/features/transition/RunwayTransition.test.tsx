@@ -99,10 +99,6 @@ describe('RunwayTransition', () => {
       '--circle-top': '526px',
       '--bar-left': '618px',
       '--plane-top': '744px',
-      '--tail-left-x': '627.8px',
-      '--tail-right-x': '652.2px',
-      '--tail-y': '803.5px',
-      '--flight-distance': '-842px',
     })
     expect(screen.getByTestId('transition-shape')).toBeInTheDocument()
     expect(screen.getByTestId('transition-dot')).toBeInTheDocument()
@@ -131,13 +127,37 @@ describe('RunwayTransition', () => {
         (rule): rule is CSSStyleRule =>
           rule instanceof CSSStyleRule && rule.selectorText === '.page-wipe',
       )
-    expect(wipeRule?.style.background).toBe('var(--elsewhere-indigo)')
-    expect(window.getComputedStyle(leftGuide).transform).toBe('rotate(74.86deg)')
-    expect(window.getComputedStyle(rightGuide).transform).toBe(
-      'rotate(-74.86deg)',
-    )
+    expect(wipeRule?.style.getPropertyValue('fill')).toBe('var(--elsewhere-indigo)')
     expect(document.querySelector('#gooey-runway-filter')).not.toBeInTheDocument()
     expect(document.querySelector('.liquid-drop')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    { width: 2480, height: 900, dividerX: 1140 },
+    { width: 390, height: 844, dividerX: 195 },
+    { width: 1200, height: 380, dividerX: 840 },
+  ])('keeps the wipe on both guides until it clears the $width × $height viewport', ({ width, height, dividerX }) => {
+    vi.stubGlobal('innerWidth', width)
+    vi.stubGlobal('innerHeight', height)
+    render(<RunwayTransition origin={{ ...origin, dividerX }} actionLabel="Login" onComplete={vi.fn()} />)
+
+    const wipe = screen.getByTestId('page-wipe')
+    const points = wipe.getAttribute('points')?.trim().split(/\s+/).map((point) => point.split(',').map(Number))
+    expect(points).toHaveLength(5)
+    const [leftTail, tailCenter, rightTail, rightBottom, leftBottom] = points!
+    expect(tailCenter[1]).toBeLessThan(leftTail[1])
+    const flight = Number.parseFloat(screen.getByTestId('runway-transition').style.getPropertyValue('--flight-distance'))
+    for (const [side, start, end, screenX] of [
+      ['left', leftTail, leftBottom, 0],
+      ['right', rightTail, rightBottom, width],
+    ] as const) {
+      const guide = screen.getByTestId(`wing-guide-${side}`)
+      expect([Number(guide.getAttribute('x1')), Number(guide.getAttribute('y1'))]).toEqual(start)
+      expect([Number(guide.getAttribute('x2')), Number(guide.getAttribute('y2'))]).toEqual(end)
+      const cornerY = start[1] + (screenX - start[0]) * (end[1] - start[1]) / (end[0] - start[0])
+      expect(cornerY + flight).toBeLessThan(0)
+      expect(end[1] + flight).toBeGreaterThan(height)
+    }
   })
 
   it('keeps the circular cap radius while stretching and ends as a rectangle', () => {

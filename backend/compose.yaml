@@ -1,0 +1,21 @@
+name: elsewhere
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: elsewhere
+      MYSQL_USER: elsewhere
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in backend/.env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in backend/.env}
+    ports:
+      - "127.0.0.1:13306:3306"
+    volumes:
+      - elsewhere_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  elsewhere_mysql:

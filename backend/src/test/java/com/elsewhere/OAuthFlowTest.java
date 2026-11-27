@@ -15,13 +15,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static com.elsewhere.ApiTestRequests.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:oauthtest;DB_CLOSE_DELAY=-1",
+        "spring.datasource.username=sa", "spring.datasource.password=",
+        "spring.datasource.url=jdbc:h2:mem:oauthtest;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "CLIENT_ID_GITHUB=test-github-id", "CLIENT_SECRET_GITHUB=test-github-secret",
         "CLIENT_ID_GOOGLE=test-google-id", "CLIENT_SECRET_GOOGLE=test-google-secret"
 })
@@ -65,11 +66,18 @@ class OAuthFlowTest {
                         .param("code", "sample").param("state", state).cookie(stateCookie))
                 .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauthError=invalid"));
 
-        var secondStart = mvc.perform(post("/api/auth/oauth/github/start")).andExpect(status().isOk()).andReturn();
+        var secondStart = mvc.perform(post("/api/auth/oauth/github/start").secure(true))
+                .andExpect(status().isOk()).andReturn();
         Cookie secondState = secondStart.getResponse().getCookie(OAuthController.STATE_COOKIE);
-        mvc.perform(get("/api/auth/oauth/github/callback")
-                        .param("code", "second").param("state", secondState.getValue()).cookie(secondState))
-                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success"));
+        assertThat(secondState.getSecure()).isTrue();
+        var repeated = mvc.perform(get("/api/auth/oauth/github/callback").secure(true)
+                        .param("code", "second").param("state", secondState.getValue()).cookie(secondState, session))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success")).andReturn();
+        Cookie rotated = repeated.getResponse().getCookie(AuthController.COOKIE);
+        assertThat(rotated.getSecure()).isTrue();
+        assertThat(rotated.getValue()).isNotEqualTo(session.getValue());
+        mvc.perform(get("/api/auth/me").cookie(rotated)).andExpect(status().isOk());
+        mvc.perform(get("/api/auth/me").cookie(session)).andExpect(status().isUnauthorized());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'github'", Integer.class))
                 .isEqualTo(1);
     }
