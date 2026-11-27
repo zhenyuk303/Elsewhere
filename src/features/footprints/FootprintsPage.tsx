@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { travelSlides } from '../carousel/carouselData'
 import { FootprintEditor } from './FootprintEditor'
 import {
   allFilters, demoFootprints, filterPhotos, provinces, shufflePhotoIds, themes,
@@ -18,6 +19,18 @@ const titleLetterStagger = 50
 const titleOpeningDuration = titleLetterDuration +
   (Math.max(introduction.title.length, introduction.secondLine.length) - 1) * titleLetterStagger
 type Gallery = { ids: string[]; lead?: Footprint; leadKey?: string; version?: number }
+
+function ProvinceTitle({ province }: { province: string }) {
+  const labelSrc = travelSlides.find(slide => slide.location === province)?.labelSrc
+  const [imageFailed, setImageFailed] = useState(false)
+  if (!labelSrc || imageFailed) return <span className="fp-province-fallback">{province}</span>
+
+  return (
+    <span className="fp-province-artwork">
+      <img src={labelSrc} alt="" decoding="async" onError={() => setImageFailed(true)} />
+    </span>
+  )
+}
 
 function galleryCardKey(version: number, index: number, id: string) {
   return `${version}:${index}:${id}`
@@ -236,8 +249,8 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
       <header className="fp-intro" data-selected={!!lead}>
         <div className="fp-intro-content">
           <h1 id="footprints-title" tabIndex={-1} ref={heading} className={lead ? 'fp-title fp-title--province' : 'fp-title'}
-            aria-label={lead ? undefined : introduction.title}>
-            {lead?.province ?? [introduction.title, introduction.secondLine].map(line => (
+            aria-label={lead?.province ?? introduction.title}>
+            {lead ? <ProvinceTitle key={lead.province} province={lead.province} /> : [introduction.title, introduction.secondLine].map(line => (
               <span key={line} className="fp-title-line" aria-hidden="true">
                 {[...line].map((letter, index) => (
                   <span key={index} className="fp-title-letter"

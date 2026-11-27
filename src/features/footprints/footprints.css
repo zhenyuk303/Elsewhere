@@ -98,11 +98,34 @@
 .fp-title-letter { display: inline-block; }
 .fp-title:focus { outline: none; }
 .fp-title--province {
-  width: 110%;
   font-size: min(11.3vw, 18svh);
   line-height: .86;
-  transform: scaleX(.65);
+  transform: none;
   white-space: normal;
+}
+.fp-province-artwork {
+  /* Trim the shared transparent border of the existing 2896 × 1728 artwork. */
+  --fp-brush-crop-width: 2576;
+  --fp-brush-crop-height: 1504;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  inline-size: min(100%, clamp(13rem, 28vw, 27rem), 48svh);
+  aspect-ratio: var(--fp-brush-crop-width) / var(--fp-brush-crop-height);
+}
+.fp-province-artwork img {
+  position: absolute;
+  inset-inline-start: calc(-100% * 200 / var(--fp-brush-crop-width));
+  inset-block-start: calc(-100% * 128 / var(--fp-brush-crop-height));
+  inline-size: calc(100% * 2896 / var(--fp-brush-crop-width));
+  max-inline-size: none;
+  filter: brightness(0);
+}
+.fp-province-fallback {
+  display: block;
+  width: 110%;
+  transform: scaleX(.65);
+  transform-origin: left;
 }
 .fp-description {
   margin: clamp(16px, 1.9vw, 54px) 0 0;
@@ -333,7 +356,8 @@
   .fp-intro { top: calc(max(10px, env(safe-area-inset-top)) + 111px); }
   .fp-intro-content { width: 100%; }
   .fp-title { font-size: min(24vw, 14svh); transform: scaleX(.61); }
-  .fp-title--province { width: 136%; font-size: min(17vw, 11svh); }
+  .fp-title--province { font-size: min(17vw, 11svh); transform: none; }
+  .fp-province-fallback { width: 136%; transform: scaleX(.61); }
   .fp-description { font-size: clamp(13px, 4.2vw, 23px); }
   .fp-details { width: 95%; }
   .fp-editor { width: min(94%, 440px); }
