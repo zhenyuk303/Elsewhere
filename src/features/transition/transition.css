@@ -7,7 +7,6 @@
   --bar-width: 44px;
   --dot-size: 10px;
   --plane-size: 64px;
-  --page-background: #f3f1ed;
 }
 
 .transition-shape {
@@ -50,10 +49,7 @@
 .flight-assembly {
   position: absolute;
   z-index: 2;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 300vh;
+  inset: 0;
   pointer-events: none;
   will-change: transform;
 }
@@ -73,47 +69,25 @@
   will-change: transform, opacity;
 }
 
-.wing-guide {
+.flight-trail {
   position: absolute;
-  z-index: 2;
-  top: var(--tail-y);
-  width: 2px;
-  height: 400vh;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 0 8px rgb(255 255 255 / 36%);
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   opacity: 0;
-  transform-origin: top center;
-}
-
-.wing-guide--left {
-  left: var(--tail-left-x);
-  margin-left: -1px;
-  transform: rotate(74.86deg);
-}
-
-.wing-guide--right {
-  left: var(--tail-right-x);
-  margin-left: -1px;
-  transform: rotate(-74.86deg);
 }
 
 .page-wipe {
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 300vh;
-  background: var(--page-background);
-  clip-path: polygon(
-    var(--tail-left-x) var(--tail-y),
-    var(--tail-right-x) var(--tail-y),
-    var(--wipe-right-x) var(--wipe-far-y),
-    var(--wipe-left-x) var(--wipe-far-y)
-  );
-  opacity: 0;
-  will-change: clip-path;
+  fill: var(--elsewhere-indigo);
+}
+
+.wing-guide {
+  stroke: #fff;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgb(255 255 255 / 36%));
 }
 
 .stage-collapse .transition-shape {
@@ -178,21 +152,18 @@
 }
 
 .stage-flight .flight-assembly {
-  animation: flight-assembly-takeoff 1100ms
+  /* Paint the completed wipe before App switches screens at 3000ms. */
+  animation: flight-assembly-takeoff 1050ms
     cubic-bezier(0.55, 0.02, 0.88, 0.32) both;
 }
 
 .stage-flight .transition-airplane {
-  animation: airplane-flight-visibility 1100ms linear both;
+  opacity: 1;
+  transform: translateX(-50%);
 }
 
-.stage-flight .wing-guide {
+.stage-flight .flight-trail {
   opacity: 1;
-}
-
-.stage-flight .page-wipe {
-  opacity: 1;
-  animation: page-wipe-fill 1100ms linear both;
 }
 
 @keyframes shape-collapse {
@@ -341,39 +312,6 @@
   }
 }
 
-@keyframes airplane-flight-visibility {
-  from {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-  }
-
-  76% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateX(-50%) scale(0.82);
-  }
-}
-
-@keyframes page-wipe-fill {
-  0%,
-  82% {
-    clip-path: polygon(
-      var(--tail-left-x) var(--tail-y),
-      var(--tail-right-x) var(--tail-y),
-      var(--wipe-right-x) var(--wipe-far-y),
-      var(--wipe-left-x) var(--wipe-far-y)
-    );
-  }
-
-  100% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .stage-collapse .transition-shape,
   .stage-collapse .transition-label,
@@ -383,11 +321,13 @@
   .stage-stretch .transition-shape,
   .stage-stretch .transition-dot,
   .stage-morph .transition-dot,
-  .stage-morph .transition-airplane,
-  .stage-flight .flight-assembly,
-  .stage-flight .transition-airplane,
-  .stage-flight .page-wipe {
+  .stage-morph .transition-airplane {
     animation-duration: 30ms;
+    animation-timing-function: linear;
+  }
+
+  .stage-flight .flight-assembly {
+    animation-duration: 20ms;
     animation-timing-function: linear;
   }
 

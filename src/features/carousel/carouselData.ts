@@ -1,5 +1,6 @@
 export type TravelSlide = {
   src: string
+  labelSrc: string
   location: string
 }
 
@@ -42,7 +43,8 @@ const locationNames: Record<string, string> = {
 
 export const travelSlides: TravelSlide[] = Object.entries(locationNames).map(
   ([fileName, location]) => ({
-    src: `${import.meta.env.BASE_URL}images/${encodeURIComponent(fileName)}.jpg`,
+    src: `${import.meta.env.BASE_URL}images/carousel/${encodeURIComponent(fileName)}.webp`,
+    labelSrc: `${import.meta.env.BASE_URL}images/province-labels/${encodeURIComponent(fileName)}.png`,
     location,
   }),
 )

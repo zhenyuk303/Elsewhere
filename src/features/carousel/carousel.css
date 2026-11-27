@@ -74,14 +74,15 @@
 
 .color-window--reveal .color-window__shape,
 .color-window--reveal .color-window__border {
-  animation: color-window-reveal 2500ms cubic-bezier(0.2, 0.78, 0.18, 1) both;
+  will-change: transform;
+  animation: color-window-reveal 2500ms linear both;
 }
 
 .color-window--hold .color-window__shape,
 .color-window--hold .color-window__border,
 .color-window--slide .color-window__shape,
 .color-window--slide .color-window__border {
-  transform: rotate(8deg) scale(1);
+  transform: rotate(8deg) scale(var(--color-window-scale, 1));
 }
 
 .is-paused .color-window__shape,
@@ -99,21 +100,24 @@
 .location-lockup {
   position: absolute;
   z-index: 2;
-  left: clamp(30px, 5vw, 58px);
-  bottom: clamp(36px, 6vh, 62px);
+  left: clamp(18px, 2.5vw, 32px);
+  bottom: 2%;
+  width: min(34%, 240px);
+  height: 12%;
   color: #fff;
 }
 
-.location-index {
+.location-calligraphy {
   display: block;
-  margin-bottom: 8px;
-  color: rgb(255 255 255 / 62%);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(0 10px 28px rgb(0 0 0 / 36%));
 }
 
-.location-lockup h2 {
+.location-fallback {
   margin: 0;
   font-size: clamp(2.4rem, 5vw, 4.8rem);
   font-weight: 500;
@@ -145,12 +149,14 @@
 @keyframes color-window-reveal {
   from {
     transform: rotate(0deg) scale(0.035);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.55, 1);
   }
   45% {
     transform: rotate(4deg) scale(0.46);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
   }
   to {
-    transform: rotate(8deg) scale(1);
+    transform: rotate(8deg) scale(var(--color-window-scale, 1));
   }
 }
 
@@ -171,11 +177,13 @@
   }
 
   .location-lockup {
-    left: 24px;
-    bottom: 28px;
+    left: 18px;
+    bottom: 2%;
+    width: min(34%, 180px);
+    height: 12%;
   }
 
-  .location-lockup h2 {
+  .location-fallback {
     font-size: clamp(2.3rem, 13vw, 4.4rem);
   }
 

@@ -1,8 +1,9 @@
 import { FormEvent, useState } from 'react'
-import qqIcon from '../../assets/social/qq-icon.png'
-import wechatIcon from '../../assets/social/wechat-icon.svg'
-import type { AuthMode, ButtonRect } from './types'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
+import { BrandLogo } from '../brand/BrandLogo'
 import type { SocialProvider } from './authApi'
+import type { AuthMode, ButtonRect } from './types'
 import './auth.css'
 
 type AuthPanelProps = {
@@ -12,7 +13,7 @@ type AuthPanelProps = {
   onAuthenticate: (username: string, password: string, agreementAccepted: boolean) => Promise<void>
   onSocialLogin: (provider: SocialProvider) => Promise<void>
   initialError?: string
-  onValidSubmit: (origin: ButtonRect) => void
+  onValidSubmit: (origin: ButtonRect, mode: AuthMode) => void
 }
 
 type FormErrors = Partial<
@@ -73,6 +74,15 @@ export function AuthPanel({
     const nextErrors: FormErrors = {}
     if (!username.trim()) nextErrors.username = 'Username is required'
     if (!password.trim()) nextErrors.password = 'Password is required'
+    else if (isSignup) {
+      const length = [...password].length
+      if (length < 8 || length > 72 || !/[A-Z]/.test(password) || !/[a-z]/.test(password)
+        || !/[0-9]/.test(password) || !/[\p{P}\p{S}]/u.test(password)) {
+        nextErrors.password = 'Use 8–72 characters with an uppercase letter, a lowercase letter, a number and a special character'
+      } else if (new TextEncoder().encode(password).length > 72) {
+        nextErrors.password = 'Password must fit within 72 UTF-8 bytes'
+      }
+    }
     if (isSignup && !agreement) {
       nextErrors.agreement = 'Please accept the terms to continue'
     }
@@ -88,7 +98,7 @@ export function AuthPanel({
     setServerError('')
     try {
       await onAuthenticate(username.trim(), password, agreement)
-      onValidSubmit({ left, top, width, height })
+      onValidSubmit({ left, top, width, height }, mode)
     } catch (error) {
       setServerError(error instanceof Error ? error.message : 'Request failed')
     } finally {
@@ -113,7 +123,7 @@ export function AuthPanel({
     <div className="auth-panel">
       <header className="auth-header">
         <a className="brand" href="#top" aria-label="Elsewhere home">
-          ELSEWHERE
+          <BrandLogo decorative />
         </a>
         <div className="title-block" key={mode}>
           <h1 id="auth-title">
@@ -169,7 +179,7 @@ export function AuthPanel({
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
               disabled={isDisabled}
-              aria-describedby={errors.password ? `${mode}-password-error` : undefined}
+              aria-describedby={errors.password ? `${mode}-password-error` : isSignup ? 'signup-password-rules' : undefined}
             />
             <button
               className="password-toggle"
@@ -181,6 +191,11 @@ export function AuthPanel({
               <EyeIcon hidden={showPassword} />
             </button>
           </div>
+          {isSignup && !errors.password && (
+            <p className="field-hint" id="signup-password-rules">
+              8–72 characters with uppercase, lowercase, a number and a symbol. Maximum 72 UTF-8 bytes.
+            </p>
+          )}
           {errors.password ? (
             <p className="field-error" id={`${mode}-password-error`}>
               {errors.password}
@@ -217,7 +232,7 @@ export function AuthPanel({
           name="primary-action"
           disabled={isDisabled}
         >
-          <span>{busy ? 'Please wait…' : 'Login'}</span>
+          <span>{busy ? 'Please wait…' : isSignup ? 'Sign Up' : 'Login'}</span>
         </button>
         {serverError ? <p className="field-error" role="alert">{serverError}</p> : null}
 
@@ -226,20 +241,13 @@ export function AuthPanel({
             <span>{isSignup ? 'Or sign up with' : 'Or login with'}</span>
           </p>
           <div className="social-actions">
-            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('qq')}>
-              <span className="social-icon social-icon--qq" aria-hidden="true">
-                <img src={qqIcon} alt="" />
-              </span>
-              QQ
+            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('github')}>
+              <img className="social-icon" src={githubMark} alt="" width={20} height={20} />
+              GitHub
             </button>
-            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('wechat')}>
-              <span
-                className="social-icon social-icon--wechat"
-                aria-hidden="true"
-              >
-                <img src={wechatIcon} alt="" />
-              </span>
-              微信
+            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('google')}>
+              <img className="social-icon" src={googleMark} alt="" width={20} height={20} />
+              Google
             </button>
           </div>
         </div>

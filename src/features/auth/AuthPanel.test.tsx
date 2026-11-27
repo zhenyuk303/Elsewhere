@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
 import { AuthPanel } from './AuthPanel'
 
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
@@ -27,7 +29,9 @@ describe('AuthPanel', () => {
   it('renders the exact signup experience without an email field', () => {
     renderPanel()
 
-    expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
+    const brand = screen.getByRole('link', { name: 'Elsewhere home' })
+    expect(brand.querySelector('.brand-logo')).toBeInTheDocument()
+    expect(brand).not.toHaveTextContent('ELSEWHERE')
     expect(screen.queryByText('YOUR NEXT CHAPTER')).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Create your account' }),
@@ -40,17 +44,17 @@ describe('AuthPanel', () => {
     expect(screen.getByLabelText('Username')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'QQ' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Google' })).toBeInTheDocument()
   })
 
-  it('renders the primary login action without a decorative arrow', () => {
+  it('renders the primary signup action without a decorative arrow', () => {
     renderPanel()
 
-    const loginButton = screen.getByRole('button', { name: 'Login' })
+    const signupButton = screen.getByRole('button', { name: 'Sign Up' })
 
-    expect(loginButton).toHaveTextContent(/^Login$/)
-    expect(loginButton.querySelector('.button-arrow')).toBeNull()
+    expect(signupButton).toHaveTextContent(/^Sign Up$/)
+    expect(signupButton.querySelector('.button-arrow')).toBeNull()
   })
 
   it('animates the three-line heading block while keeping its anchor fixed', () => {
@@ -75,31 +79,24 @@ describe('AuthPanel', () => {
     expect(window.getComputedStyle(titleBlock!).transform).toBe('none')
   })
 
-  it('uses local icon artwork for the social sign-up actions', () => {
+  it('shows GitHub and Google marks without the retired providers', () => {
     renderPanel()
 
-    const qqIcon = screen
-      .getByRole('button', { name: 'QQ' })
-      .querySelector('img')
-    const wechatIcon = screen
-      .getByRole('button', { name: '微信' })
-      .querySelector('img')
-
-    expect(qqIcon).toHaveAttribute('src', expect.stringContaining('qq-icon'))
-    expect(qqIcon).toHaveAttribute('alt', '')
-    expect(wechatIcon?.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/)
-    expect(wechatIcon).toHaveAttribute('alt', '')
+    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('img')).toHaveAttribute('src', githubMark)
+    expect(screen.getByRole('button', { name: 'Google' }).querySelector('img')).toHaveAttribute('src', googleMark)
+    expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '微信' })).not.toBeInTheDocument()
   })
 
-  it('reports an unavailable social provider without leaving the form', async () => {
+  it('shows a backend configuration error without leaving the form', async () => {
     const user = userEvent.setup()
     const { onSocialLogin, onValidSubmit } = renderPanel('login')
-    onSocialLogin.mockRejectedValueOnce(new Error('QQ login is not configured yet'))
+    onSocialLogin.mockRejectedValueOnce(new Error('GitHub login is not configured yet'))
 
-    await user.click(screen.getByRole('button', { name: 'QQ' }))
+    await user.click(screen.getByRole('button', { name: 'GitHub' }))
 
-    expect(onSocialLogin).toHaveBeenCalledWith('qq')
-    expect(await screen.findByRole('alert')).toHaveTextContent('QQ login is not configured yet')
+    expect(onSocialLogin).toHaveBeenCalledWith('github')
+    expect(await screen.findByRole('alert')).toHaveTextContent('GitHub login is not configured yet')
     expect(onValidSubmit).not.toHaveBeenCalled()
   })
 
@@ -174,7 +171,7 @@ describe('AuthPanel', () => {
 
     await user.type(screen.getByLabelText('Username'), '   ')
     await user.type(screen.getByLabelText('Password'), '   ')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
 
     expect(screen.getByText('Username is required')).toBeInTheDocument()
     expect(screen.getByText('Password is required')).toBeInTheDocument()
@@ -187,7 +184,7 @@ describe('AuthPanel', () => {
   it('submits signup only after the agreement is accepted', async () => {
     const user = userEvent.setup()
     const { onValidSubmit } = renderPanel()
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Sign Up' })
     vi.spyOn(submit, 'getBoundingClientRect').mockReturnValue({
       left: 120,
       top: 480,
@@ -196,7 +193,7 @@ describe('AuthPanel', () => {
     } as DOMRect)
 
     await user.type(screen.getByLabelText('Username'), 'traveler')
-    await user.type(screen.getByLabelText('Password'), 'secret-path')
+    await user.type(screen.getByLabelText('Password'), 'Fixture1!')
     await user.click(
       screen.getByRole('checkbox', {
         name: 'I agree to all Term, Privacy Policy and Fees',
@@ -204,12 +201,27 @@ describe('AuthPanel', () => {
     )
     await user.click(submit)
 
-    expect(onValidSubmit).toHaveBeenCalledWith({
-      left: 120,
-      top: 480,
-      width: 340,
-      height: 54,
-    })
+    expect(onValidSubmit).toHaveBeenCalledWith(
+      {
+        left: 120,
+        top: 480,
+        width: 340,
+        height: 54,
+      },
+      'signup',
+    )
+  })
+
+  it('shows the signup password rules and rejects a digits-only password before submitting', async () => {
+    const user = userEvent.setup()
+    const { onAuthenticate } = renderPanel()
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/8–72 characters/)
+    await user.type(screen.getByLabelText('Username'), 'traveler')
+    await user.type(screen.getByLabelText('Password'), '12345678')
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/uppercase letter/)
+    expect(onAuthenticate).not.toHaveBeenCalled()
   })
 
   it('places login social actions in the same form slot as signup', () => {
@@ -219,8 +231,8 @@ describe('AuthPanel', () => {
     const socialBlock = socialLabel.closest('.social-block')
     const form = socialBlock?.closest('form')
 
-    expect(screen.getByRole('button', { name: 'QQ' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '微信' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Google' })).toBeInTheDocument()
     expect(form?.children).toHaveLength(5)
     expect(form?.children.item(2)).toHaveClass(
       'agreement-row',

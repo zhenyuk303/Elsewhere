@@ -12,12 +12,16 @@ const phaseDuration: Record<CarouselPhase, number> = {
   slide: SLIDE_MS,
 }
 
-export function useCarousel(itemCount: number, paused: boolean) {
+export function useCarousel(itemCount: number, paused: boolean, readyIndex?: number) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [phase, setPhase] = useState<CarouselPhase>('reveal')
 
   useEffect(() => {
-    if (paused || itemCount < 2) return
+    if (
+      paused ||
+      itemCount < 2 ||
+      (phase === 'reveal' && readyIndex !== undefined && readyIndex !== currentIndex)
+    ) return
 
     const timer = window.setTimeout(() => {
       if (phase === 'reveal') {
@@ -35,7 +39,7 @@ export function useCarousel(itemCount: number, paused: boolean) {
     }, phaseDuration[phase])
 
     return () => window.clearTimeout(timer)
-  }, [itemCount, paused, phase])
+  }, [currentIndex, itemCount, paused, phase, readyIndex])
 
   const nextIndex = itemCount > 0 ? (currentIndex + 1) % itemCount : 0
 

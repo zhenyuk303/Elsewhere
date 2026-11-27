@@ -1,5 +1,6 @@
 package com.elsewhere;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,62 +15,107 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static com.elsewhere.ApiTestRequests.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:oauthtest;DB_CLOSE_DELAY=-1",
-        "QQ_APP_ID=test-app", "QQ_APP_SECRET=test-secret",
-        "QQ_REDIRECT_URI=https://elsewhere.example/api/auth/oauth/qq/callback"
+        "spring.datasource.username=sa", "spring.datasource.password=",
+        "spring.datasource.url=jdbc:h2:mem:oauthtest;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+        "CLIENT_ID_GITHUB=test-github-id", "CLIENT_SECRET_GITHUB=test-github-secret",
+        "CLIENT_ID_GOOGLE=test-google-id", "CLIENT_SECRET_GOOGLE=test-google-secret"
 })
 @AutoConfigureMockMvc
 class OAuthFlowTest {
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
-    @MockitoBean TencentOAuthClient client;
+    @MockitoBean OAuthClient client;
 
     @Test
-    void bindsStateToBrowserAndCreatesOneLocalIdentity() throws Exception {
-        when(client.authorizationUrl(any(), anyString())).thenAnswer(call ->
-                "https://graph.qq.com/oauth2.0/authorize?state=" + call.getArgument(1, String.class));
-        when(client.exchangeOpenId(any(), anyString())).thenReturn("qq-open-id-1");
+    void githubLoginBindsStateAndReusesIdentity() throws Exception {
+        when(client.authorizationUrl(any(), anyString(), anyString())).thenAnswer(call ->
+                "https://github.com/login/oauth/authorize?state=" + call.getArgument(1, String.class));
+        when(client.exchangeUserId(any(), anyString(), anyString())).thenReturn("1234567");
 
-        var started = mvc.perform(post("/api/auth/oauth/qq/start"))
+        var started = mvc.perform(post("/api/auth/oauth/github/start"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.authorizationUrl").isString())
                 .andReturn();
         Cookie stateCookie = started.getResponse().getCookie(OAuthController.STATE_COOKIE);
         assertThat(stateCookie).isNotNull();
         assertThat(stateCookie.isHttpOnly()).isTrue();
         String state = stateCookie.getValue();
-        assertThat(started.getResponse().getContentAsString()).contains(state).doesNotContain("test-secret");
+        assertThat(started.getResponse().getContentAsString()).contains(state).doesNotContain("test-github-secret");
 
-        mvc.perform(get("/api/auth/oauth/qq/callback")
-                        .param("code", "test-code").param("state", state))
+        mvc.perform(get("/api/auth/oauth/github/callback").param("code", "sample").param("state", state))
                 .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauthError=invalid"));
 
-        var completed = mvc.perform(get("/api/auth/oauth/qq/callback")
-                        .param("code", "test-code").param("state", state).cookie(stateCookie))
-                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/"))
+        var completed = mvc.perform(get("/api/auth/oauth/github/callback")
+                        .param("code", "sample").param("state", state).cookie(stateCookie))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success"))
                 .andReturn();
         Cookie session = completed.getResponse().getCookie(AuthController.COOKIE);
         assertThat(session).isNotNull();
         assertThat(session.isHttpOnly()).isTrue();
         mvc.perform(get("/api/auth/me").cookie(session)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.startsWith("qq_")));
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'qq'", Integer.class))
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.startsWith("github_")));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'github'", Integer.class))
                 .isEqualTo(1);
 
-        mvc.perform(get("/api/auth/oauth/qq/callback")
-                        .param("code", "test-code").param("state", state).cookie(stateCookie))
+        mvc.perform(get("/api/auth/oauth/github/callback")
+                        .param("code", "sample").param("state", state).cookie(stateCookie))
                 .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauthError=invalid"));
+
+        var secondStart = mvc.perform(post("/api/auth/oauth/github/start").secure(true))
+                .andExpect(status().isOk()).andReturn();
+        Cookie secondState = secondStart.getResponse().getCookie(OAuthController.STATE_COOKIE);
+        assertThat(secondState.getSecure()).isTrue();
+        var repeated = mvc.perform(get("/api/auth/oauth/github/callback").secure(true)
+                        .param("code", "second").param("state", secondState.getValue()).cookie(secondState, session))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success")).andReturn();
+        Cookie rotated = repeated.getResponse().getCookie(AuthController.COOKIE);
+        assertThat(rotated.getSecure()).isTrue();
+        assertThat(rotated.getValue()).isNotEqualTo(session.getValue());
+        mvc.perform(get("/api/auth/me").cookie(rotated)).andExpect(status().isOk());
+        mvc.perform(get("/api/auth/me").cookie(session)).andExpect(status().isUnauthorized());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'github'", Integer.class))
+                .isEqualTo(1);
     }
 
     @Test
-    void requiresProviderConfiguration() throws Exception {
-        mvc.perform(post("/api/auth/oauth/wechat/start"))
-                .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.message").value("WeChat login is not configured yet"));
+    void googleLoginUsesItsOwnIdentity() throws Exception {
+        when(client.authorizationUrl(any(), anyString(), anyString())).thenAnswer(call ->
+                "https://accounts.google.com/o/oauth2/v2/auth?state=" + call.getArgument(1, String.class));
+        when(client.exchangeUserId(any(), anyString(), anyString())).thenReturn("google-sub-1");
+
+        var started = mvc.perform(post("/api/auth/oauth/google/start"))
+                .andExpect(status().isOk()).andReturn();
+        Cookie stateCookie = started.getResponse().getCookie(OAuthController.STATE_COOKIE);
+        mvc.perform(get("/api/auth/oauth/google/callback")
+                        .param("code", "sample").param("state", stateCookie.getValue()).cookie(stateCookie))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/?oauth=success"));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM oauth_identities WHERE provider = 'google'", Integer.class))
+                .isEqualTo(1);
+    }
+
+    @Test
+    void authorizationUrlsUseExpectedProvidersAndPkce() {
+        OAuthClient actual = new OAuthClient(new ObjectMapper());
+        var github = new OAuthSettings.Provider("github", "gh-id", "secret",
+                "http://localhost:5173/api/auth/oauth/github/callback");
+        var google = new OAuthSettings.Provider("google", "google-id", "secret",
+                "http://localhost:5173/api/auth/oauth/google/callback");
+        assertThat(actual.authorizationUrl(github, "state1", "challenge1"))
+                .startsWith("https://github.com/login/oauth/authorize?")
+                .contains("code_challenge=challenge1", "code_challenge_method=S256", "scope=read%3Auser");
+        assertThat(actual.authorizationUrl(google, "state2", "challenge2"))
+                .startsWith("https://accounts.google.com/o/oauth2/v2/auth?")
+                .contains("code_challenge=challenge2", "scope=openid+profile");
+    }
+
+    @Test
+    void retiredProvidersHaveNoLoginEndpoint() throws Exception {
+        mvc.perform(post("/api/auth/oauth/qq/start")).andExpect(status().isNotFound());
+        mvc.perform(post("/api/auth/oauth/wechat/start")).andExpect(status().isNotFound());
     }
 }

@@ -1,0 +1,274 @@
+[
+  {
+    "province": "Anhui",
+    "imagePath": "/images/carousel/%E5%AE%89%E5%BE%BD.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Macau",
+    "imagePath": "/images/carousel/%E6%BE%B3%E9%97%A8.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Beijing",
+    "imagePath": "/images/carousel/%E5%8C%97%E4%BA%AC.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Chongqing",
+    "imagePath": "/images/carousel/%E9%87%8D%E5%BA%86.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Fujian",
+    "imagePath": "/images/carousel/%E7%A6%8F%E5%BB%BA.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Gansu",
+    "imagePath": "/images/carousel/%E7%94%98%E8%82%83.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Guangdong",
+    "imagePath": "/images/carousel/%E5%B9%BF%E4%B8%9C.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Guangxi",
+    "imagePath": "/images/carousel/%E5%B9%BF%E8%A5%BF.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Guizhou",
+    "imagePath": "/images/carousel/%E8%B4%B5%E5%B7%9E.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Hainan",
+    "imagePath": "/images/carousel/%E6%B5%B7%E5%8D%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Hebei",
+    "imagePath": "/images/carousel/%E6%B2%B3%E5%8C%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Henan",
+    "imagePath": "/images/carousel/%E6%B2%B3%E5%8D%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Heilongjiang",
+    "imagePath": "/images/carousel/%E9%BB%91%E9%BE%99%E6%B1%9F.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Hubei",
+    "imagePath": "/images/carousel/%E6%B9%96%E5%8C%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Hunan",
+    "imagePath": "/images/carousel/%E6%B9%96%E5%8D%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Jilin",
+    "imagePath": "/images/carousel/%E5%90%89%E6%9E%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Jiangsu",
+    "imagePath": "/images/carousel/%E6%B1%9F%E8%8B%8F.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Jiangxi",
+    "imagePath": "/images/carousel/%E6%B1%9F%E8%A5%BF.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Liaoning",
+    "imagePath": "/images/carousel/%E8%BE%BD%E5%AE%81.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Inner Mongolia",
+    "imagePath": "/images/carousel/%E5%86%85%E8%92%99%E5%8F%A4.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Ningxia",
+    "imagePath": "/images/carousel/%E5%AE%81%E5%A4%8F.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Qinghai",
+    "imagePath": "/images/carousel/%E9%9D%92%E6%B5%B7.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Shandong",
+    "imagePath": "/images/carousel/%E5%B1%B1%E4%B8%9C.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Shanxi",
+    "imagePath": "/images/carousel/%E5%B1%B1%E8%A5%BF.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Shaanxi",
+    "imagePath": "/images/carousel/%E9%99%95%E8%A5%BF.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Shanghai",
+    "imagePath": "/images/carousel/%E4%B8%8A%E6%B5%B7.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Sichuan",
+    "imagePath": "/images/carousel/%E5%9B%9B%E5%B7%9D.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Taiwan",
+    "imagePath": "/images/carousel/%E5%8F%B0%E6%B9%BE.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Tianjin",
+    "imagePath": "/images/carousel/%E5%A4%A9%E6%B4%A5.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Tibet",
+    "imagePath": "/images/carousel/%E8%A5%BF%E8%97%8F.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Hong Kong",
+    "imagePath": "/images/carousel/%E9%A6%99%E6%B8%AF.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Xinjiang",
+    "imagePath": "/images/carousel/%E6%96%B0%E7%96%86.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Yunnan",
+    "imagePath": "/images/carousel/%E4%BA%91%E5%8D%97.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  },
+  {
+    "province": "Zhejiang",
+    "imagePath": "/images/carousel/%E6%B5%99%E6%B1%9F.webp",
+    "city": "",
+    "date": "",
+    "note": "",
+    "themes": []
+  }
+]
