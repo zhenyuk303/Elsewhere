@@ -1,6 +1,8 @@
 import { FormEvent, useState } from 'react'
-import qqIcon from '../../assets/social/qq-icon.png'
-import wechatIcon from '../../assets/social/wechat-icon.svg'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
+import { BrandLogo } from '../brand/BrandLogo'
+import type { SocialProvider } from './authApi'
 import type { AuthMode, ButtonRect } from './types'
 import './auth.css'
 
@@ -8,7 +10,10 @@ type AuthPanelProps = {
   mode: AuthMode
   disabled: boolean
   onModeChange: (mode: AuthMode) => void
-  onValidSubmit: (origin: ButtonRect) => void
+  onAuthenticate: (username: string, password: string, agreementAccepted: boolean) => Promise<void>
+  onSocialLogin: (provider: SocialProvider) => Promise<void>
+  initialError?: string
+  onValidSubmit: (origin: ButtonRect, mode: AuthMode) => void
 }
 
 type FormErrors = Partial<
@@ -47,6 +52,9 @@ export function AuthPanel({
   mode,
   disabled,
   onModeChange,
+  onAuthenticate,
+  onSocialLogin,
+  initialError = '',
   onValidSubmit,
 }: AuthPanelProps) {
   const [username, setUsername] = useState('')
@@ -54,34 +62,68 @@ export function AuthPanel({
   const [showPassword, setShowPassword] = useState(false)
   const [agreement, setAgreement] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
+  const [serverError, setServerError] = useState(initialError)
+  const [busy, setBusy] = useState(false)
 
   const isSignup = mode === 'signup'
+  const isDisabled = disabled || busy
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const nextErrors: FormErrors = {}
     if (!username.trim()) nextErrors.username = 'Username is required'
     if (!password.trim()) nextErrors.password = 'Password is required'
+    else if (isSignup) {
+      const length = [...password].length
+      if (length < 8 || length > 72 || !/[A-Z]/.test(password) || !/[a-z]/.test(password)
+        || !/[0-9]/.test(password) || !/[\p{P}\p{S}]/u.test(password)) {
+        nextErrors.password = 'Use 8–72 characters with an uppercase letter, a lowercase letter, a number and a special character'
+      } else if (new TextEncoder().encode(password).length > 72) {
+        nextErrors.password = 'Password must fit within 72 UTF-8 bytes'
+      }
+    }
     if (isSignup && !agreement) {
       nextErrors.agreement = 'Please accept the terms to continue'
     }
 
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0 || disabled) return
+    if (Object.keys(nextErrors).length > 0 || isDisabled) return
 
     const button = event.currentTarget.elements.namedItem(
       'primary-action',
     ) as HTMLButtonElement
     const { left, top, width, height } = button.getBoundingClientRect()
-    onValidSubmit({ left, top, width, height })
+    setBusy(true)
+    setServerError('')
+    try {
+      await onAuthenticate(username.trim(), password, agreement)
+      onValidSubmit({ left, top, width, height }, mode)
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : 'Request failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleSocialLogin(provider: SocialProvider) {
+    if (isDisabled) return
+    setBusy(true)
+    setServerError('')
+    try {
+      await onSocialLogin(provider)
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : 'Social login is unavailable')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
     <div className="auth-panel">
       <header className="auth-header">
         <a className="brand" href="#top" aria-label="Elsewhere home">
-          ELSEWHERE
+          <BrandLogo decorative />
         </a>
         <div className="title-block" key={mode}>
           <h1 id="auth-title">
@@ -89,10 +131,12 @@ export function AuthPanel({
           </h1>
           {isSignup ? (
             <p className="auth-subtitle">
-              Start a wonderful journey
+              Let's create an account and start a wonderful journey
             </p>
           ) : (
-            <p className="auth-subtitle">A wonderful journey begins now</p>
+            <p className="auth-subtitle">
+              The best view comes after the hardest climb.
+            </p>
           )}
         </div>
       </header>
@@ -110,7 +154,7 @@ export function AuthPanel({
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               placeholder="Username"
-              disabled={disabled}
+              disabled={isDisabled}
               aria-describedby={errors.username ? `${mode}-username-error` : undefined}
             />
           </div>
@@ -134,19 +178,24 @@ export function AuthPanel({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
-              disabled={disabled}
-              aria-describedby={errors.password ? `${mode}-password-error` : undefined}
+              disabled={isDisabled}
+              aria-describedby={errors.password ? `${mode}-password-error` : isSignup ? 'signup-password-rules' : undefined}
             />
             <button
               className="password-toggle"
               type="button"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               onClick={() => setShowPassword((visible) => !visible)}
-              disabled={disabled}
+              disabled={isDisabled}
             >
               <EyeIcon hidden={showPassword} />
             </button>
           </div>
+          {isSignup && !errors.password && (
+            <p className="field-hint" id="signup-password-rules">
+              8–72 characters with uppercase, lowercase, a number and a symbol. Maximum 72 UTF-8 bytes.
+            </p>
+          )}
           {errors.password ? (
             <p className="field-error" id={`${mode}-password-error`}>
               {errors.password}
@@ -161,7 +210,7 @@ export function AuthPanel({
                 type="checkbox"
                 checked={agreement}
                 onChange={(event) => setAgreement(event.target.checked)}
-                disabled={disabled}
+                disabled={isDisabled}
               />
               <span aria-hidden="true" className="custom-check" />
               <span>I agree to all Term, Privacy Policy and Fees</span>
@@ -170,44 +219,38 @@ export function AuthPanel({
               <p className="field-error agreement-error">{errors.agreement}</p>
             ) : null}
           </div>
-        ) : null}
+        ) : (
+          <div
+            className="agreement-row agreement-row--placeholder"
+            aria-hidden="true"
+          />
+        )}
 
         <button
           className="primary-button"
           type="submit"
           name="primary-action"
-          disabled={disabled}
+          disabled={isDisabled}
         >
-          <span>Login</span>
-          <span aria-hidden="true" className="button-arrow">
-            ↗
-          </span>
+          <span>{busy ? 'Please wait…' : isSignup ? 'Sign Up' : 'Login'}</span>
         </button>
+        {serverError ? <p className="field-error" role="alert">{serverError}</p> : null}
 
-        {isSignup ? (
-          <div className="social-block">
-            <p className="social-label">
-              <span>Or sign up with</span>
-            </p>
-            <div className="social-actions">
-              <button type="button" disabled={disabled}>
-                <span className="social-icon social-icon--qq" aria-hidden="true">
-                  <img src={qqIcon} alt="" />
-                </span>
-                QQ
-              </button>
-              <button type="button" disabled={disabled}>
-                <span
-                  className="social-icon social-icon--wechat"
-                  aria-hidden="true"
-                >
-                  <img src={wechatIcon} alt="" />
-                </span>
-                Wechat
-              </button>
-            </div>
+        <div className="social-block">
+          <p className="social-label">
+            <span>{isSignup ? 'Or sign up with' : 'Or login with'}</span>
+          </p>
+          <div className="social-actions">
+            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('github')}>
+              <img className="social-icon" src={githubMark} alt="" width={20} height={20} />
+              GitHub
+            </button>
+            <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('google')}>
+              <img className="social-icon" src={googleMark} alt="" width={20} height={20} />
+              Google
+            </button>
           </div>
-        ) : null}
+        </div>
       </form>
 
       <p className="mode-switch">

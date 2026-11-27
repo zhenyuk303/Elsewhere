@@ -8,6 +8,7 @@ export const REDUCED_TRANSITION_MS = 150
 
 type RunwayTransitionProps = {
   origin: TransitionOrigin
+  actionLabel: 'Sign Up' | 'Login'
   onComplete: () => void
 }
 
@@ -25,12 +26,6 @@ type TransitionStyle = CSSProperties & {
   '--circle-top': string
   '--bar-left': string
   '--plane-top': string
-  '--tail-left-x': string
-  '--tail-right-x': string
-  '--tail-y': string
-  '--wipe-left-x': string
-  '--wipe-right-x': string
-  '--wipe-far-y': string
   '--flight-distance': string
 }
 
@@ -38,7 +33,9 @@ const BAR_WIDTH = 44
 const PLANE_SIZE = 64
 const TAIL_HALF_SPAN = 12.2
 const TAIL_Y_OFFSET = 59.5
-const TAIL_EDGE_SLOPE = 3.3 / 12.2
+const TAIL_RISE = 3.3
+const TAIL_EDGE_SLOPE = TAIL_RISE / TAIL_HALF_SPAN
+const TRAIL_OVERSCAN = 32
 
 function Airplane() {
   return (
@@ -55,6 +52,7 @@ function Airplane() {
 
 export function RunwayTransition({
   origin,
+  actionLabel,
   onComplete,
 }: RunwayTransitionProps) {
   const [stage, setStage] = useState<TransitionStage>('collapse')
@@ -88,33 +86,33 @@ export function RunwayTransition({
     }
   }, [onComplete])
 
-  const style: TransitionStyle = {
-    ...(() => {
-      const originCenterX = origin.left + origin.width / 2
-      const originCenterY = origin.top + origin.height / 2
-      const planeTop = origin.cardTop + origin.cardHeight - PLANE_SIZE
-      const tailY = planeTop + TAIL_Y_OFFSET
-      const tailLeftX = origin.dividerX - TAIL_HALF_SPAN
-      const tailRightX = origin.dividerX + TAIL_HALF_SPAN
-      const wipeFarY = window.innerHeight * 3
-      const wipeHorizontalRun = (wipeFarY - tailY) / TAIL_EDGE_SLOPE
+  const originCenterX = origin.left + origin.width / 2
+  const originCenterY = origin.top + origin.height / 2
+  const cardBottom = origin.cardTop + origin.cardHeight
+  const planeTop = cardBottom - PLANE_SIZE
+  const tailY = planeTop + TAIL_Y_OFFSET
+  const tailLeftX = origin.dividerX - TAIL_HALF_SPAN
+  const tailRightX = origin.dividerX + TAIL_HALF_SPAN
 
-      return {
-        '--origin-center-x': `${originCenterX}px`,
-        '--origin-center-y': `${originCenterY}px`,
-        '--circle-left': `${originCenterX - BAR_WIDTH / 2}px`,
-        '--circle-top': `${originCenterY - BAR_WIDTH / 2}px`,
-        '--bar-left': `${origin.dividerX - BAR_WIDTH / 2}px`,
-        '--plane-top': `${planeTop}px`,
-        '--tail-left-x': `${tailLeftX}px`,
-        '--tail-right-x': `${tailRightX}px`,
-        '--tail-y': `${tailY}px`,
-        '--wipe-left-x': `${tailLeftX - wipeHorizontalRun}px`,
-        '--wipe-right-x': `${tailRightX + wipeHorizontalRun}px`,
-        '--wipe-far-y': `${wipeFarY}px`,
-        '--flight-distance': `${-(origin.cardTop + origin.cardHeight + 34)}px`,
-      }
-    })(),
+  // Carry the same trail past both top corners before handing off to the homepage.
+  const farthestSide = Math.max(0, tailLeftX, window.innerWidth - tailRightX)
+  const flightDistance = Math.ceil(Math.max(
+    cardBottom + 34,
+    tailY + farthestSide * TAIL_EDGE_SLOPE + TRAIL_OVERSCAN,
+  ))
+  const trailBottomY = window.innerHeight + flightDistance + TRAIL_OVERSCAN
+  const trailRun = (trailBottomY - tailY) / TAIL_EDGE_SLOPE
+  const trailLeftX = tailLeftX - trailRun
+  const trailRightX = tailRightX + trailRun
+  const trailPoints = [
+    [tailLeftX, tailY],
+    [origin.dividerX, tailY - TAIL_RISE],
+    [tailRightX, tailY],
+    [trailRightX, trailBottomY],
+    [trailLeftX, trailBottomY],
+  ].map(([x, y]) => `${x},${y}`).join(' ')
+
+  const style: TransitionStyle = {
     '--origin-left': `${origin.left}px`,
     '--origin-top': `${origin.top}px`,
     '--origin-width': `${origin.width}px`,
@@ -122,6 +120,13 @@ export function RunwayTransition({
     '--divider-x': `${origin.dividerX}px`,
     '--card-top': `${origin.cardTop}px`,
     '--card-height': `${origin.cardHeight}px`,
+    '--origin-center-x': `${originCenterX}px`,
+    '--origin-center-y': `${originCenterY}px`,
+    '--circle-left': `${originCenterX - BAR_WIDTH / 2}px`,
+    '--circle-top': `${originCenterY - BAR_WIDTH / 2}px`,
+    '--bar-left': `${origin.dividerX - BAR_WIDTH / 2}px`,
+    '--plane-top': `${planeTop}px`,
+    '--flight-distance': `${-flightDistance}px`,
   }
 
   return (
@@ -133,19 +138,29 @@ export function RunwayTransition({
       aria-hidden="true"
     >
       <div className="transition-shape" data-testid="transition-shape">
-        <span className="transition-label">Login</span>
+        <span className="transition-label">{actionLabel}</span>
       </div>
       <span className="transition-dot" data-testid="transition-dot" />
       <div className="flight-assembly" data-testid="flight-assembly">
-        <div className="page-wipe" data-testid="page-wipe" />
-        <span
-          className="wing-guide wing-guide--left"
-          data-testid="wing-guide-left"
-        />
-        <span
-          className="wing-guide wing-guide--right"
-          data-testid="wing-guide-right"
-        />
+        <svg className="flight-trail" aria-hidden="true">
+          <polygon className="page-wipe" data-testid="page-wipe" points={trailPoints} />
+          <line
+            className="wing-guide"
+            data-testid="wing-guide-left"
+            x1={tailLeftX}
+            y1={tailY}
+            x2={trailLeftX}
+            y2={trailBottomY}
+          />
+          <line
+            className="wing-guide"
+            data-testid="wing-guide-right"
+            x1={tailRightX}
+            y1={tailY}
+            x2={trailRightX}
+            y2={trailBottomY}
+          />
+        </svg>
         <Airplane />
       </div>
     </div>

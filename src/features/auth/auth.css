@@ -3,8 +3,9 @@
   min-height: 610px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   margin: 0 auto;
+  padding-top: clamp(28px, 5vh, 40px);
 }
 
 .auth-header {
@@ -17,14 +18,18 @@
   width: fit-content;
   margin: 0 auto clamp(32px, 5vh, 48px);
   color: #121212;
-  font-size: 1.3rem;
-  font-weight: 850;
-  letter-spacing: 0.14em;
   text-decoration: none;
 }
 
+.brand .brand-logo {
+  --brand-logo-width: clamp(170px, 15vw, 240px);
+}
+
 .title-block {
-  animation: auth-content-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-name: auth-content-in;
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
 }
 
 .auth-header h1 {
@@ -73,15 +78,9 @@
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
-.field-shell input:focus-visible {
-  outline: none;
-}
-
 .field-shell:focus-within {
-  border-color: #907355;
+  border-color: #a78a68;
   background: #fff;
-  outline: 2px solid #907355;
-  outline-offset: -2px;
   box-shadow: 0 0 0 4px rgb(167 138 104 / 12%);
 }
 
@@ -117,6 +116,10 @@
   font-size: 0.9rem;
 }
 
+.field-shell input:focus-visible {
+  outline: none;
+}
+
 .field-shell input::placeholder {
   color: #aaa6a0;
 }
@@ -132,14 +135,27 @@
   cursor: pointer;
 }
 
-.field-error {
+.password-toggle:focus-visible {
+  outline: none;
+}
+
+.field-error,
+.field-hint {
   margin: 0 4px;
-  color: #a84438;
   font-size: 0.72rem;
+}
+
+.field-error {
+  color: #a84438;
 }
 
 .agreement-row {
   margin-top: 1px;
+}
+
+.agreement-row--placeholder {
+  min-height: 18px;
+  visibility: hidden;
 }
 
 .checkbox-label {
@@ -195,7 +211,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
   margin-top: 4px;
   border: 0;
   border-radius: 0;
@@ -219,15 +234,6 @@
 .primary-button:disabled {
   cursor: wait;
   opacity: 0.72;
-}
-
-.button-arrow {
-  font-size: 1rem;
-  transition: transform 180ms ease;
-}
-
-.primary-button:hover .button-arrow {
-  transform: translate(2px, -2px);
 }
 
 .social-block {
@@ -280,36 +286,11 @@
 }
 
 .social-icon {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.social-icon img {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: block;
+  flex: 0 0 auto;
   object-fit: contain;
-}
-
-.social-icon--qq {
-  background: #fff1e6;
-}
-
-.social-icon--wechat {
-  width: 30px;
-  height: 30px;
-  background: #07c160;
-}
-
-.social-icon--wechat img {
-  width: 22px;
-  height: 22px;
-  filter: brightness(0) invert(1);
 }
 
 .mode-switch {
@@ -325,7 +306,7 @@
   text-underline-offset: 3px;
 }
 
-.auth-panel :where(button, a, input):focus-visible {
+.auth-panel :where(button:not(.password-toggle), a):focus-visible {
   outline: 2px solid #907355;
   outline-offset: 3px;
 }
@@ -333,11 +314,10 @@
 @keyframes auth-content-in {
   from {
     opacity: 0;
-    transform: translateX(14px);
   }
+
   to {
     opacity: 1;
-    transform: translateX(0);
   }
 }
 
@@ -411,8 +391,7 @@
   }
 
   .primary-button,
-  .social-actions button,
-  .button-arrow {
+  .social-actions button {
     transition-duration: 80ms;
   }
 }

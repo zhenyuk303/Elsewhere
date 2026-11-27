@@ -4,3 +4,15 @@ dist/
 vite.config.js
 vite.config.d.ts
 *.local
+backend/target/
+backend/.idea/
+backend/data/*
+!backend/data/.gitkeep
+backend/.env
+.env
+.env.*
+!.env.example
+*.mv.db
+*.trace.db
+database/private/
+*.sql.local

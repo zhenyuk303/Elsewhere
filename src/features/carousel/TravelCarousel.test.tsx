@@ -1,18 +1,187 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { vi } from 'vitest'
 import { TravelCarousel } from './TravelCarousel'
+import { travelSlides } from './carouselData'
 
 describe('TravelCarousel', () => {
+  it('waits for the current photo to decode before starting the first reveal', async () => {
+    vi.useFakeTimers()
+    const resolvers: Array<() => void> = []
+    class ImageMock {
+      src = ''
+      decode() {
+        return new Promise<void>((resolve) => resolvers.push(resolve))
+      }
+    }
+    vi.stubGlobal('Image', ImageMock)
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+      const carousel = container.querySelector('.travel-carousel')
+      expect(carousel).toHaveClass('is-paused')
+
+      act(() => vi.advanceTimersByTime(2500))
+      expect(carousel).toHaveAttribute('data-phase', 'reveal')
+
+      await act(async () => resolvers[0]?.())
+      expect(carousel).not.toHaveClass('is-paused')
+      act(() => vi.advanceTimersByTime(2500))
+      expect(carousel).toHaveAttribute('data-phase', 'hold')
+    } finally {
+      resolvers.forEach((resolve) => resolve())
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
+  })
+
+  it('decodes only the visible and upcoming photos before each reveal', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const decoded: string[] = []
+    class ImageMock {
+      src = ''
+      decode() {
+        decoded.push(this.src)
+        return Promise.resolve()
+      }
+    }
+    vi.stubGlobal('Image', ImageMock)
+
+    try {
+      render(<TravelCarousel paused={false} />)
+      expect(decoded).toEqual([travelSlides[1].src, travelSlides[2].src])
+
+      await act(async () => { await Promise.resolve() })
+
+      act(() => vi.advanceTimersByTime(2500))
+      act(() => vi.advanceTimersByTime(3000))
+      act(() => vi.advanceTimersByTime(1200))
+
+      expect(decoded).toContain(travelSlides[3].src)
+      expect(decoded).toHaveLength(3)
+    } finally {
+      vi.unstubAllGlobals()
+      vi.restoreAllMocks()
+      vi.useRealTimers()
+    }
+  })
+
   it('renders location-only travel slides and starts in grayscale reveal', () => {
     const { container } = render(<TravelCarousel paused={false} />)
 
     const carousel = screen.getByLabelText('Travel destinations')
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const location = activeSlide?.getAttribute('aria-label')
+    const expectedSlide = travelSlides.find(
+      (slide) => slide.location === location,
+    )
+    const calligraphy = activeSlide?.querySelector('.location-calligraphy')
+
     expect(carousel).toHaveAttribute('data-phase', 'reveal')
-    expect(screen.getByText('Beijing')).toBeInTheDocument()
+    expect(expectedSlide).toBeDefined()
+    expect(calligraphy).toHaveAttribute('src', expectedSlide?.labelSrc)
+    expect(activeSlide).toHaveAttribute('aria-label', expectedSlide?.location)
+    expect(activeSlide?.querySelector('.location-index')).toBeNull()
+    expect(activeSlide?.querySelector('.location-fallback')).toBeNull()
     expect(screen.queryByText(/travel package/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/package in/i)).not.toBeInTheDocument()
     expect(container.querySelector('.travel-slide')).not.toHaveClass(
       'has-image-error',
     )
+  })
+
+  it('starts from a shuffled destination order and reports the full collection', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    try {
+      render(<TravelCarousel paused={false} />)
+
+      const carousel = screen.getByLabelText('Travel destinations')
+      expect(carousel).toHaveAttribute('data-slide-count', '34')
+      expect(carousel).toHaveAttribute(
+        'data-location',
+        travelSlides[1].location,
+      )
+    } finally {
+      vi.restoreAllMocks()
+    }
+  })
+
+  it('keeps the calligraphy in the lower-left safe area outside the color window', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const lockup = container.querySelector(
+      '.travel-slide--current .location-lockup',
+    )
+    const style = window.getComputedStyle(lockup!)
+    const widthPercent = Number.parseFloat(
+      style.width.match(/min\(([\d.]+)%/)?.[1] ?? 'NaN',
+    )
+    const occupiedBottomPercent =
+      Number.parseFloat(style.bottom) + Number.parseFloat(style.height)
+
+    expect(widthPercent).toBeLessThanOrEqual(34)
+    expect(Number.parseFloat(style.bottom)).toBeGreaterThanOrEqual(2)
+    expect(occupiedBottomPercent).toBeLessThanOrEqual(15)
+  })
+
+  it('shrinks the rotated color window away from the label on wide layouts', () => {
+    let resizeCallback: ResizeObserverCallback | undefined
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback
+      }
+
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+      const carousel = screen.getByLabelText('Travel destinations')
+
+      expect(resizeCallback).toBeDefined()
+      act(() => {
+        resizeCallback?.(
+          [
+            {
+              contentRect: { width: 880, height: 360 },
+            } as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver,
+        )
+      })
+
+      const windowScale = Number.parseFloat(
+        carousel.style.getPropertyValue('--color-window-scale'),
+      )
+      const label = container.querySelector('.location-lockup')
+      const labelStyle = window.getComputedStyle(label!)
+      const labelRight =
+        Number.parseFloat(labelStyle.left) +
+        Math.min(880 * 0.34, 180)
+      const labelTop =
+        360 *
+        (1 -
+          (Number.parseFloat(labelStyle.bottom) +
+            Number.parseFloat(labelStyle.height)) /
+            100)
+      const radians = (8 * Math.PI) / 180
+      const svgScale = 880 / 1000
+      const svgTop = (360 - 880) / 2
+      const labelRightInViewBox = labelRight / svgScale
+      const rotatedSquareBottomInViewBox =
+        500 +
+        Math.tan(radians) * (labelRightInViewBox - 500) +
+        (350 * windowScale) / Math.cos(radians)
+      const rotatedSquareBottom =
+        svgTop + rotatedSquareBottomInViewBox * svgScale
+
+      expect(rotatedSquareBottom).toBeLessThan(labelTop)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('keeps the gray image, color reveal, and frame in one coordinate system', () => {
@@ -39,6 +208,31 @@ describe('TravelCarousel', () => {
     }
   })
 
+  it('finishes the reveal with a clockwise square rotation', () => {
+    vi.useFakeTimers()
+
+    try {
+      const { container } = render(<TravelCarousel paused={false} />)
+
+      act(() => {
+        vi.advanceTimersByTime(2500)
+      })
+
+      const carousel = screen.getByLabelText('Travel destinations')
+      const shape = container.querySelector(
+        '.color-window--hold .color-window__shape',
+      )
+
+      expect(carousel).toHaveAttribute('data-phase', 'hold')
+      expect(shape).not.toBeNull()
+      expect(window.getComputedStyle(shape!).transform).toBe(
+        'rotate(8deg) scale(var(--color-window-scale, 1))',
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('keeps a neutral location card when a travel image fails to load', () => {
     const { container } = render(<TravelCarousel paused={false} />)
     const activeSlide = container.querySelector('.travel-slide--current')
@@ -48,6 +242,22 @@ describe('TravelCarousel', () => {
     fireEvent.error(grayImage!)
 
     expect(activeSlide).toHaveClass('has-image-error')
-    expect(screen.getByText('Beijing')).toBeInTheDocument()
+    expect(activeSlide?.querySelector('.location-calligraphy')).not.toBeNull()
+  })
+
+  it('falls back to the English location only when a calligraphy label fails', () => {
+    const { container } = render(<TravelCarousel paused={false} />)
+    const activeSlide = container.querySelector('.travel-slide--current')
+    const calligraphy = activeSlide?.querySelector('.location-calligraphy')
+    const location = activeSlide?.getAttribute('aria-label')
+
+    expect(calligraphy).not.toBeNull()
+    fireEvent.error(calligraphy!)
+
+    expect(activeSlide?.querySelector('.location-calligraphy')).toBeNull()
+    expect(activeSlide?.querySelector('.location-fallback')).toHaveTextContent(
+      location!,
+    )
+    expect(activeSlide?.querySelector('.location-index')).toBeNull()
   })
 })

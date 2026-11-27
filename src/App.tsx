@@ -1,26 +1,202 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { AuthPanel } from './features/auth/AuthPanel'
+import {
+  authenticate,
+  beginSocialLogin,
+  currentUser,
+  logout,
+  type AuthUser,
+  type SocialProvider,
+} from './features/auth/authApi'
 import type {
   AuthMode,
   ButtonRect,
   TransitionOrigin,
 } from './features/auth/types'
 import { TravelCarousel } from './features/carousel/TravelCarousel'
-import { HomePlaceholder } from './features/home/HomePlaceholder'
+import { FootprintsPage } from './features/footprints/FootprintsPage'
+import { HomePage } from './features/home/HomePage'
+import {
+  HOME_GALLERY_MS,
+  HOME_LIFT_MS,
+  homeIntroSlides,
+  preloadHomeImage,
+  type HomePhase,
+} from './features/home/homeIntro'
 import { RunwayTransition } from './features/transition/RunwayTransition'
 
-type ViewState = 'auth' | 'transitioning' | 'home'
+type ActiveHomePhase = Exclude<HomePhase, 'primed'>
+
+type AppScreenState =
+  | {
+      view: 'auth'
+      homePhase: null
+      transitionOrigin: null
+      transitionActionLabel: null
+    }
+  | {
+      view: 'transitioning'
+      homePhase: 'primed'
+      transitionOrigin: TransitionOrigin
+      transitionActionLabel: 'Sign Up' | 'Login'
+    }
+  | {
+      view: 'home'
+      homePhase: ActiveHomePhase
+      transitionOrigin: null
+      transitionActionLabel: null
+    }
+
+type AppScreenAction =
+  | {
+      type: 'start-transition'
+      origin: TransitionOrigin
+      actionLabel: 'Sign Up' | 'Login'
+    }
+  | { type: 'complete-transition'; reducedMotion: boolean }
+  | { type: 'advance-home'; phase: Extract<HomePhase, 'lifting' | 'ready'> }
+  | { type: 'restore-oauth'; reducedMotion: boolean }
+  | { type: 'return-to-auth' }
+
+const initialScreenState: AppScreenState = {
+  view: 'auth',
+  homePhase: null,
+  transitionOrigin: null,
+  transitionActionLabel: null,
+}
+
+function screenReducer(
+  state: AppScreenState,
+  action: AppScreenAction,
+): AppScreenState {
+  switch (action.type) {
+    case 'start-transition':
+      if (state.view !== 'auth') return state
+      return {
+        view: 'transitioning',
+        homePhase: 'primed',
+        transitionOrigin: action.origin,
+        transitionActionLabel: action.actionLabel,
+      }
+    case 'complete-transition':
+      if (state.view !== 'transitioning') return state
+      return {
+        view: 'home',
+        homePhase: action.reducedMotion ? 'ready' : 'gallery',
+        transitionOrigin: null,
+        transitionActionLabel: null,
+      }
+    case 'advance-home':
+      if (state.view !== 'home') return state
+      if (action.phase === 'lifting' && state.homePhase !== 'gallery') return state
+      if (action.phase === 'ready' && state.homePhase !== 'lifting') return state
+      return { ...state, homePhase: action.phase }
+    case 'restore-oauth':
+      return {
+        view: 'home',
+        homePhase: action.reducedMotion ? 'ready' : 'gallery',
+        transitionOrigin: null,
+        transitionActionLabel: null,
+      }
+    case 'return-to-auth':
+      return initialScreenState
+  }
+}
+
+function prefersReducedMotion() {
+  return Boolean(
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+  )
+}
 
 export function App() {
   const cardRef = useRef<HTMLDivElement>(null)
-  const [authMode, setAuthMode] = useState<AuthMode>('signup')
-  const [view, setView] = useState<ViewState>('auth')
-  const [transitionOrigin, setTransitionOrigin] =
-    useState<TransitionOrigin | null>(null)
+  const [authMode, setAuthMode] = useState<AuthMode>('login')
+  const [screen, dispatch] = useReducer(screenReducer, initialScreenState)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [showFootprints, setShowFootprints] = useState(false)
+  const [isLogoutPending, setIsLogoutPending] = useState(false)
+  const signInRevision = useRef(0)
+  const [oauthError] = useState(() => {
+    const error = new URLSearchParams(window.location.search).get('oauthError')
+    return error === 'cancelled' ? 'Third-party login was cancelled.'
+      : error === 'invalid' ? 'Third-party login expired. Please try again.'
+      : error === 'failed' ? 'Third-party login failed. Please try again.' : ''
+  })
+  const [oauthSucceeded] = useState(
+    () => new URLSearchParams(window.location.search).get('oauth') === 'success',
+  )
+
+  useEffect(() => {
+    const prepareFirstImage = () => {
+      void preloadHomeImage(homeIntroSlides[0].src)
+    }
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const idleId = window.requestIdleCallback(prepareFirstImage)
+      return () => window.cancelIdleCallback(idleId)
+    }
+
+    const timer = window.setTimeout(prepareFirstImage, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!oauthSucceeded) return
+
+    let active = true
+    const revision = signInRevision.current
+    currentUser().then((restored) => {
+      if (active && restored && revision === signInRevision.current) {
+        setUser(restored)
+        dispatch({
+          type: 'restore-oauth',
+          reducedMotion: prefersReducedMotion(),
+        })
+      }
+    })
+    return () => { active = false }
+  }, [oauthSucceeded])
+
+  useEffect(() => {
+    if (!oauthError && !oauthSucceeded) return
+
+    const url = new URL(window.location.href)
+    url.searchParams.delete('oauthError')
+    url.searchParams.delete('oauth')
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash)
+  }, [oauthError, oauthSucceeded])
+
+  useEffect(() => {
+    if (screen.view !== 'home') return
+
+    const next = screen.homePhase === 'gallery'
+      ? { delay: HOME_GALLERY_MS, phase: 'lifting' as const }
+      : screen.homePhase === 'lifting'
+        ? { delay: HOME_LIFT_MS, phase: 'ready' as const }
+        : null
+    if (!next) return
+
+    const timer = window.setTimeout(() => {
+      dispatch({ type: 'advance-home', phase: next.phase })
+    }, next.delay)
+    return () => window.clearTimeout(timer)
+  }, [screen])
+
+  const handleAuthenticate = useCallback(async (username: string, password: string, agreementAccepted: boolean) => {
+    const revision = ++signInRevision.current
+    const authenticated = await authenticate(authMode, username, password, agreementAccepted)
+    if (revision === signInRevision.current) setUser(authenticated)
+  }, [authMode])
+
+  const handleSocialLogin = useCallback(async (provider: SocialProvider) => {
+    const url = await beginSocialLogin(provider)
+    window.location.assign(url)
+  }, [])
 
   const handleValidSubmit = useCallback(
-    (buttonOrigin: ButtonRect) => {
-      if (view !== 'auth') return
+    (buttonOrigin: ButtonRect, submittedMode: AuthMode) => {
+      if (screen.view !== 'auth') return
 
       const card = cardRef.current
       if (!card) return
@@ -34,49 +210,89 @@ export function App() {
         ? cardRect.left + cardRect.width / 2
         : (carouselRect?.left ?? cardRect.left + cardRect.width / 2)
 
-      setTransitionOrigin({
-        ...buttonOrigin,
-        dividerX,
-        cardTop: cardRect.top,
-        cardHeight: cardRect.height,
+      dispatch({
+        type: 'start-transition',
+        origin: {
+          ...buttonOrigin,
+          dividerX,
+          cardTop: cardRect.top,
+          cardHeight: cardRect.height,
+        },
+        actionLabel: submittedMode === 'signup' ? 'Sign Up' : 'Login',
       })
-      setView('transitioning')
     },
-    [view],
+    [screen.view],
   )
 
   const handleTransitionComplete = useCallback(() => {
-    setView('home')
+    dispatch({
+      type: 'complete-transition',
+      reducedMotion: prefersReducedMotion(),
+    })
   }, [])
 
-  if (view === 'home') {
-    return <HomePlaceholder />
-  }
+  const openFootprints = useCallback(() => setShowFootprints(true), [])
+
+  const handleLogout = useCallback(async () => {
+    signInRevision.current += 1
+    setIsLogoutPending(true)
+    setAuthMode('login')
+    setShowFootprints(false)
+    setUser(null)
+    dispatch({ type: 'return-to-auth' })
+    try {
+      await logout()
+    } catch {
+      // The client must still return to Login when cleanup is unavailable.
+    } finally {
+      setIsLogoutPending(false)
+    }
+  }, [])
 
   return (
-    <main className="app-shell">
-      <div
-        ref={cardRef}
-        className={`journey-card ${view === 'transitioning' ? 'is-transitioning' : ''}`}
-        data-testid="auth-journey"
-      >
-        <section className="auth-shell" aria-labelledby="auth-title">
-          <AuthPanel
-            key={authMode}
-            mode={authMode}
-            disabled={view === 'transitioning'}
-            onModeChange={setAuthMode}
-            onValidSubmit={handleValidSubmit}
-          />
-        </section>
-        <TravelCarousel paused={view === 'transitioning'} />
-      </div>
-      {view === 'transitioning' && transitionOrigin ? (
-        <RunwayTransition
-          origin={transitionOrigin}
-          onComplete={handleTransitionComplete}
+    <>
+      {screen.view !== 'auth' ? (
+        <HomePage
+          phase={screen.homePhase}
+          onLogout={handleLogout}
+          onOpenFootprints={user ? openFootprints : undefined}
+          onReturnHome={() => setShowFootprints(false)}
+          footprints={screen.view === 'home' && showFootprints && user
+            ? <FootprintsPage key={user.id} ownerId={user.id} />
+            : undefined}
         />
       ) : null}
-    </main>
+
+      {screen.view !== 'home' ? (
+        <main className="app-shell auth-layer">
+          <div
+            ref={cardRef}
+            className={`journey-card ${screen.view === 'transitioning' ? 'is-transitioning' : ''}`}
+            data-testid="auth-journey"
+          >
+            <section className="auth-shell" aria-labelledby="auth-title">
+              <AuthPanel
+                key={authMode}
+                mode={authMode}
+                disabled={screen.view === 'transitioning' || isLogoutPending}
+                onModeChange={setAuthMode}
+                onAuthenticate={handleAuthenticate}
+                onSocialLogin={handleSocialLogin}
+                initialError={oauthError}
+                onValidSubmit={handleValidSubmit}
+              />
+            </section>
+            <TravelCarousel paused={screen.view === 'transitioning'} />
+          </div>
+          {screen.view === 'transitioning' ? (
+            <RunwayTransition
+              origin={screen.transitionOrigin}
+              actionLabel={screen.transitionActionLabel}
+              onComplete={handleTransitionComplete}
+            />
+          ) : null}
+        </main>
+      ) : null}
+    </>
   )
 }
