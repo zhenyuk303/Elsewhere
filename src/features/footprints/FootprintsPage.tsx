@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Ref } from 'react'
 import { travelSlides } from '../carousel/carouselData'
 import { FootprintEditor } from './FootprintEditor'
 import { serverFootprints } from './footprintsApi'
@@ -31,6 +31,63 @@ function ProvinceTitle({ province }: { province: string }) {
       <img src={labelSrc} alt="" decoding="async" onError={() => setImageFailed(true)} />
     </span>
   )
+}
+
+function TitleArtwork({ province }: { province: string }) {
+  return province ? <ProvinceTitle key={province} province={province} /> : <>
+    {[introduction.title, introduction.secondLine].map(line => (
+      <span key={line} className="fp-title-line">
+        {[...line].map((letter, index) => (
+          <span key={index} className="fp-title-letter"
+            style={{ animationDelay: `${index * titleLetterStagger}ms` }}>{letter}</span>
+        ))}
+      </span>
+    ))}
+  </>
+}
+
+function JournalTitle({ province, headingRef }: { province: string; headingRef: Ref<HTMLHeadingElement> }) {
+  const currentVisual = useRef<HTMLSpanElement>(null)
+  const [transition, setTransition] = useState({
+    province, previous: undefined as { province: string; opacity: number } | undefined, version: 0,
+  })
+  useLayoutEffect(() => {
+    if (transition.province === province) return
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const opacity = currentVisual.current ? Number(getComputedStyle(currentVisual.current).opacity) : 1
+    setTransition({
+      province, previous: reducedMotion ? undefined : { province: transition.province, opacity },
+      version: transition.version + 1,
+    })
+  }, [province, transition.province, transition.version])
+
+  useEffect(() => {
+    const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    const skipFade = () => {
+      if (preference?.matches) setTransition(current => ({ ...current, previous: undefined }))
+    }
+    preference?.addEventListener('change', skipFade)
+    return () => preference?.removeEventListener('change', skipFade)
+  }, [])
+  const { previous, version } = transition
+  const titleClass = (value: string) => value ? 'fp-title fp-title--province' : 'fp-title'
+
+  return <div className="fp-title-swap">
+    <h1 id="footprints-title" tabIndex={-1} ref={headingRef} className={titleClass(transition.province)}
+      aria-label={province || introduction.title}>
+      <span key={version} ref={currentVisual} className={`fp-title-current${previous !== undefined ? ' fp-title-enter' : ''}`}
+        aria-hidden="true" onAnimationEnd={event => {
+          if (event.target !== event.currentTarget) return
+          setTransition(current => current.version === version ? { ...current, previous: undefined } : current)
+        }}>
+        <TitleArtwork province={transition.province} />
+      </span>
+    </h1>
+    {previous !== undefined && <div key={version} className="fp-title-previous" aria-hidden="true"
+      style={{ '--fp-title-exit-opacity': previous.opacity } as CSSProperties}>
+      <div className={titleClass(previous.province)}><TitleArtwork province={previous.province} /></div>
+    </div>}
+  </div>
 }
 
 function galleryCardKey(version: number, index: number, id: string) {
@@ -163,6 +220,7 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   }
 
   const lead = gallery.lead
+  const titleProvince = lead?.province ?? filters.province
   const canScrollReel = !filterSlide && gallery.ids.length > 0
 
   useEffect(() => {
@@ -251,17 +309,7 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
 
       <header className="fp-intro" data-selected={!!lead}>
         <div className="fp-intro-content">
-          <h1 id="footprints-title" tabIndex={-1} ref={heading} className={lead ? 'fp-title fp-title--province' : 'fp-title'}
-            aria-label={lead?.province ?? introduction.title}>
-            {lead ? <ProvinceTitle key={lead.province} province={lead.province} /> : [introduction.title, introduction.secondLine].map(line => (
-              <span key={line} className="fp-title-line" aria-hidden="true">
-                {[...line].map((letter, index) => (
-                  <span key={index} className="fp-title-letter"
-                    style={{ animationDelay: `${index * titleLetterStagger}ms` }}>{letter}</span>
-                ))}
-              </span>
-            ))}
-          </h1>
+          <JournalTitle province={titleProvince} headingRef={heading} />
           {lead ? (
             <div className="fp-details" aria-live="polite">
               <dl>
