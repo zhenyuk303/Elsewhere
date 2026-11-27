@@ -5,11 +5,11 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -25,15 +25,19 @@ public class AuthService {
     public record SignedIn(User user, String token) {}
 
     private final JdbcTemplate jdbc;
-    private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder();
+    private static final Pattern REGISTRATION_PASSWORD =
+            Pattern.compile("(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[\\p{P}\\p{S}]).+", Pattern.DOTALL);
+    private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder(10);
     private final SecureRandom random = new SecureRandom();
+    private final String unknownUserHash = passwords.encode(newToken());
 
     public AuthService(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
 
     @Transactional
-    public SignedIn register(String username, String password) {
+    public SignedIn register(String username, String password, String previousToken) {
+        validateNewPassword(password);
         String clean = username.trim();
         String key = clean.toLowerCase(Locale.ROOT);
         try {
@@ -42,16 +46,36 @@ public class AuthService {
         } catch (DuplicateKeyException ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already taken");
         }
-        return createSession(findByKey(key).orElseThrow());
+        return createSession(findByKey(key).orElseThrow(), previousToken);
     }
 
     @Transactional
-    public SignedIn login(String username, String password) {
-        User user = findByKey(username.trim().toLowerCase(Locale.ROOT))
-                .orElseThrow(AuthService::badCredentials);
-        String hash = jdbc.queryForObject("SELECT password_hash FROM users WHERE id = ?", String.class, user.id());
-        if (!passwords.matches(password, hash)) throw badCredentials();
-        return createSession(user);
+    public SignedIn login(String usernameKey, String password, String previousToken) {
+        var credentials = jdbc.query("""
+                SELECT id, username, password_hash FROM users WHERE username_key = ?
+                """, (rs, row) -> new Credentials(new User(rs.getLong(1), rs.getString(2)), rs.getString(3)),
+                usernameKey).stream().findFirst().orElse(null);
+        boolean validInput = password != null && !password.isBlank()
+                && password.length() <= 72 && password.getBytes(StandardCharsets.UTF_8).length <= 72;
+        // Unknown accounts go through the same cost-10 BCrypt verification as regular accounts.
+        String hash = credentials == null ? unknownUserHash : credentials.hash();
+        boolean matches = passwords.matches(validInput ? password : "", hash);
+        if (!validInput || !matches || credentials == null) throw badCredentials();
+        return createSession(credentials.user(), previousToken);
+    }
+
+    private record Credentials(User user, String hash) {}
+
+    private static void validateNewPassword(String password) {
+        if (password == null || password.codePointCount(0, password.length()) < 8
+                || password.codePointCount(0, password.length()) > 72
+                || !REGISTRATION_PASSWORD.matcher(password).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Use 8–72 characters with an uppercase letter, a lowercase letter, a number and a special character");
+        }
+        if (password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must fit within 72 UTF-8 bytes");
+        }
     }
 
     public User requireUser(String token) {
@@ -68,12 +92,12 @@ public class AuthService {
     }
 
     @Transactional
-    public SignedIn loginExternal(String provider, String appId, String providerUserId) {
+    public SignedIn loginExternal(String provider, String appId, String providerUserId, String previousToken) {
         User user = jdbc.query("SELECT u.id, u.username FROM oauth_identities i JOIN users u ON u.id = i.user_id "
                         + "WHERE i.provider = ? AND i.app_id = ? AND i.provider_user_id = ?",
                 (rs, row) -> new User(rs.getLong(1), rs.getString(2)), provider, appId, providerUserId)
                 .stream().findFirst().orElseGet(() -> createExternalUser(provider, appId, providerUserId));
-        return createSession(user);
+        return createSession(user, previousToken);
     }
 
     private User createExternalUser(String provider, String appId, String providerUserId) {
@@ -104,13 +128,18 @@ public class AuthService {
                 (rs, row) -> new User(rs.getLong(1), rs.getString(2)), key).stream().findFirst();
     }
 
-    private SignedIn createSession(User user) {
+    private SignedIn createSession(User user, String previousToken) {
+        logout(previousToken);
+        String token = newToken();
+        jdbc.update("INSERT INTO auth_sessions(token_hash, user_id, expires_at) VALUES (?, ?, ?)",
+                tokenHash(token), user.id(), Timestamp.from(Instant.now().plus(AuthCookies.SESSION_DURATION)));
+        return new SignedIn(user, token);
+    }
+
+    private String newToken() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        jdbc.update("INSERT INTO auth_sessions(token_hash, user_id, expires_at) VALUES (?, ?, ?)",
-                tokenHash(token), user.id(), Timestamp.from(Instant.now().plus(7, ChronoUnit.DAYS)));
-        return new SignedIn(user, token);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private static String tokenHash(String token) {

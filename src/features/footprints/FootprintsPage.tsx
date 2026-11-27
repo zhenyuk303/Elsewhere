@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { travelSlides } from '../carousel/carouselData'
 import { FootprintEditor } from './FootprintEditor'
+import { serverFootprints } from './footprintsApi'
 import {
-  allFilters, demoFootprints, filterPhotos, provinces, shufflePhotoIds, themes,
-  type Filters, type Footprint, type FootprintsRepository, type PhotoDraft,
+  allFilters, filterPhotos, provinces, shufflePhotoIds, themes,
+  type Filters, type Footprint, type FootprintsRepository, type PhotoDraft, type PhotoUpload,
 } from './footprintsData'
 import { mobileBreakpoint, photoSize, reelFrame, reelSlideDistance, reelStride, rightmostPhotoX, shiftReelCard, trailingPhotoOffset, wheelTravel } from './reelGeometry'
 import { useReelMotion } from './useReelMotion'
@@ -63,7 +64,7 @@ function galleryLayout(width: number, gallery: Gallery, position: number, openin
 type GalleryCard = ReturnType<typeof galleryLayout>[number]
 type FilterSlide = { width: number; distance: number; outgoing: GalleryCard[] }
 
-export function FootprintsPage({ ownerId, repository = demoFootprints }: {
+export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   ownerId: number
   repository?: FootprintsRepository
 }) {
@@ -74,6 +75,7 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
   const [editor, setEditor] = useState<'add' | Footprint | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [notice, setNotice] = useState('')
   const [wheelHoverPaused, setWheelHoverPaused] = useState(false)
@@ -115,9 +117,10 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
       setGallery({ ids: shufflePhotoIds(records) })
       setLoading(false)
       if (animateOpening && records.length) openReel()
-    }).catch(() => {
+    }).catch((error: unknown) => {
       if (!active) return
       setLoadFailed(true)
+      setLoadError(error instanceof Error ? error.message : 'Could not open your photo journal.')
       setLoading(false)
     })
     return () => { active = false }
@@ -188,10 +191,10 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
     })
   }
 
-  async function save(draft: PhotoDraft) {
+  async function save(draft: PhotoDraft, upload?: PhotoUpload) {
     const previous = editor !== 'add' ? editor : null
     if (!editor || (previous && previous.ownerId !== ownerId)) throw new Error('You can only edit photos you own.')
-    const record = await repository.save(ownerId, draft, previous?.id)
+    const record = await repository.save(ownerId, draft, previous?.id, upload)
     if (!mounted.current) return
     const next = previous ? photos.map(photo => photo.id === record.id ? record : photo) : [...photos, record]
     const result = filterPhotos(next, chosenFilters.current)
@@ -357,7 +360,7 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
         {loading || loadFailed || (!slide && !gallery.ids.length) ? (
           <div className="fp-empty" role={loadFailed ? 'alert' : 'status'}>
             {loading ? 'Opening your photo journal…' : loadFailed ? <>
-              <p>Could not open your local photo library.</p>
+              <p>{loadError}</p>
               <button type="button" onClick={() => { setLoadFailed(false); setLoading(true); setAttempt(value => value + 1) }}>Try again</button>
             </> : <>
               <p>No footprints match these filters.</p>
@@ -368,7 +371,18 @@ export function FootprintsPage({ ownerId, repository = demoFootprints }: {
       </div>
 
       <span className="fp-sr-only" role="status">{notice}</span>
-      {editor && <FootprintEditor photo={editor === 'add' ? undefined : editor} onSave={save} onDismiss={closeEditor} />}
+      {editor && <FootprintEditor photo={editor === 'add' ? undefined : editor} onSave={save} onDismiss={closeEditor}
+        onDelete={editor !== 'add' && repository.remove ? async () => {
+          await repository.remove!(ownerId, editor.id)
+          if (!mounted.current) return
+          const next = photos.filter(photo => photo.id !== editor.id)
+          setPhotos(next)
+          resetReel()
+          setFilterSlide(null)
+          setGallery({ ids: shufflePhotoIds(filterPhotos(next, chosenFilters.current)), version: ++galleryVersion.current })
+          setNotice('Footprint deleted.')
+          closeEditor()
+        } : undefined} />}
     </section>
   )
 }

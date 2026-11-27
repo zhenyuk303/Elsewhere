@@ -12,6 +12,11 @@ import {
 import { REDUCED_TRANSITION_MS } from './features/transition/RunwayTransition'
 import './styles/global.css'
 
+vi.mock('./features/footprints/footprintsApi', async () => {
+  const { createDemoRepository } = await import('./features/footprints/footprintsData')
+  return { serverFootprints: createDemoRepository() }
+})
+
 vi.mock('./features/auth/authApi', () => ({
   authenticate: vi.fn().mockResolvedValue({ id: 1, username: 'traveler' }),
   beginSocialLogin: vi.fn().mockResolvedValue('https://github.com/login/oauth/authorize'),
@@ -61,7 +66,7 @@ function fillValidSignupForm() {
     target: { value: 'traveler' },
   })
   fireEvent.change(screen.getByLabelText('Password'), {
-    target: { value: 'secret-path' },
+    target: { value: 'Fixture1!' },
   })
   fireEvent.click(
     screen.getByRole('checkbox', {
