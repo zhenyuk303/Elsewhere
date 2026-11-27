@@ -41,7 +41,8 @@ public class OAuthService {
         return new Started(client.authorizationUrl(provider, state, challenge), state);
     }
 
-    public AuthService.SignedIn complete(String providerName, String code, String state, String cookieState) {
+    public AuthService.SignedIn complete(String providerName, String code, String state, String cookieState,
+            String previousToken) {
         OAuthSettings.Provider provider = configured(providerName);
         if (code == null || code.isBlank() || state == null || state.isBlank() || cookieState == null ||
                 !MessageDigest.isEqual(state.getBytes(StandardCharsets.UTF_8), cookieState.getBytes(StandardCharsets.UTF_8)))
@@ -55,7 +56,7 @@ public class OAuthService {
                 stateHash, providerName, Timestamp.from(Instant.now()));
         if (consumed != 1) throw invalidState();
         String providerUserId = client.exchangeUserId(provider, code, verifier);
-        return auth.loginExternal(providerName, provider.clientId(), providerUserId);
+        return auth.loginExternal(providerName, provider.clientId(), providerUserId, previousToken);
     }
 
     private OAuthSettings.Provider configured(String name) {

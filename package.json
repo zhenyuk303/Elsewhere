@@ -4,12 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "assets:carousel": "node scripts/optimize-carousel-images.mjs",
+    "assets:province-labels": "node scripts/generate-province-labels.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest",
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@fontsource-variable/google-sans": "^5.3.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
@@ -17,6 +20,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

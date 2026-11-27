@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
 import { AuthPanel } from './AuthPanel'
 
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
@@ -27,7 +29,9 @@ describe('AuthPanel', () => {
   it('renders the exact signup experience without an email field', () => {
     renderPanel()
 
-    expect(screen.getByText('ELSEWHERE')).toBeInTheDocument()
+    const brand = screen.getByRole('link', { name: 'Elsewhere home' })
+    expect(brand.querySelector('.brand-logo')).toBeInTheDocument()
+    expect(brand).not.toHaveTextContent('ELSEWHERE')
     expect(screen.queryByText('YOUR NEXT CHAPTER')).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Create your account' }),
@@ -44,13 +48,13 @@ describe('AuthPanel', () => {
     expect(screen.getByRole('button', { name: 'Google' })).toBeInTheDocument()
   })
 
-  it('renders the primary login action without a decorative arrow', () => {
+  it('renders the primary signup action without a decorative arrow', () => {
     renderPanel()
 
-    const loginButton = screen.getByRole('button', { name: 'Login' })
+    const signupButton = screen.getByRole('button', { name: 'Sign Up' })
 
-    expect(loginButton).toHaveTextContent(/^Login$/)
-    expect(loginButton.querySelector('.button-arrow')).toBeNull()
+    expect(signupButton).toHaveTextContent(/^Sign Up$/)
+    expect(signupButton.querySelector('.button-arrow')).toBeNull()
   })
 
   it('animates the three-line heading block while keeping its anchor fixed', () => {
@@ -78,8 +82,8 @@ describe('AuthPanel', () => {
   it('shows GitHub and Google marks without the retired providers', () => {
     renderPanel()
 
-    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('.social-icon')).toHaveTextContent('GH')
-    expect(screen.getByRole('button', { name: 'Google' }).querySelector('.social-icon')).toHaveTextContent('G')
+    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('img')).toHaveAttribute('src', githubMark)
+    expect(screen.getByRole('button', { name: 'Google' }).querySelector('img')).toHaveAttribute('src', googleMark)
     expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '微信' })).not.toBeInTheDocument()
   })
@@ -167,7 +171,7 @@ describe('AuthPanel', () => {
 
     await user.type(screen.getByLabelText('Username'), '   ')
     await user.type(screen.getByLabelText('Password'), '   ')
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
 
     expect(screen.getByText('Username is required')).toBeInTheDocument()
     expect(screen.getByText('Password is required')).toBeInTheDocument()
@@ -180,7 +184,7 @@ describe('AuthPanel', () => {
   it('submits signup only after the agreement is accepted', async () => {
     const user = userEvent.setup()
     const { onValidSubmit } = renderPanel()
-    const submit = screen.getByRole('button', { name: 'Login' })
+    const submit = screen.getByRole('button', { name: 'Sign Up' })
     vi.spyOn(submit, 'getBoundingClientRect').mockReturnValue({
       left: 120,
       top: 480,
@@ -189,7 +193,7 @@ describe('AuthPanel', () => {
     } as DOMRect)
 
     await user.type(screen.getByLabelText('Username'), 'traveler')
-    await user.type(screen.getByLabelText('Password'), 'secret-path')
+    await user.type(screen.getByLabelText('Password'), 'Fixture1!')
     await user.click(
       screen.getByRole('checkbox', {
         name: 'I agree to all Term, Privacy Policy and Fees',
@@ -197,12 +201,27 @@ describe('AuthPanel', () => {
     )
     await user.click(submit)
 
-    expect(onValidSubmit).toHaveBeenCalledWith({
-      left: 120,
-      top: 480,
-      width: 340,
-      height: 54,
-    })
+    expect(onValidSubmit).toHaveBeenCalledWith(
+      {
+        left: 120,
+        top: 480,
+        width: 340,
+        height: 54,
+      },
+      'signup',
+    )
+  })
+
+  it('shows the signup password rules and rejects a digits-only password before submitting', async () => {
+    const user = userEvent.setup()
+    const { onAuthenticate } = renderPanel()
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/8–72 characters/)
+    await user.type(screen.getByLabelText('Username'), 'traveler')
+    await user.type(screen.getByLabelText('Password'), '12345678')
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/uppercase letter/)
+    expect(onAuthenticate).not.toHaveBeenCalled()
   })
 
   it('places login social actions in the same form slot as signup', () => {

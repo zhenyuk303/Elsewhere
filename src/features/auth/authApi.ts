@@ -6,7 +6,11 @@ async function request(path: string, options?: RequestInit): Promise<AuthUser | 
     response = await fetch(`/api/auth/${path}`, {
       credentials: 'same-origin',
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.method === 'POST' ? { 'X-Elsewhere-Request': '1' } : {}),
+        ...options?.headers,
+      },
     })
   } catch {
     throw new Error('Cannot reach the server. Please try again.')
@@ -47,6 +51,7 @@ export async function beginSocialLogin(provider: SocialProvider): Promise<string
     response = await fetch(`/api/auth/oauth/${provider}/start`, {
       method: 'POST',
       credentials: 'same-origin',
+      headers: { 'X-Elsewhere-Request': '1' },
     })
   } catch {
     throw new Error('Cannot reach the server. Please try again.')
