@@ -23,6 +23,7 @@
 
 .brand .brand-logo {
   --brand-logo-width: clamp(170px, 15vw, 240px);
+  --brand-logo-size: calc(var(--brand-logo-width) / 5.47);
 }
 
 .title-block {
