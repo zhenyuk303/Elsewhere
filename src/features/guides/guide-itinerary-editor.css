@@ -1,0 +1,134 @@
+.guide-itinerary {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  color: #202630;
+  font: 400 .88rem/1.5 'Google Sans Variable', Arial, sans-serif;
+}
+.guide-itinerary .guide-itinerary-day {
+  position: relative;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid rgb(35 48 104 / 16%);
+}
+.guide-itinerary-day > legend { padding: 0 12px 0 0; font-size: 1.12rem; font-weight: 650; }
+.guide-itinerary button { font: inherit; cursor: pointer; }
+.guide-itinerary :is(input, textarea) {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid rgb(35 48 104 / 18%);
+  border-radius: 7px;
+  background: rgb(255 255 255 / 75%);
+  color: #202630;
+  font: inherit;
+}
+.guide-itinerary textarea { resize: vertical; }
+.guide-itinerary :is(input, textarea)::placeholder { color: #737876; }
+.guide-itinerary :is(button, input, textarea):focus-visible {
+  outline: 2px solid #233068;
+  outline-offset: 3px;
+}
+.guide-itinerary-stops { display: grid; gap: 14px; }
+.guide-itinerary-stop {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgb(35 48 104 / 13%);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 30%);
+}
+.guide-itinerary-stop-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.guide-itinerary-stop-head h4 { margin: 0; font-size: .88rem; font-weight: 600; }
+.guide-itinerary-remove, .guide-itinerary-remove-day {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #665f58;
+  font-size: .76rem !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.guide-itinerary-remove-day { display: block; margin: -8px 0 12px auto; }
+.guide-itinerary-place-time { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; }
+.guide-itinerary-field { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.guide-itinerary-time { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 8px; }
+.guide-itinerary-time-label { display: grid; gap: 4px; min-width: 0; }
+.guide-itinerary-time-label > span { color: #665f58; font-size: .72rem; }
+.guide-itinerary-time-divider { align-self: end; padding-bottom: 10px; color: #665f58; }
+.guide-itinerary-photos {
+  min-width: 0;
+  padding: 10px;
+  border: 1px dashed rgb(35 48 104 / 25%);
+  border-radius: 8px;
+}
+.guide-itinerary-photos[data-dragging='true'] { background: #e9edf6; border-color: #233068; }
+.guide-itinerary-photo-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.guide-itinerary-photo-list li { position: relative; width: 96px; height: 78px; }
+.guide-itinerary-photo-list img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 5px; }
+.guide-itinerary-photo-list button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgb(35 48 104 / 20%);
+  border-radius: 50%;
+  background: #fff;
+  color: #233068;
+  line-height: 1;
+}
+.guide-itinerary-attach {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 52px;
+  color: #233068;
+  text-align: center;
+}
+.guide-itinerary .guide-itinerary-attach input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.guide-itinerary-attach:focus-within { outline: 2px solid #233068; outline-offset: 3px; border-radius: 5px; }
+.guide-itinerary-attach > span { pointer-events: none; }
+.guide-itinerary-drop-hint { color: #665f58; }
+.guide-itinerary-add-item, .guide-itinerary-add-day {
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid rgb(35 48 104 / 22%);
+  border-radius: 7px;
+  background: transparent;
+  color: #233068;
+}
+.guide-itinerary-add-item { margin-top: 12px; }
+.guide-itinerary-add-day { justify-self: start; }
+.guide-itinerary :disabled { opacity: .55; cursor: default; }
+@media (max-width: 600px) {
+  .guide-itinerary-stop { padding: 13px; }
+  .guide-itinerary-place-time { grid-template-columns: minmax(0, 1fr); }
+  .guide-itinerary :is(input, textarea) { font-size: 1rem; }
+  .guide-itinerary-drop-hint { display: block; font-size: .76rem; }
+  .guide-itinerary-photo-list button { width: 32px; height: 32px; }
+}

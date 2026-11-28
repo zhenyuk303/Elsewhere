@@ -31,6 +31,20 @@ export function photoGeometry(viewport: number, x: number) {
   return { left: x * scale, width: width * scale, height: height * scale, scale }
 }
 
+export function highestPhotoBefore(viewport: number, rightEdge: number) {
+  if (viewport <= mobileBreakpoint) return photoSize(viewport).height
+
+  // Use the tallest card that can reach the reading column at any scroll position.
+  let before = 0
+  let after = viewport
+  while (after - before > .5) {
+    const x = (before + after) / 2
+    if (photoGeometry(viewport, x).left <= rightEdge) before = x
+    else after = x
+  }
+  return photoGeometry(viewport, after).height
+}
+
 export function reelFrame(viewport: number, count: number, position: number, openingScale = 1) {
   const stride = reelStride(viewport)
   const length = stride * count
