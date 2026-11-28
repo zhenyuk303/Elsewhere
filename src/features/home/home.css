@@ -33,6 +33,26 @@ body.home-view {
   pointer-events: auto;
 }
 
+.homepage.homepage--guides {
+  position: relative;
+  inset: auto;
+  overflow: visible;
+  background: var(--elsewhere-warm);
+}
+
+.homepage--guides .homepage-warm-reveal {
+  position: static;
+}
+
+.homepage--guides .homepage-nav-action[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.homepage--guides .homepage-nav button:focus-visible {
+  outline: 2px solid var(--elsewhere-indigo);
+  outline-offset: 3px;
+}
+
 .homepage--primed,
 .homepage--gallery {
   pointer-events: none;
@@ -100,6 +120,18 @@ body.home-view {
   --brand-logo-size: clamp(34px, 3.5vw, 54px);
   justify-self: start;
 }
+
+.homepage-brand-home {
+  display: flex;
+  justify-self: start;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.homepage-brand-home:disabled { cursor: default; }
 
 .homepage-nav-right {
   justify-self: end;
@@ -203,7 +235,10 @@ body.home-view {
   background: var(--elsewhere-warm);
   box-shadow: 0 12px 32px
     color-mix(in srgb, var(--elsewhere-indigo) 12%, transparent);
+  transform-origin: top right;
 }
+
+.homepage-profile-menu[inert] { pointer-events: none; }
 
 .homepage-profile-menu-item {
   padding: 11px 12px;
