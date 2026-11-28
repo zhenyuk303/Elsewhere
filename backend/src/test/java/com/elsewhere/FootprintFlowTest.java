@@ -37,6 +37,29 @@ class FootprintFlowTest {
     }
 
     @Test
+    void stageI02CreatesReadsAndDeletesById() throws Exception {
+        Cookie owner = account("qa_stage_i02");
+        String png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV1sAAAAASUVORK5CYII=";
+        var input = new java.util.HashMap<>(draft("data:image/png;base64," + png));
+        input.put("note", "\u6625\u6e38");
+        var response = mvc.perform(post("/api/footprints").cookie(owner).contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsBytes(input)))
+                .andExpect(status().isCreated()).andReturn().getResponse();
+        String id = json.readTree(response.getContentAsByteArray()).path("id").asText();
+        assertThat(id).isNotBlank();
+        String image = "/api/footprints/" + id + "/image";
+        mvc.perform(get("/api/footprints/{id}", id).cookie(owner)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id)).andExpect(jsonPath("$.province").value("Anhui"))
+                .andExpect(jsonPath("$.city").value("Hefei")).andExpect(jsonPath("$.note").value("\u6625\u6e38"))
+                .andExpect(jsonPath("$.image.src").value(image));
+        mvc.perform(get(image).cookie(owner)).andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_PNG))
+                .andExpect(content().bytes(Base64.getDecoder().decode(png)));
+        mvc.perform(delete("/api/footprints/{id}", id).cookie(owner)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/footprints/{id}", id).cookie(owner)).andExpect(status().isNotFound());
+    }
+
+    @Test
     void externalIdentityIsCaseSensitive() {
         var first = auth.loginExternal("google", "test-app", "CaseSensitiveSubject");
         var second = auth.loginExternal("google", "test-app", "casesensitivesubject");

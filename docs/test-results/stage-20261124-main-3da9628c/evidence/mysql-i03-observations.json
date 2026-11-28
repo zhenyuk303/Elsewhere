@@ -1,0 +1,15 @@
+{
+  "database": "MySQL 8.4.11",
+  "browser": "Codex in-app browser",
+  "uploadPreview": "1x1 PNG",
+  "savedToast": true,
+  "logoutThenPasswordLogin": true,
+  "sameServerPhotoDecoded": true,
+  "city": "Hefei",
+  "note": "春游",
+  "deletedToast": true,
+  "refreshReturnedToLogin": true,
+  "deletedAssetAbsentAfterLogin": true,
+  "bundledAnhuiStillPresent": true,
+  "consoleErrors": 0
+}

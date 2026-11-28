@@ -1,0 +1,124 @@
+
+> elsewhere-travel-demo@0.0.0 test
+> vitest --run --reporter=verbose
+
+
+ RUN  v5.0.5 D:/Song/M.U.S.T/2609/SEP/Elsewhere-test-3da9628c
+
+ ✓ src/features/footprints/useReelMotion.test.ts > reaches the exact scroll target without speeding up in the last frame 36ms
+ ✓ src/features/carousel/carouselData.test.ts > carouselData > loads all 34 destination images from the supplied image collection 5ms
+ ✓ src/features/carousel/carouselData.test.ts > carouselData > shuffles a complete cycle without losing or repeating a destination 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > P01 wheelTravel(4,-2,1,720) returns -80 4ms
+ ✓ src/features/footprints/reelGeometry.test.ts > P02 wheelTravel(4,-2,2,720) returns -1440 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > P03 wheelTravel(4,-2,0,720) returns -2 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > P04 wheelTravel(2,-4,0,720) returns 2 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > reproduces the reference staircase proportions at a 1280px viewport 2ms
+ ✓ src/features/footprints/reelGeometry.test.ts > docks the selected photo inside the right edge at each viewport size 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > moves according to wheel distance instead of snapping to a slot 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > keeps the entering photo visible at the left edge of a short loop 1ms
+ ✓ src/features/footprints/reelGeometry.test.ts > preserves the paint order when the left edges of overlapping photos cross 1ms
+ ✓ src/features/footprints/footprintsApi.test.ts > I01 creates a footprint through POST and propagates a 400 error 15ms
+ ✓ src/features/footprints/footprintsApi.test.ts > uses authenticated API requests and encodes seed identifiers 2ms
+ ✓ src/features/footprints/footprintsApi.test.ts > imports only the current account browser records before listing 3ms
+ ✓ src/features/footprints/footprintsApi.test.ts > surfaces backend validation and expired-session errors 1ms
+ ✓ src/features/home/WalkerParade.test.tsx > WalkerParade > shows one decorative walker, then waits five empty seconds after exit 38ms
+ ✓ src/features/home/WalkerParade.test.tsx > WalkerParade > plays all seven source intervals in order and wraps to the first 21ms
+ ✓ src/features/home/WalkerParade.test.tsx > WalkerParade > ignores duplicate crossing events and clears the wait on unmount 4ms
+ ✓ src/features/home/WalkerParade.test.tsx > WalkerParade > skips a failed sprite without holding the page 3ms
+ ✓ src/features/home/WalkerParade.test.tsx > WalkerParade > omits continuous walking for reduced motion and removes its listener 4ms
+ ✓ src/features/home/walkerData.test.ts > walkerCycles > uses only the seven requested recording segments in order 4ms
+ ✓ src/features/home/walkerData.test.ts > walkerCycles > ships a sprite strip and timing for each loop 2ms
+ ✓ src/features/home/homeIntro.test.ts > home intro assets > prepares a five-scene travel sequence before the page lifts 6ms
+ ✓ src/features/home/homeIntro.test.ts > home intro assets > deduplicates image construction and decode work 2ms
+ ✓ src/features/home/homeIntro.test.ts > home intro assets > treats image loading and decode failures as non-blocking 2ms
+ ✓ src/features/footprints/footprints.test.ts > seeds one owned record per existing province and preserves the carousel pairing 8ms
+ ✓ src/features/footprints/footprints.test.ts > keeps browser edits with their account and rejects another owner’s photo 5ms
+ ✓ src/features/footprints/footprints.test.ts > uses the local folder for its authorized account and preserves existing seed edits 7ms
+ ✓ src/features/footprints/footprints.test.ts > matches both filters and returns each matching record once 2ms
+ ✓ src/features/carousel/useCarousel.test.tsx > useCarousel > advances through reveal, hold, and horizontal slide at the agreed timings 22ms
+ ✓ src/features/carousel/useCarousel.test.tsx > useCarousel > cancels the active phase timer while paused and resumes one clean timer 4ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > keeps the same five image nodes through every controlled phase 65ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > waits for the current photo to decode before starting the first reveal 40ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > decodes only the visible and upcoming photos before each reveal 19ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > renders location-only travel slides and starts in grayscale reveal 25ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > starts from a shuffled destination order and reports the full collection 11ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > runs the five transition stages at their exact boundaries 38ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > exposes the geometry and semantic animation layers 50ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > keeps the wipe on both guides until it clears the 2480 × 900 viewport 8ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > keeps the calligraphy in the lower-left safe area outside the color window 55ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > shrinks the rotated color window away from the label on wide layouts 11ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > keeps the gray image, color reveal, and frame in one coordinate system 8ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > finishes the reveal with a clockwise square rotation 11ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > keeps a neutral location card when a travel image fails to load 10ms
+ ✓ src/features/carousel/TravelCarousel.test.tsx > TravelCarousel > falls back to the English location only when a calligraphy label fails 5ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > keeps the wipe on both guides until it clears the 390 × 844 viewport 5ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > keeps the wipe on both guides until it clears the 1200 × 380 viewport 5ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > keeps the circular cap radius while stretching and ends as a rectangle 12ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > cleans up timers when the transition unmounts 4ms
+ ✓ src/features/transition/RunwayTransition.test.tsx > RunwayTransition > preserves the stage order on the short reduced-motion path 6ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > keeps the indigo curtain separate from the warm page and the persistent picture 133ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > rolls fixed digit columns to the five scene targets and cleans up on unmount 31ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > gives the journey button four decorative edges and an independent accessible label 30ms
+ ✓ src/features/auth/AuthPanel.test.tsx > L01 agreement decision (signup, checked=false, operands=T/T) 373ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > locks primed and gallery states and unlocks interaction while lifting 45ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > places the logo left and all four navigation controls right 46ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > does not schedule phase work from inside the component 8ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > starts the walking parade only after App enters ready 28ms
+ ✓ src/App.test.tsx > App > always opens on Login even when a server session could be restored 137ms
+ ✓ src/App.test.tsx > App > prepares only the first homepage image while Login is idle 12ms
+ ✓ src/App.test.tsx > App > keeps the login layer on the shared warm background 15ms
+ ✓ src/App.test.tsx > App > does not mount the homepage when authentication fails 69ms
+ ✓ src/features/auth/AuthPanel.test.tsx > L02 agreement decision (signup, checked=true, operands=T/F) 194ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > keeps profile and navigation hooks static 20ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > toggles an accessible profile menu with the requested actions 32ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > keeps the personal homepage action reserved and closes its menu 31ms
+ ✓ src/App.test.tsx > App > restores the Homepage only after a successful OAuth callback 30ms
+ ✓ src/App.test.tsx > App > switches only the left panel and preserves the carousel node and phase 30ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > dismisses the profile menu outside and with Escape 37ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > supports keyboard opening, navigation, and Tab dismissal 31ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > blocks duplicate logout submissions while one is pending 34ms
+ ✓ src/features/auth/AuthPanel.test.tsx > L03 agreement decision (login, checked=false, operands=F/short-circuit) 154ms
+ ✓ src/App.test.tsx > App > primes one homepage beneath the paused auth view and swaps layers atomically 125ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > keeps a failed logout available for retry 54ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > removes document menu listeners when closed or unmounted 30ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > locks document scrolling only while an active homepage is mounted 8ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > disables the persistent marquee for reduced motion 18ms
+ ✓ src/features/home/HomePage.test.tsx > HomePage > preserves the marquee position within its repeat when resizing 11ms
+ ✓ src/features/auth/AuthPanel.test.tsx > L04 agreement decision (login, checked=true, operands=F/short-circuit) 188ms
+ ✓ src/App.test.tsx > App > advances the homepage phases from App-owned timers 67ms
+ ✓ src/App.test.tsx > App > cleans up App-owned idle and homepage timers on unmount 47ms
+ ✓ src/App.test.tsx > App > enters the final homepage directly after the reduced-motion airplane 46ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > renders the exact signup experience without an email field 34ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > renders the primary signup action without a decorative arrow 10ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > animates the three-line heading block while keeping its anchor fixed 8ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > shows GitHub and Google marks without the retired providers 14ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > shows a backend configuration error without leaving the form 26ms
+ ✓ src/App.test.tsx > App > keeps the login label while the login transition collapses 37ms
+ ✓ src/App.test.tsx > App > captures the real button, divider, and card geometry for the transition 54ms
+ ✓ src/App.test.tsx > App > uses the card horizontal center as the transition axis on stacked layouts 54ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > switches password visibility without changing its value 74ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > uses one equally sized outer focus highlight for both credential fields 33ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > asks the parent to switch only when the bottom login link is used 15ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > rejects whitespace credentials and an unchecked signup agreement 65ms
+ ✓ src/App.test.tsx > App > opens Footprints after one Home exit and preserves the shared navigation 123ms
+ ✓ src/App.test.tsx > App > cancels the pending Footprints opening when returning Home during the exit 54ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > submits signup only after the agreement is accepted 120ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > places login social actions in the same form slot as signup 14ms
+ ✓ src/App.test.tsx > App > opens Footprints immediately when reduced motion is requested 64ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > renders login copy and submits without an agreement checkbox 124ms
+ ✓ src/features/auth/AuthPanel.test.tsx > AuthPanel > keeps the user on the form when the server rejects the credentials 133ms
+ ✓ src/App.test.tsx > App > settles on the last gallery click and keeps missing info tied to the lead photo 169ms
+ ✓ src/App.test.tsx > App > moves the clicked photo with its neighbor on the reel into the rightmost lead slot 141ms
+ ✓ src/App.test.tsx > App > moves the outgoing photos continuously before settling on the selected province 123ms
+ ✓ src/App.test.tsx > App > waits for mouse movement after the wheel settles before restoring hover 91ms
+ ✓ src/App.test.tsx > App > keeps the filtered reel moving and wrapping after selecting a photo 142ms
+ ✓ src/App.test.tsx > App > advances the reel with the keyboard without replacing its introduction 91ms
+ ✓ src/App.test.tsx > App > logs out from the profile menu and returns to Login 75ms
+ ✓ src/App.test.tsx > App > returns to Login when backend logout cleanup fails 54ms
+ ✓ src/App.test.tsx > App > keeps Login disabled until backend logout cleanup settles 49ms
+
+ Test Files  14 passed (14)
+      Tests  111 passed (111)
+   Start at  21:41:08
+   Duration  10.61s (environment 71%, setup 20%, tests 4%, import 2%, transform 2%, worker 1%)
+

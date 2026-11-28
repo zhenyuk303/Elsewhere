@@ -8,6 +8,23 @@ const draft = {
 
 afterEach(() => { vi.unstubAllGlobals(); window.localStorage.clear() })
 
+it('I01 creates a footprint through POST and propagates a 400 error', async () => {
+  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV1sAAAAASUVORK5CYII='
+  const input = { ...draft, note: '\u6625\u6e38', image: { src: image, thumbnailSrc: image } }
+  const fetch = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...input, id: 'qa-created', ownerId: 1 }), { status: 201 }))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ message: 'Invalid footprint' }), { status: 400 }))
+  vi.stubGlobal('fetch', fetch)
+  await expect(serverFootprints.save(1, input)).resolves.toMatchObject({ id: 'qa-created' })
+  await expect(serverFootprints.save(1, input)).rejects.toThrow('Invalid footprint')
+  expect(fetch).toHaveBeenCalledTimes(2)
+  for (const [url, init] of fetch.mock.calls) {
+    expect(url).toBe('/api/footprints')
+    expect(init).toMatchObject({ method: 'POST', credentials: 'same-origin' })
+    expect(JSON.parse(init.body)).toMatchObject(input)
+  }
+})
+
 it('uses authenticated API requests and encodes seed identifiers', async () => {
   const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...draft, id: 'id', ownerId: 1 }) })
   vi.stubGlobal('fetch', fetch)

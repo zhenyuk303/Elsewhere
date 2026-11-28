@@ -1,0 +1,106 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.elsewhere:elsewhere-backend >-------------------
+[INFO] Building elsewhere-backend 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ elsewhere-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ elsewhere-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ elsewhere-backend ---
+[INFO] skip non existing resourceDirectory D:\Song\M.U.S.T\2609\SEP\Elsewhere-test-3da9628c\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ elsewhere-backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ elsewhere-backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.elsewhere.StageAuthHttpTest
+21:58:33.952 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.elsewhere.StageAuthHttpTest]: StageAuthHttpTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:58:34.158 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.elsewhere.ElsewhereApplication for test class com.elsewhere.StageAuthHttpTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.0)
+
+2026-11-24T21:58:34.995+08:00  INFO 40628 --- [           main] com.elsewhere.StageAuthHttpTest          : Starting StageAuthHttpTest using Java 25.0.1 with PID 40628 (started by An in D:\Song\M.U.S.T\2609\SEP\Elsewhere-test-3da9628c\backend)
+2026-11-24T21:58:34.997+08:00  INFO 40628 --- [           main] com.elsewhere.StageAuthHttpTest          : No active profile set, falling back to 1 default profile: "default"
+2026-11-24T21:58:36.195+08:00  INFO 40628 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-11-24T21:58:36.217+08:00  INFO 40628 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-24T21:58:36.218+08:00  INFO 40628 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.41]
+2026-11-24T21:58:36.311+08:00  INFO 40628 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-11-24T21:58:36.312+08:00  INFO 40628 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1288 ms
+2026-11-24T21:58:36.481+08:00  INFO 40628 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-24T21:58:36.832+08:00  INFO 40628 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4db0ba1c
+2026-11-24T21:58:36.834+08:00  INFO 40628 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-24T21:58:37.486+08:00  INFO 40628 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 53838 (http) with context path '/'
+2026-11-24T21:58:37.493+08:00  INFO 40628 --- [           main] com.elsewhere.StageAuthHttpTest          : Started StageAuthHttpTest in 2.92 seconds (process running for 4.296)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\An\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.5\byte-buddy-agent-1.17.5.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+2026-11-24T21:58:40.248+08:00  INFO 40628 --- [1-auto-1-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-24T21:58:40.248+08:00  INFO 40628 --- [1-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-24T21:58:40.249+08:00  INFO 40628 --- [1-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+STAGE E01 status=201 usernameLen=9 passwordLen=10 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE E02 status=400 usernameLen=0 passwordLen=10 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E03 status=400 usernameLen=1 passwordLen=10 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E04 status=400 usernameLen=31 passwordLen=10 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E05 status=400 usernameLen=7 passwordLen=10 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E06 status=400 usernameLen=9 passwordLen=0 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E07 status=400 usernameLen=9 passwordLen=7 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E08 status=400 usernameLen=9 passwordLen=73 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE E09 setup=201 status=409 exactOriginalIdOnly=true noNewSession=true
+STAGE E10 status=400 usernameLen=9 passwordLen=10 agreement=false usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE B01 status=201 usernameLen=10 passwordLen=12 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B02 status=201 usernameLen=2 passwordLen=12 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B03 status=201 usernameLen=3 passwordLen=12 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B04 status=201 usernameLen=29 passwordLen=12 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B05 status=201 usernameLen=30 passwordLen=12 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B06 status=201 usernameLen=10 passwordLen=8 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B07 status=201 usernameLen=10 passwordLen=9 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B08 status=201 usernameLen=10 passwordLen=71 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B09 status=201 usernameLen=10 passwordLen=72 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE B10 status=400 usernameLen=1 passwordLen=12 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE B11 status=400 usernameLen=31 passwordLen=12 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE B12 status=400 usernameLen=10 passwordLen=7 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE B13 status=400 usernameLen=10 passwordLen=73 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE C01 status=200 cookie=present me=200/same-id
+STAGE C02 status=401 cookie=absent me=401
+STAGE C03 status=401 cookie=absent me=401
+STAGE D01 status=201 usernameLen=7 passwordLen=10 agreement=true usersDelta=1 sessionsDelta=1 me=200/same-new-id
+STAGE D02 status=400 usernameLen=7 passwordLen=10 agreement=false usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE D03 status=400 usernameLen=7 passwordLen=7 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE D05 status=400 usernameLen=1 passwordLen=10 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE D04 status=400 usernameLen=7 passwordLen=7 agreement=false usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE D06 status=400 usernameLen=1 passwordLen=10 agreement=false usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE D07 status=400 usernameLen=1 passwordLen=7 agreement=true usersDelta=0 sessionsDelta=0 me=401/no-cookie
+STAGE D08 status=400 usernameLen=1 passwordLen=7 agreement=false usersDelta=0 sessionsDelta=0 me=401/no-cookie
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.440 s -- in com.elsewhere.StageAuthHttpTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 34, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.718 s
+[INFO] Finished at: 2026-11-24T21:58:42+08:00
+[INFO] ------------------------------------------------------------------------

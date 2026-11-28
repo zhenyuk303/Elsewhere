@@ -23,6 +23,35 @@ function renderPanel(mode: 'signup' | 'login' = 'signup') {
   return { onModeChange, onAuthenticate, onSocialLogin, onValidSubmit }
 }
 
+it.each([
+  ['L01', 'signup', false, 'T/T'],
+  ['L02', 'signup', true, 'T/F'],
+  ['L03', 'login', false, 'F/short-circuit'],
+  ['L04', 'login', true, 'F/short-circuit'],
+] as const)('%s agreement decision (%s, checked=%s, operands=%s)', async (id, mode, checked) => {
+  const user = userEvent.setup()
+  const onAuthenticate = vi.fn().mockResolvedValue(undefined)
+  const props = { disabled: false, onModeChange: vi.fn(), onAuthenticate,
+    onSocialLogin: vi.fn().mockResolvedValue(undefined), onValidSubmit: vi.fn() }
+  const { rerender } = render(<AuthPanel {...props} mode={checked ? 'signup' : mode} />)
+  if (checked) {
+    await user.click(screen.getByRole('checkbox'))
+    expect(screen.getByRole('checkbox')).toBeChecked()
+    if (mode === 'login') rerender(<AuthPanel {...props} mode={'login'} />)
+  }
+  await user.type(screen.getByLabelText('Username'), 'qa_logic')
+  await user.type(screen.getByLabelText('Password'), 'synthetic-password')
+  await user.click(screen.getByRole('button', { name: mode === 'signup' ? /^Sign Up$/ : /^Login$/ }))
+  const error = screen.queryByText('Please accept the terms to continue')
+  if (id === 'L01') {
+    expect(error).toBeVisible()
+    expect(onAuthenticate).not.toHaveBeenCalled()
+  } else {
+    expect(error).not.toBeInTheDocument()
+    expect(onAuthenticate).toHaveBeenCalledExactlyOnceWith('qa_logic', 'synthetic-password', checked)
+  }
+})
+
 describe('AuthPanel', () => {
   it('renders the exact signup experience without an email field', () => {
     renderPanel()

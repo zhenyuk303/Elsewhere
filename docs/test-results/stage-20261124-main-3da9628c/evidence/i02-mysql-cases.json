@@ -1,0 +1,22 @@
+[
+  {
+    "name": "rejectsInvalidDataAndImportsBrowserRecordsOnlyOnce",
+    "time": "3.089",
+    "failure": false
+  },
+  {
+    "name": "savesImagesAndMetadataWithOwnerIsolationAndDeletion",
+    "time": "0.226",
+    "failure": false
+  },
+  {
+    "name": "stageI02CreatesReadsAndDeletesById",
+    "time": "0.127",
+    "failure": false
+  },
+  {
+    "name": "externalIdentityIsCaseSensitive",
+    "time": "0.128",
+    "failure": false
+  }
+]

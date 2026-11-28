@@ -1,5 +1,14 @@
 import { photoGeometry, reelFrame, rightmostPhotoX, wheelTravel } from './reelGeometry'
 
+it.each([
+  ['P01', 4, -2, 1, -80],
+  ['P02', 4, -2, 2, -1440],
+  ['P03', 4, -2, 0, -2],
+  ['P04', 2, -4, 0, 2],
+] as const)('%s wheelTravel(%s,%s,%s,720) returns %s', (_id, dx, dy, mode, expected) => {
+  expect(wheelTravel(dx, dy, mode, 720)).toBe(expected)
+})
+
 it('reproduces the reference staircase proportions at a 1280px viewport', () => {
   const floors = Array.from({ length: 5 }, (_, i) => photoGeometry(1280, i * 192))
   expect(floors.map(card => Math.round(card.left))).toEqual([0, 100, 288, 566, 932])
