@@ -1,4 +1,4 @@
-import { photoGeometry, reelFrame, rightmostPhotoX, wheelTravel } from './reelGeometry'
+import { highestPhotoBefore, photoGeometry, reelFrame, rightmostPhotoX, wheelTravel } from './reelGeometry'
 
 it.each([
   ['P01', 4, -2, 1, -80],
@@ -39,6 +39,19 @@ it('moves according to wheel distance instead of snapping to a slot', () => {
 it('keeps the entering photo visible at the left edge of a short loop', () => {
   const frame = reelFrame(1280, 8, -51.2)
   expect(frame.some(card => card.left < 0 && card.left + card.width > 0)).toBe(true)
+})
+
+it('reserves space for the photo details throughout a reel rotation', () => {
+  const readingEdge = 510
+  for (const viewport of [390, 900, 1335, 1920]) {
+    const highest = highestPhotoBefore(viewport, readingEdge)
+    for (let x = -viewport; x <= viewport; x += 2) {
+      const card = photoGeometry(viewport, x)
+      if (card.left <= readingEdge && card.left + card.width >= 0) {
+        expect(card.height).toBeLessThanOrEqual(highest)
+      }
+    }
+  }
 })
 
 it('preserves the paint order when the left edges of overlapping photos cross', () => {

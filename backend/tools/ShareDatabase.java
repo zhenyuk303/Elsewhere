@@ -9,7 +9,8 @@ import java.util.*;
 /** Schema-only database export plus explicitly curated public development fixtures. */
 class ShareDatabase {
     private static final List<String> TABLES = List.of("users", "auth_sessions", "oauth_login_states",
-            "oauth_identities", "footprint_libraries", "footprints", "footprint_imports");
+            "oauth_identities", "footprint_libraries", "footprints", "footprint_imports",
+            "footprint_upload_sessions", "footprint_upload_frames");
     private static final Set<String> THEMES = Set.of("COAST", "MOUNTAINS", "CITY", "COUNTRYSIDE", "CULTURE", "FOOD", "WILDLIFE");
 
     public static void main(String[] args) throws Exception {
@@ -40,7 +41,7 @@ class ShareDatabase {
 
     private static void export(Connection db, Path repo, Path output) throws Exception {
         StringBuilder sql = new StringBuilder("-- Elsewhere safe development snapshot v1\n"
-                + "-- Structure of all seven tables. No live table rows are exported.\n"
+                + "-- Table definitions only. No live table rows are exported.\n"
                 + "-- Fixtures come exclusively from database/dev-seeds.json.\n"
                 + "-- Set @shared_owner_username to your own registered username before importing fixtures.\n"
                 + "-- Existing tables and rows are preserved. No database name or credentials are embedded.\n"

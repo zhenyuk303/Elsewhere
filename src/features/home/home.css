@@ -15,6 +15,7 @@ body.home-view {
 
 .homepage {
   --home-nav-top: max(10px, env(safe-area-inset-top));
+  --home-edge-gutter: max(12px, 1.5vw, env(safe-area-inset-left), env(safe-area-inset-right));
   --home-fast-out: cubic-bezier(0.22, 1, 0.36, 1);
   --home-line-ease: cubic-bezier(0.333, 1, 0.667, 1);
   --home-link-ease: cubic-bezier(0.7, 0.6, 0, 1);
@@ -30,6 +31,26 @@ body.home-view {
   color: var(--elsewhere-indigo);
   font-family: 'Google Sans Variable', Arial, sans-serif;
   pointer-events: auto;
+}
+
+.homepage.homepage--guides {
+  position: relative;
+  inset: auto;
+  overflow: visible;
+  background: var(--elsewhere-warm);
+}
+
+.homepage--guides .homepage-warm-reveal {
+  position: static;
+}
+
+.homepage--guides .homepage-nav-action[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.homepage--guides .homepage-nav button:focus-visible {
+  outline: 2px solid var(--elsewhere-indigo);
+  outline-offset: 3px;
 }
 
 .homepage--primed,
@@ -77,9 +98,7 @@ body.home-view {
 .homepage-nav {
   position: absolute;
   z-index: 7;
-  top: var(--home-nav-top);
-  right: clamp(24px, 4.4vw, 72px);
-  left: clamp(24px, 4.4vw, 72px);
+  inset: var(--home-nav-top) var(--home-edge-gutter) auto;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -98,9 +117,21 @@ body.home-view {
 }
 
 .homepage-brand {
-  --brand-logo-width: clamp(112px, 12.5vw, 210px);
+  --brand-logo-size: clamp(34px, 3.5vw, 54px);
   justify-self: start;
 }
+
+.homepage-brand-home {
+  display: flex;
+  justify-self: start;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.homepage-brand-home:disabled { cursor: default; }
 
 .homepage-nav-right {
   justify-self: end;
@@ -204,7 +235,10 @@ body.home-view {
   background: var(--elsewhere-warm);
   box-shadow: 0 12px 32px
     color-mix(in srgb, var(--elsewhere-indigo) 12%, transparent);
+  transform-origin: top right;
 }
+
+.homepage-profile-menu[inert] { pointer-events: none; }
 
 .homepage-profile-menu-item {
   padding: 11px 12px;
@@ -498,9 +532,8 @@ body.home-view {
   --line-delay: calc(var(--home-content-delay) + 480ms);
   position: absolute;
   z-index: 8;
-  right: clamp(24px, 4.4vw, 90px);
-  bottom: clamp(26px, 4vh, 48px);
-  left: clamp(24px, 4.4vw, 90px);
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: var(--home-edge-gutter);
 }
 
 .homepage-credit {
@@ -515,7 +548,7 @@ body.home-view {
 }
 
 .homepage-credit .brand-logo {
-  --brand-logo-width: clamp(88px, 8vw, 150px);
+  --brand-logo-size: clamp(23px, 2vw, 34px);
 }
 
 @keyframes homepage-frame-open {
@@ -594,14 +627,12 @@ body.home-view {
 
 @media (max-width: 760px) {
   .homepage-nav {
-    right: 18px;
-    left: 18px;
     grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 12px;
   }
 
   .homepage-brand {
-    --brand-logo-width: clamp(90px, 26vw, 120px);
+    --brand-logo-size: 34px;
   }
 
   .homepage-nav-right {
@@ -644,20 +675,9 @@ body.home-view {
   .homepage-final-copy p {
     font-size: 0.86rem;
   }
-
-  .homepage-footer {
-    right: 20px;
-    bottom: 24px;
-    left: 20px;
-  }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {
-  .homepage-nav {
-    right: 20px;
-    left: 20px;
-  }
-
   .homepage-profile {
     width: 34px;
   }
@@ -685,10 +705,6 @@ body.home-view {
     min-height: 34px;
     padding: 8px 15px;
     font-size: 0.62rem;
-  }
-
-  .homepage-footer {
-    bottom: 14px;
   }
 
   .homepage-credit {

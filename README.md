@@ -55,7 +55,7 @@ mvn spring-boot:run
 
 ### 导出并通过 GitHub 共享
 
-`database/shared.sql` 包含七张表的定义和开发初始数据。初始数据来自 `database/dev-seeds.json`，当前为 34 张项目内置省份照片，城市、日期、备注和主题为空。需要共享其他开发文案时，先编辑 JSON 并确认内容可公开，再执行导出。
+`database/shared.sql` 包含数据库表定义和开发初始数据。初始数据来自 `database/dev-seeds.json`，当前为 34 张项目内置省份照片，城市、日期、备注和主题为空。需要共享其他开发文案时，先编辑 JSON 并确认内容可公开，再执行导出。
 
 ```powershell
 ./backend/tools/share-db.ps1 -Action Export
@@ -117,7 +117,13 @@ The backend defaults to MySQL Server 8.4 at `127.0.0.1:3306/elsewhere`. Docker u
 
 For a classroom demo, set `ELSEWHERE_DEMO_USERS=true` and `ELSEWHERE_DEMO_PASSWORD` to a password of at least eight characters before starting the backend. This creates four users once: `traveler`, `atlas`, `rivers`, and `skyline`. Demo users are disabled by default.
 
-Run `mvn test` from `backend/` to verify the API. `POST /api/auth/register` expects `{ "username": "traveler", "password": "at least 8 characters", "agreementAccepted": true }`. `POST /api/auth/login` expects username and password. `GET /api/auth/me` checks the session; `POST /api/auth/logout` ends it. The frontend calls these APIs and starts its existing transition only after successful authentication.
+Run `mvn test` from `backend/` to verify the API. `POST /api/auth/register` accepts `username`, `password`, and `agreementAccepted`. New passwords must be 8–72 characters and contain an uppercase letter (A–Z), a lowercase letter (a–z), a digit (0–9), and a punctuation mark or symbol. BCrypt also limits the UTF-8 representation to 72 bytes. Existing accounts keep their current BCrypt hashes and may log in with their existing passwords.
+
+`POST /api/auth/login` accepts username and password. A missing account and a wrong password both return the same 401. Within a ten-minute window, five failures for the same username and IP, or 30 failures for one IP across usernames, temporarily block further attempts in that window with 429. The counters are in memory and apply per backend process. The IP comes from the servlet request. For multiple clients behind a reverse proxy, configure the servlet container to trust only your proxy and have the proxy replace client-supplied forwarding headers.
+
+`GET /api/auth/me` checks the session. Successful authentication replaces the session token carried by the request, and `POST /api/auth/logout` revokes the current token. Cookies use `HttpOnly` and `SameSite=Lax`, with `Secure` on HTTPS. Set `ELSEWHERE_SECURE_COOKIES=true` when serving HTTPS behind a TLS terminator that leaves the backend connection on HTTP.
+
+Same-origin API writes require `X-Elsewhere-Request: 1`, including login, signup, logout, OAuth start and footprint writes. Browser clients use the Vite proxy locally. Keep API CORS restricted to trusted origins for this CSRF protection. OAuth callbacks continue to use one-time state and PKCE.
 
 ## GitHub and Google login
 
@@ -147,6 +153,22 @@ npm run build
 ## Footprints
 
 After logging in, choose **Footprints** in the primary navigation. Every account starts with one photo for each of the 34 destinations in `travelSlides`. Edits, additions, deletions, and uploaded photographs are saved by the authenticated MySQL-backed APIs. Photo and province are required. City, date, note and theme are optional. Filters match the labels saved on each photo.
+
+### 新增足迹 · 照片分帧上传
+
+浏览器沿用原有压缩流程，最长边为 1120px，上传上限为 4 MiB。每帧最大 256 KiB。浏览器收到服务器确认后显示进度并发送下一帧。网络失败时自动查询服务器确认过的帧，最多重试两次。若仍失败，保持编辑窗口打开，恢复网络后点击 **Retry upload**。
+
+| 请求 | 用途 |
+| --- | --- |
+| `POST /api/footprints/uploads` | 提交总字节数、图片类型、整图 SHA-256，取得上传 ID |
+| `PUT /api/footprints/uploads/{id}/frames/{index}` | 上传二进制帧，编号从 0 开始。头字段 `X-Frame-Offset`、`X-Frame-Length`、`X-Upload-Size` 和 `X-Frame-SHA256` 分别标明偏移、长度、整图大小和帧校验值 |
+| `GET /api/footprints/uploads/{id}` | 查看已确认帧及上传状态 |
+| `POST /api/footprints` | 使用 `uploadId` 和原有足迹字段组装图片、校验整图并保存 |
+| `DELETE /api/footprints/uploads/{id}` | 取消尚未完成的上传 |
+
+上传会话和帧存入 MySQL，后端重启后可以继续。没有新帧的会话会在 24 小时后过期。保存成功后立即清除临时帧，并保留会话 24 小时，以便重试保存时返回同一条足迹。
+
+演示时以 HTTPS 或 `localhost` 打开网站，选一张压缩后仍超过 256 KiB 的照片。在浏览器开发者工具的 Network 面板选择慢速网络，保存时观察 `frames/0`、`frames/1` 等请求。收到一帧确认后临时选择 Offline，保持编辑窗口打开，恢复联网后查看 `GET /uploads/{id}` 和后续帧请求。
 
 Use the wheel, drag the photos, or press the arrow keys to browse an endless loop of photos matching the current filters. Selecting a photo scrolls the reel to bring it to the right and opens its details.
 

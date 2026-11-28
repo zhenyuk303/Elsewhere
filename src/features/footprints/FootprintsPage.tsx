@@ -1,13 +1,24 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Ref } from 'react'
+import { travelSlides } from '../carousel/carouselData'
 import { FootprintEditor } from './FootprintEditor'
+import { FootprintSelect } from './FootprintSelect'
 import { serverFootprints } from './footprintsApi'
 import {
   allFilters, filterPhotos, provinces, shufflePhotoIds, themes,
-  type Filters, type Footprint, type FootprintsRepository, type PhotoDraft,
+  type Filters, type Footprint, type FootprintsRepository, type PhotoDraft, type PhotoUpload,
 } from './footprintsData'
-import { mobileBreakpoint, photoSize, reelFrame, reelSlideDistance, reelStride, rightmostPhotoX, shiftReelCard, trailingPhotoOffset, wheelTravel } from './reelGeometry'
+import { highestPhotoBefore, mobileBreakpoint, photoSize, reelFrame, reelSlideDistance, reelStride, rightmostPhotoX, shiftReelCard, trailingPhotoOffset, wheelTravel } from './reelGeometry'
 import { useReelMotion } from './useReelMotion'
 import './footprints.css'
+
+const provinceOptions = [
+  { value: '', label: 'All provinces' },
+  ...provinces.map(province => ({ value: province, label: province })),
+]
+const themeOptions = [
+  { value: '', label: 'All themes' },
+  ...themes.map(theme => ({ value: theme, label: theme[0] + theme.slice(1).toLowerCase() })),
+]
 
 const introduction = {
   title: 'Footprints',
@@ -19,6 +30,75 @@ const titleLetterStagger = 50
 const titleOpeningDuration = titleLetterDuration +
   (Math.max(introduction.title.length, introduction.secondLine.length) - 1) * titleLetterStagger
 type Gallery = { ids: string[]; lead?: Footprint; leadKey?: string; version?: number }
+
+function ProvinceTitle({ province }: { province: string }) {
+  const labelSrc = travelSlides.find(slide => slide.location === province)?.labelSrc
+  const [imageFailed, setImageFailed] = useState(false)
+  if (!labelSrc || imageFailed) return <span className="fp-province-fallback">{province}</span>
+
+  return (
+    <span className="fp-province-artwork">
+      <img src={labelSrc} alt="" decoding="async" onError={() => setImageFailed(true)} />
+    </span>
+  )
+}
+
+function TitleArtwork({ province }: { province: string }) {
+  return province ? <ProvinceTitle key={province} province={province} /> : <>
+    {[introduction.title, introduction.secondLine].map(line => (
+      <span key={line} className="fp-title-line">
+        {[...line].map((letter, index) => (
+          <span key={index} className="fp-title-letter"
+            style={{ animationDelay: `${index * titleLetterStagger}ms` }}>{letter}</span>
+        ))}
+      </span>
+    ))}
+  </>
+}
+
+function JournalTitle({ province, headingRef }: { province: string; headingRef: Ref<HTMLHeadingElement> }) {
+  const currentVisual = useRef<HTMLSpanElement>(null)
+  const [transition, setTransition] = useState({
+    province, previous: undefined as { province: string; opacity: number } | undefined, version: 0,
+  })
+  useLayoutEffect(() => {
+    if (transition.province === province) return
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const opacity = currentVisual.current ? Number(getComputedStyle(currentVisual.current).opacity) : 1
+    setTransition({
+      province, previous: reducedMotion ? undefined : { province: transition.province, opacity },
+      version: transition.version + 1,
+    })
+  }, [province, transition.province, transition.version])
+
+  useEffect(() => {
+    const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    const skipFade = () => {
+      if (preference?.matches) setTransition(current => ({ ...current, previous: undefined }))
+    }
+    preference?.addEventListener('change', skipFade)
+    return () => preference?.removeEventListener('change', skipFade)
+  }, [])
+  const { previous, version } = transition
+  const titleClass = (value: string) => value ? 'fp-title fp-title--province' : 'fp-title'
+
+  return <div className="fp-title-swap">
+    <h1 id="footprints-title" tabIndex={-1} ref={headingRef} className={titleClass(transition.province)}
+      aria-label={province || introduction.title}>
+      <span key={version} ref={currentVisual} className={`fp-title-current${previous !== undefined ? ' fp-title-enter' : ''}`}
+        aria-hidden="true" onAnimationEnd={event => {
+          if (event.target !== event.currentTarget) return
+          setTransition(current => current.version === version ? { ...current, previous: undefined } : current)
+        }}>
+        <TitleArtwork province={transition.province} />
+      </span>
+    </h1>
+    {previous !== undefined && <div key={version} className="fp-title-previous" aria-hidden="true"
+      style={{ '--fp-title-exit-opacity': previous.opacity } as CSSProperties}>
+      <div className={titleClass(previous.province)}><TitleArtwork province={previous.province} /></div>
+    </div>}
+  </div>
+}
 
 function galleryCardKey(version: number, index: number, id: string) {
   return `${version}:${index}:${id}`
@@ -71,6 +151,9 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   const galleryVersion = useRef(0)
   const chosenFilters = useRef(allFilters)
   const sceneElement = useRef<HTMLElement>(null)
+  const toolsElement = useRef<HTMLDivElement>(null)
+  const detailsElement = useRef<HTMLDivElement>(null)
+  const noteElement = useRef<HTMLParagraphElement>(null)
   const wheelPointer = useRef<{ x: number; y: number } | null>(null)
   const gesture = useRef<{ x: number; y: number; lastX: number; active: boolean } | null>(null)
   const suppressClickUntil = useRef(0)
@@ -150,13 +233,62 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   }
 
   const lead = gallery.lead
+  const hasLead = !!lead
+  const titleProvince = lead?.province ?? filters.province
   const canScrollReel = !filterSlide && gallery.ids.length > 0
+
+  useLayoutEffect(() => {
+    const scene = sceneElement.current
+    const tools = toolsElement.current
+    const details = detailsElement.current
+    const note = noteElement.current
+    if (!scene || !tools || !details || !note) return
+
+    const measure = () => {
+      const frame = scene.getBoundingClientRect()
+      if (!frame.height) return
+      scene.style.setProperty('--fp-tools-reserve', `${Math.ceil(tools.getBoundingClientRect().width) + 20}px`)
+      const reading = details.getBoundingClientRect()
+      const body = note.getBoundingClientRect()
+      const photoHeight = highestPhotoBefore(reel.width, reading.right - frame.left + 12)
+      const spaceAroundNote = reading.bottom - frame.top - body.height + photoHeight + 24
+      const lineHeight = Number.parseFloat(getComputedStyle(note).lineHeight)
+      const minimumNoteHeight = Math.min(note.scrollHeight, lineHeight * 3)
+      const title = heading.current?.querySelector<HTMLElement>(
+        '.fp-title-current .fp-province-artwork, .fp-title-current .fp-province-fallback',
+      )?.getBoundingClientRect()
+      const spaceForTitle = title
+        ? title.bottom - frame.top + highestPhotoBefore(reel.width, title.right - frame.left + 12) + 24
+        : 0
+      // Reserve enough room to read in short windows while keeping photos at full size.
+      const minimumHeight = Math.ceil(Math.max(spaceAroundNote + minimumNoteHeight, spaceForTitle))
+      const noteRoom = Math.floor(Math.max(window.innerHeight, minimumHeight) - spaceAroundNote)
+      scene.style.setProperty('--fp-minimum-height', `${minimumHeight}px`)
+      note.style.setProperty('--fp-note-room', `${noteRoom}px`)
+    }
+    measure()
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
+    observer?.observe(tools)
+    observer?.observe(details)
+    if (heading.current) observer?.observe(heading.current)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
+      scene.style.removeProperty('--fp-minimum-height')
+      scene.style.removeProperty('--fp-tools-reserve')
+      note.style.removeProperty('--fp-note-room')
+    }
+  }, [lead?.id, titleProvince, reel.width])
 
   useEffect(() => {
     const element = sceneElement.current
     if (!element || !canScrollReel || editor) return
     function wheel(event: WheelEvent) {
-      if (event.ctrlKey || (event.target instanceof Element && event.target.closest('dialog, select, .fp-note'))) return
+      const target = event.target
+      if (event.ctrlKey || (target instanceof Element && target.closest('dialog, .fp-select, .fp-note'))) return
+      if (target instanceof Element && !target.closest('.fp-photo') &&
+        Math.abs(event.deltaY) > Math.abs(event.deltaX) && (element?.clientHeight ?? 0) > window.innerHeight) return
       const mode = event.deltaMode
       const distance = wheelTravel(event.deltaX, event.deltaY, mode, element?.clientHeight)
       if (!distance) return
@@ -178,24 +310,26 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
     })
   }
 
-  async function save(draft: PhotoDraft) {
+  async function save(draft: PhotoDraft, upload?: PhotoUpload) {
     const previous = editor !== 'add' ? editor : null
     if (!editor || (previous && previous.ownerId !== ownerId)) throw new Error('You can only edit photos you own.')
-    const record = await repository.save(ownerId, draft, previous?.id)
+    const record = await repository.save(ownerId, draft, previous?.id, upload)
     if (!mounted.current) return
-    const next = previous ? photos.map(photo => photo.id === record.id ? record : photo) : [...photos, record]
-    const result = filterPhotos(next, chosenFilters.current)
-    const ids = shufflePhotoIds(result)
-    const savedIndex = ids.indexOf(record.id)
-    const inScope = savedIndex >= 0
-    const version = ++galleryVersion.current
-    const position = inScope ? savedIndex * reelStride(reel.width) - rightmostPhotoX(reel.width) : 0
-    resetReel(position)
-    setFilterSlide(null)
-    setPhotos(next)
-    setGallery({ ids, version, lead: inScope ? record : undefined, leadKey: inScope ? galleryCardKey(version, savedIndex, record.id) : undefined })
-    setNotice(inScope ? 'Footprint saved.' : 'Footprint saved. It is outside the current filters.')
-    closeEditor()
+    return () => {
+      if (!mounted.current) return
+      const next = previous ? photos.map(photo => photo.id === record.id ? record : photo) : [...photos, record]
+      const result = filterPhotos(next, chosenFilters.current)
+      const ids = shufflePhotoIds(result)
+      const savedIndex = ids.indexOf(record.id)
+      const inScope = savedIndex >= 0
+      const version = ++galleryVersion.current
+      const position = inScope ? savedIndex * reelStride(reel.width) - rightmostPhotoX(reel.width) : 0
+      resetReel(position)
+      setFilterSlide(null)
+      setPhotos(next)
+      setGallery({ ids, version, lead: inScope ? record : undefined, leadKey: inScope ? galleryCardKey(version, savedIndex, record.id) : undefined })
+      setNotice(inScope ? 'Footprint saved.' : 'Footprint saved. It is outside the current filters.')
+    }
   }
 
   const controlsDisabled = loading || loadFailed
@@ -217,18 +351,16 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   return (
     <section ref={sceneElement} className="footprints" data-opening={opening && gallery.version === undefined}
       style={{ '--fp-title-letter-duration': `${titleLetterDuration}ms` } as CSSProperties}>
-      <div className="fp-tools">
-        <div className="fp-filter"><label htmlFor="fp-filter-province">Province</label>
-          <select id="fp-filter-province" value={filters.province} onChange={event => changeFilters({ province: event.target.value })} disabled={controlsDisabled}>
-            <option value="">All provinces</option>
-            {provinces.map(province => <option key={province}>{province}</option>)}
-          </select>
+      <div ref={toolsElement} className="fp-tools">
+        <div className="fp-filter">
+          <span aria-hidden="true">Province</span>
+          <FootprintSelect id="fp-filter-province" label="Province" value={filters.province} options={provinceOptions}
+            onChange={province => changeFilters({ province })} disabled={controlsDisabled} />
         </div>
-        <div className="fp-filter"><label htmlFor="fp-filter-theme">Theme</label>
-          <select id="fp-filter-theme" value={filters.theme} onChange={event => changeFilters({ theme: event.target.value })} disabled={controlsDisabled}>
-            <option value="">All themes</option>
-            {themes.map(theme => <option key={theme}>{theme}</option>)}
-          </select>
+        <div className="fp-filter">
+          <span aria-hidden="true">Theme</span>
+          <FootprintSelect id="fp-filter-theme" label="Theme" value={filters.theme} options={themeOptions}
+            onChange={theme => changeFilters({ theme })} disabled={controlsDisabled} />
         </div>
         <button type="button" className="fp-add" disabled={controlsDisabled} onClick={event => {
           editorTrigger.current = event.currentTarget
@@ -236,31 +368,23 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
         }}><span aria-hidden="true">+</span> Add footprint</button>
       </div>
 
-      <header className="fp-intro" data-selected={!!lead}>
+      <header className="fp-intro" data-selected={hasLead}>
         <div className="fp-intro-content">
-          <h1 id="footprints-title" tabIndex={-1} ref={heading} className={lead ? 'fp-title fp-title--province' : 'fp-title'}
-            aria-label={lead ? undefined : introduction.title}>
-            {lead?.province ?? [introduction.title, introduction.secondLine].map(line => (
-              <span key={line} className="fp-title-line" aria-hidden="true">
-                {[...line].map((letter, index) => (
-                  <span key={index} className="fp-title-letter"
-                    style={{ animationDelay: `${index * titleLetterStagger}ms` }}>{letter}</span>
-                ))}
-              </span>
-            ))}
-          </h1>
+          <JournalTitle province={titleProvince} headingRef={heading} />
           {lead ? (
-            <div className="fp-details" aria-live="polite">
-              <dl>
-                <div><dt>City</dt><dd>{lead.city || <span>City to be added</span>}</dd></div>
-                <div><dt>Date</dt><dd>{lead.date ? <time dateTime={lead.date}>{lead.date}</time> : <span>Date to be added</span>}</dd></div>
-                <div><dt>Theme</dt><dd>{lead.themes.length ? lead.themes.join(' / ') : <span>Theme to be added</span>}</dd></div>
-              </dl>
-              <p className="fp-note">{lead.note.trim() ? lead.note : <span>Note to be added</span>}</p>
-              {lead.ownerId === ownerId && <button type="button" className="fp-edit" onClick={event => {
-                editorTrigger.current = event.currentTarget
-                setEditor(lead)
-              }}>Edit<span aria-hidden="true"> ↗</span></button>}
+            <div className="fp-details" ref={detailsElement} aria-live="polite">
+              <p key={lead.id} ref={noteElement} className="fp-note">{lead.note.trim() ? lead.note : <span>Note to be added</span>}</p>
+              <div className="fp-detail-footer">
+                <dl className="fp-detail-meta">
+                  <div><dt className="fp-sr-only">City</dt><dd>{lead.city || <span>City to be added</span>}</dd></div>
+                  <div><dt className="fp-sr-only">Date</dt><dd>{lead.date ? <time dateTime={lead.date}>{lead.date}</time> : <span>Date to be added</span>}</dd></div>
+                  <div><dt className="fp-sr-only">Theme</dt><dd>{lead.themes.length ? lead.themes.join(' / ') : <span>Theme to be added</span>}</dd></div>
+                </dl>
+                {lead.ownerId === ownerId && <button type="button" className="fp-edit" onClick={event => {
+                  editorTrigger.current = event.currentTarget
+                  setEditor(lead)
+                }}>Edit<span aria-hidden="true"> ↗</span></button>}
+              </div>
             </div>
           ) : <p className="fp-description">{introduction.lines.map(line => <span key={line}>{line}</span>)}</p>}
         </div>
@@ -358,17 +482,20 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
       </div>
 
       <span className="fp-sr-only" role="status">{notice}</span>
-      {editor && <FootprintEditor photo={editor === 'add' ? undefined : editor} onSave={save} onDismiss={closeEditor}
+      {editor && <FootprintEditor photo={editor === 'add' ? undefined : editor} anchor={editorTrigger.current}
+        onSave={save} onDismiss={closeEditor}
         onDelete={editor !== 'add' && repository.remove ? async () => {
           await repository.remove!(ownerId, editor.id)
           if (!mounted.current) return
-          const next = photos.filter(photo => photo.id !== editor.id)
-          setPhotos(next)
-          resetReel()
-          setFilterSlide(null)
-          setGallery({ ids: shufflePhotoIds(filterPhotos(next, chosenFilters.current)), version: ++galleryVersion.current })
-          setNotice('Footprint deleted.')
-          closeEditor()
+          return () => {
+            if (!mounted.current) return
+            const next = photos.filter(photo => photo.id !== editor.id)
+            setPhotos(next)
+            resetReel()
+            setFilterSlide(null)
+            setGallery({ ids: shufflePhotoIds(filterPhotos(next, chosenFilters.current)), version: ++galleryVersion.current })
+            setNotice('Footprint deleted.')
+          }
         } : undefined} />}
     </section>
   )

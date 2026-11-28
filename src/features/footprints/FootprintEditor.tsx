@@ -1,7 +1,34 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { provinces, themes, type Footprint, type PhotoDraft, type PhotoImage, type Theme } from './footprintsData'
+import { useAnchoredDialog } from '../../components/useAnchoredDialog'
+import { FootprintSelect } from './FootprintSelect'
+import { provinces, themes, type Footprint, type PhotoDraft, type PhotoImage, type PhotoUpload, type Theme } from './footprintsData'
+import './footprint-editor.css'
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+const provinceOptions = provinces.map(province => ({ value: province, label: province }))
+
+function DeleteConfirmation({ anchor, onDismiss, onConfirm }: {
+  anchor: HTMLElement
+  onDismiss: () => void
+  onConfirm: () => void
+}) {
+  const { dialogRef, close, backdropProps } = useAnchoredDialog({
+    anchor, onClose: onDismiss, initialFocus: '#fp-delete-cancel',
+  })
+  return <dialog ref={dialogRef} className="fp-delete-confirmation" aria-labelledby="fp-delete-title"
+    aria-describedby="fp-delete-description" {...backdropProps} onCancel={event => {
+      event.preventDefault()
+      event.stopPropagation()
+      close()
+    }}>
+    <h2 id="fp-delete-title">Delete this footprint?</h2>
+    <p id="fp-delete-description">This photo and its details will be permanently deleted.</p>
+    <div className="fp-delete-confirmation-actions">
+      <button id="fp-delete-cancel" type="button" onClick={() => close()}>Cancel</button>
+      <button type="button" onClick={() => close(onConfirm)}>Delete footprint</button>
+    </div>
+  </dialog>
+}
 
 export async function prepareImage(file: File): Promise<PhotoImage> {
   if (!imageTypes.includes(file.type)) throw new Error('Choose a JPEG, PNG, WebP, AVIF or GIF photo.')
@@ -27,11 +54,12 @@ export async function prepareImage(file: File): Promise<PhotoImage> {
   }
 }
 
-export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
+export function FootprintEditor({ photo, anchor = null, onSave, onDismiss, onDelete }: {
   photo?: Footprint
-  onSave: (draft: PhotoDraft) => Promise<void>
+  anchor?: HTMLElement | null
+  onSave: (draft: PhotoDraft, upload?: PhotoUpload) => Promise<void | (() => void)>
   onDismiss: () => void
-  onDelete?: () => Promise<void>
+  onDelete?: () => Promise<void | (() => void)>
 }) {
   const [image, setImage] = useState(photo?.image)
   const [fileName, setFileName] = useState('')
@@ -46,29 +74,48 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
   const [saveError, setSaveError] = useState('')
   const [processing, setProcessing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const dialog = useRef<HTMLDialogElement>(null)
+  const [progress, setProgress] = useState<{ confirmed: number; total: number }>()
+  const [deleteAnchor, setDeleteAnchor] = useState<HTMLButtonElement | null>(null)
+  const { dialogRef, close, backdropProps } = useAnchoredDialog({
+    anchor, onClose: onDismiss, onBackdropClick: dismiss,
+  })
   const fileInput = useRef<HTMLInputElement>(null)
-  const provinceInput = useRef<HTMLSelectElement>(null)
+  const provinceInput = useRef<HTMLButtonElement>(null)
   const dateInput = useRef<HTMLInputElement>(null)
   const lastFile = useRef(0)
   const savePending = useRef(false)
+  const upload = useRef<PhotoUpload | undefined>(undefined)
+
+  function resetUpload() {
+    void upload.current?.cancel?.().catch(() => undefined)
+    upload.current = undefined
+    setProgress(undefined)
+  }
+
+  function dismiss() {
+    if (savePending.current) return
+    resetUpload()
+    close()
+  }
 
   async function deletePhoto() {
-    if (savePending.current || !onDelete || !window.confirm('Delete this footprint?')) return
+    if (savePending.current || !onDelete) return
     savePending.current = true
     setSaving(true)
     setSaveError('')
-    try { await onDelete() }
-    catch (error) { setSaveError(error instanceof Error ? error.message : 'Could not delete this footprint.') }
-    finally { savePending.current = false; setSaving(false) }
+    try {
+      const afterClose = await onDelete()
+      close(afterClose || undefined)
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not delete this footprint.')
+      savePending.current = false
+      setSaving(false)
+    }
   }
 
   useEffect(() => {
-    const panel = dialog.current
-    panel?.showModal()
     return () => {
       lastFile.current += 1
-      panel?.close()
     }
   }, [])
 
@@ -80,6 +127,8 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
     try {
       const preview = await prepareImage(file)
       if (revision === lastFile.current) {
+        resetUpload()
+        setSaveError('')
         setImage(preview)
         setFileName(file.name)
       }
@@ -119,85 +168,109 @@ export function FootprintEditor({ photo, onSave, onDismiss, onDelete }: {
     savePending.current = true
     setSaving(true)
     try {
-      await onSave({ image, province, city: city.trim(), date: photoDate, note, themes: labels })
+      if (!photo) upload.current ??= { onProgress: (confirmed, total) => setProgress({ confirmed, total }) }
+      const afterClose = await onSave({ image, province, city: city.trim(), date: photoDate, note, themes: labels }, upload.current)
+      close(afterClose || undefined)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save this footprint. Please try again.')
-    } finally {
       savePending.current = false
       setSaving(false)
     }
   }
 
   return (
-    <dialog ref={dialog} className="fp-editor" aria-labelledby="fp-editor-title" onCancel={event => {
+    <dialog ref={dialogRef} className="fp-editor" aria-labelledby="fp-editor-title" {...backdropProps} onCancel={event => {
       event.preventDefault()
-      if (!savePending.current) onDismiss()
+      if (!savePending.current) dismiss()
     }}>
-      <div className="fp-editor-head">
-        <p className="fp-kicker"><span aria-hidden="true" />Personal photo journal</p>
-        <button className="fp-close" type="button" onClick={onDismiss} aria-label="Close editor" disabled={saving}>×</button>
-        <h2 id="fp-editor-title">{photo ? 'Edit footprint' : 'Add footprint'}</h2>
-        <p>Photo and province are required. Other details can wait.</p>
-      </div>
-      <form className="fp-form" noValidate onSubmit={submit}>
-        <fieldset disabled={saving}>
-          <div className="fp-preview">
-            {image ? <img src={image.thumbnailSrc} alt="Footprint photo preview" /> : <span>No photo selected</span>}
-          </div>
-          <label htmlFor="fp-image">Photo</label>
-          <div className="fp-file">
-            <input id="fp-image" ref={fileInput} type="file" accept={imageTypes.join(',')} aria-required={!photo}
-              aria-invalid={!!imageError} aria-describedby={imageError ? 'fp-image-error' : 'fp-file-name'}
-              onChange={event => void chooseImage(event.currentTarget.files?.[0])} />
-            <span aria-hidden="true">{image ? 'Replace photo' : 'Choose photo'}</span>
-            <span id="fp-file-name">{fileName || (image ? 'Current photo' : 'No file selected')}</span>
-          </div>
-          {processing && <p className="fp-field-message" role="status">Preparing preview…</p>}
-          {imageError && <div className="fp-field-message" role="alert" id="fp-image-error">
-            {imageError} {photo && <button type="button" onClick={() => { setImage(photo.image); setFileName(''); setImageError('') }}>Keep original photo</button>}
-          </div>}
-
-          <label htmlFor="fp-province">Province</label>
-          <select id="fp-province" ref={provinceInput} required value={province} aria-invalid={provinceInvalid}
-            aria-describedby={provinceInvalid ? 'fp-province-error' : undefined}
-            onChange={event => { setProvince(event.target.value); setProvinceInvalid(false) }}>
-            <option value="">Choose a province</option>
-            {provinces.map(item => <option key={item}>{item}</option>)}
-          </select>
-          {provinceInvalid && <p className="fp-field-message" role="alert" id="fp-province-error">Choose a province to continue.</p>}
-
-          <div className="fp-form-row">
-            <label>City<input value={city} maxLength={120} onChange={event => setCity(event.target.value)} /></label>
-            <label>Photo date<input ref={dateInput} value={date} maxLength={10} placeholder="YYYY-MM-DD"
-              aria-invalid={dateInvalid} aria-describedby={dateInvalid ? 'fp-date-error' : undefined}
-              onChange={event => { setDate(event.target.value); setDateInvalid(false) }} /></label>
-          </div>
-          {dateInvalid && <p className="fp-field-message" role="alert" id="fp-date-error">Enter a valid date in YYYY-MM-DD format.</p>}
-          <label htmlFor="fp-note">Note</label>
-          <textarea id="fp-note" value={note} maxLength={4000} rows={4} onChange={event => setNote(event.target.value)} />
-
-          <fieldset className="fp-theme-field">
-            <legend>Theme</legend>
-            <p>Choose any labels that fit this photo.</p>
-            <div className="fp-theme-options">
-              {themes.map(theme => <label key={theme}>
-                <input type="checkbox" checked={labels.includes(theme)} onChange={event => setLabels(current =>
-                  event.target.checked ? [...current, theme] : current.filter(label => label !== theme))} />
-                {theme}
-              </label>)}
-            </div>
-            {!!photo?.suggestedThemes?.length && <p>
-              Suggested: {photo.suggestedThemes.map(({ theme, confidence }) => `${theme} (${Math.round(confidence * 100)}%)`).join(', ')}
-            </p>}
-          </fieldset>
-        </fieldset>
-        {saveError && <p className="fp-field-message" role="alert">{saveError}</p>}
-        <div className="fp-editor-actions">
-          {onDelete && <button type="button" onClick={() => void deletePhoto()} disabled={saving}>Delete footprint</button>}
-          <button type="button" onClick={onDismiss} disabled={saving}>Cancel</button>
-          <button type="submit" disabled={processing || saving}>{saving ? 'Saving…' : 'Save footprint'}</button>
+      <header className="fp-editor-head">
+        <div>
+          <h2 id="fp-editor-title">{photo ? 'Edit footprint' : 'Add footprint'}</h2>
+          <p>Photo and province are required.</p>
         </div>
+        <button className="fp-close" type="button" onClick={dismiss} aria-label="Close editor" disabled={saving}>×</button>
+      </header>
+      <form className="fp-form" noValidate onSubmit={submit}>
+        <div className="fp-editor-body" role="region" aria-label="Footprint details" tabIndex={0}>
+          <fieldset className="fp-editor-fields" disabled={saving}>
+            <div className="fp-editor-field">
+              <label htmlFor="fp-image">Photo</label>
+              <div className="fp-preview">
+                {image ? <img src={image.thumbnailSrc} alt="Footprint photo preview" /> : <span>No photo selected</span>}
+              </div>
+              <div className="fp-file">
+                <input id="fp-image" ref={fileInput} type="file" accept={imageTypes.join(',')} aria-required={!photo}
+                  aria-invalid={!!imageError} aria-describedby={imageError ? 'fp-image-error' : image ? 'fp-file-name' : undefined}
+                  onChange={event => void chooseImage(event.currentTarget.files?.[0])} />
+                <span className="fp-file-action" aria-hidden="true">{image ? 'Replace photo' : 'Choose photo'}</span>
+                {image && <span className="fp-file-name" id="fp-file-name" title={fileName || undefined}>{fileName || 'Current photo'}</span>}
+              </div>
+              {processing && <p className="fp-field-message" role="status">Preparing preview…</p>}
+              {imageError && <div className="fp-field-message" role="alert" id="fp-image-error">
+                {imageError} {photo && <button type="button" onClick={() => { setImage(photo.image); setFileName(''); setImageError('') }}>Keep original photo</button>}
+              </div>}
+            </div>
+
+            <div className="fp-editor-field">
+              <label htmlFor="fp-province">Province</label>
+              <FootprintSelect id="fp-province" label="Province" triggerRef={provinceInput} value={province}
+                options={provinceOptions} placeholder="Choose a province" disabled={saving} required
+                invalid={provinceInvalid} describedBy={provinceInvalid ? 'fp-province-error' : undefined}
+                onChange={value => { setProvince(value); setProvinceInvalid(false) }} />
+              {provinceInvalid && <p className="fp-field-message" role="alert" id="fp-province-error">Choose a province to continue.</p>}
+            </div>
+
+            <div className="fp-form-row">
+              <label className="fp-editor-field">
+                City
+                <input value={city} maxLength={120} onChange={event => setCity(event.target.value)} />
+              </label>
+              <label className="fp-editor-field">
+                Photo date
+                <input ref={dateInput} value={date} maxLength={10} placeholder="YYYY-MM-DD"
+                  aria-invalid={dateInvalid} aria-describedby={dateInvalid ? 'fp-date-error' : undefined}
+                  onChange={event => { setDate(event.target.value); setDateInvalid(false) }} />
+              </label>
+              {dateInvalid && <p className="fp-field-message" role="alert" id="fp-date-error">Enter a valid date in YYYY-MM-DD format.</p>}
+            </div>
+
+            <label className="fp-editor-field" htmlFor="fp-note">
+              Note
+              <textarea id="fp-note" value={note} maxLength={4000} rows={3} onChange={event => setNote(event.target.value)} />
+            </label>
+
+            <fieldset className="fp-theme-field">
+              <legend>Theme</legend>
+              <div className="fp-theme-options">
+                {themes.map(theme => <label key={theme}>
+                  <input type="checkbox" checked={labels.includes(theme)} onChange={event => setLabels(current =>
+                    event.target.checked ? [...current, theme] : current.filter(label => label !== theme))} />
+                  <span className="fp-theme-pill"><span aria-hidden="true">✓</span>{theme}</span>
+                </label>)}
+              </div>
+              {!!photo?.suggestedThemes?.length && <p className="fp-field-message">
+                Suggested: {photo.suggestedThemes.map(({ theme, confidence }) => `${theme} (${Math.round(confidence * 100)}%)`).join(', ')}
+              </p>}
+            </fieldset>
+          </fieldset>
+        </div>
+        <footer className="fp-editor-footer">
+          {progress && <div className="fp-upload-progress">
+            <label htmlFor="fp-frame-progress">Photo frames</label>
+            <progress id="fp-frame-progress" value={progress.confirmed} max={progress.total} />
+            <span role="status">{progress.confirmed} / {progress.total} confirmed{saving && progress.confirmed === progress.total && ' · Verifying and saving…'}</span>
+          </div>}
+          {saveError && <p className="fp-field-message" role="alert">{saveError}</p>}
+          <div className="fp-editor-actions">
+            {onDelete && <button className="fp-delete" type="button"
+              onClick={event => setDeleteAnchor(event.currentTarget)} disabled={saving}>Delete footprint</button>}
+            <button type="button" onClick={dismiss} disabled={saving}>Cancel</button>
+            <button type="submit" disabled={processing || saving}>{saving ? 'Saving…' : progress && saveError ? 'Retry upload' : 'Save footprint'}</button>
+          </div>
+        </footer>
       </form>
+      {deleteAnchor && <DeleteConfirmation anchor={deleteAnchor} onDismiss={() => setDeleteAnchor(null)}
+        onConfirm={() => void deletePhoto()} />}
     </dialog>
   )
 }

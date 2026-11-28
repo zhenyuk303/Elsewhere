@@ -1,4 +1,6 @@
 import { FormEvent, useState } from 'react'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
 import { BrandLogo } from '../brand/BrandLogo'
 import type { SocialProvider } from './authApi'
 import type { AuthMode, ButtonRect } from './types'
@@ -72,6 +74,15 @@ export function AuthPanel({
     const nextErrors: FormErrors = {}
     if (!username.trim()) nextErrors.username = 'Username is required'
     if (!password.trim()) nextErrors.password = 'Password is required'
+    else if (isSignup) {
+      const length = [...password].length
+      if (length < 8 || length > 72 || !/[A-Z]/.test(password) || !/[a-z]/.test(password)
+        || !/[0-9]/.test(password) || !/[\p{P}\p{S}]/u.test(password)) {
+        nextErrors.password = 'Use 8–72 characters with an uppercase letter, a lowercase letter, a number and a special character'
+      } else if (new TextEncoder().encode(password).length > 72) {
+        nextErrors.password = 'Password must fit within 72 UTF-8 bytes'
+      }
+    }
     if (isSignup && !agreement) {
       nextErrors.agreement = 'Please accept the terms to continue'
     }
@@ -112,7 +123,7 @@ export function AuthPanel({
     <div className="auth-panel">
       <header className="auth-header">
         <a className="brand" href="#top" aria-label="Elsewhere home">
-          <BrandLogo decorative />
+          <BrandLogo decorative withWordmark={!isSignup} />
         </a>
         <div className="title-block" key={mode}>
           <h1 id="auth-title">
@@ -168,7 +179,7 @@ export function AuthPanel({
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
               disabled={isDisabled}
-              aria-describedby={errors.password ? `${mode}-password-error` : undefined}
+              aria-describedby={errors.password ? `${mode}-password-error` : isSignup ? 'signup-password-rules' : undefined}
             />
             <button
               className="password-toggle"
@@ -180,6 +191,11 @@ export function AuthPanel({
               <EyeIcon hidden={showPassword} />
             </button>
           </div>
+          {isSignup && !errors.password && (
+            <p className="field-hint" id="signup-password-rules">
+              8–72 characters with uppercase, lowercase, a number and a symbol. Maximum 72 UTF-8 bytes.
+            </p>
+          )}
           {errors.password ? (
             <p className="field-error" id={`${mode}-password-error`}>
               {errors.password}
@@ -226,11 +242,11 @@ export function AuthPanel({
           </p>
           <div className="social-actions">
             <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('github')}>
-              <span className="social-icon social-icon--github" aria-hidden="true">GH</span>
+              <img className="social-icon" src={githubMark} alt="" width={20} height={20} />
               GitHub
             </button>
             <button type="button" disabled={isDisabled} onClick={() => handleSocialLogin('google')}>
-              <span className="social-icon social-icon--google" aria-hidden="true">G</span>
+              <img className="social-icon" src={googleMark} alt="" width={20} height={20} />
               Google
             </button>
           </div>

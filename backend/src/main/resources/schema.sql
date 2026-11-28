@@ -60,3 +60,25 @@ CREATE TABLE IF NOT EXISTS footprint_imports (
   PRIMARY KEY (user_id, source_id),
   CONSTRAINT fk_footprint_import_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS footprint_upload_sessions (
+  id CHAR(36) PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  total_size INT NOT NULL,
+  image_type VARCHAR(30) NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  expires_at TIMESTAMP(3) NOT NULL,
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  INDEX idx_footprint_upload_expiry (expires_at),
+  INDEX idx_footprint_upload_owner (user_id, completed, expires_at),
+  CONSTRAINT fk_footprint_upload_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS footprint_upload_frames (
+  upload_id CHAR(36) NOT NULL,
+  frame_index INT NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  payload MEDIUMBLOB NOT NULL,
+  PRIMARY KEY (upload_id, frame_index),
+  CONSTRAINT fk_footprint_upload_frame FOREIGN KEY (upload_id) REFERENCES footprint_upload_sessions(id) ON DELETE CASCADE
+);

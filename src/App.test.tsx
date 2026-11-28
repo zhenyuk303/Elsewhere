@@ -66,7 +66,7 @@ function fillValidSignupForm() {
     target: { value: 'traveler' },
   })
   fireEvent.change(screen.getByLabelText('Password'), {
-    target: { value: 'secret-path' },
+    target: { value: 'Fixture1!' },
   })
   fireEvent.click(
     screen.getByRole('checkbox', {
@@ -103,6 +103,11 @@ async function openFootprintsFromHome() {
   fireEvent.click(screen.getByRole('button', { name: 'Footprints' }))
   await act(async () => { vi.advanceTimersByTime(HOME_FOOTPRINTS_EXIT_MS) })
   await act(async () => { vi.advanceTimersByTime(1800) })
+}
+
+function selectFootprintFilter(filter: 'Province' | 'Theme', option: string) {
+  fireEvent.click(screen.getByRole('combobox', { name: filter }))
+  fireEvent.click(screen.getByRole('option', { name: option }))
 }
 
 describe('App', () => {
@@ -464,10 +469,36 @@ describe('App', () => {
 
     await act(async () => { vi.advanceTimersByTime(1800) })
     expect(opening).not.toHaveAttribute('data-opening', 'true')
-    expect(screen.getByLabelText('Province')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Province' })).toBeInTheDocument()
     expect(screen.queryByText(/demo collection|elsewhere \/ footprints/i)).not.toBeInTheDocument()
     fireEvent.click(home)
     expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeInTheDocument()
+  })
+
+  it('opens the latest requested page and preserves navigation between Guides and Footprints', async () => {
+    await renderAuthenticatedHomepage()
+    const navigation = screen.getByRole('navigation', { name: 'Primary navigation' })
+    const guides = screen.getByRole('button', { name: 'Guides' })
+    fireEvent.click(screen.getByRole('button', { name: 'Footprints' }))
+    act(() => vi.advanceTimersByTime(HOME_FOOTPRINTS_EXIT_MS / 2))
+    fireEvent.click(guides)
+    await act(async () => { vi.advanceTimersByTime(HOME_FOOTPRINTS_EXIT_MS) })
+
+    expect(guides).toHaveAttribute('aria-current', 'page')
+    expect(navigation.closest('main')).toHaveAttribute('aria-labelledby', 'guides-title')
+    expect(document.getElementById('guides-title')).toBeInTheDocument()
+    expect(document.body).not.toHaveClass('home-view')
+    expect(screen.queryByLabelText('Province')).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBe(navigation)
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    expect(screen.getByRole('combobox', { name: 'Province' })).toBeInTheDocument()
+    expect(guides).not.toHaveAttribute('aria-current')
+    fireEvent.click(guides)
+    expect(document.getElementById('guides-title')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Elsewhere home' }))
+    expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeInTheDocument()
+    expect(guides).toHaveFocus()
   })
 
   it('cancels the pending Footprints opening when returning Home during the exit', async () => {
@@ -516,11 +547,43 @@ describe('App', () => {
     expect(galleryPhotos.some(button => button.getAttribute('aria-label') !== selectedName)).toBe(true)
     expect(screen.getByText('City to be added')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'COAST' } })
+    selectFootprintFilter('Theme', 'Coast')
     act(() => vi.advanceTimersByTime(2800))
     expect(screen.getByRole('heading', { name: 'Footprints' })).toBeInTheDocument()
     expect(screen.getByText('No footprints match these filters.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^View photo from / })).not.toBeInTheDocument()
+  })
+
+  it('shows the selected province brush title immediately and keeps it when the theme changes', async () => {
+    await renderAuthenticatedHomepage()
+    await openFootprintsFromHome()
+    selectFootprintFilter('Province', 'Beijing')
+    expect(screen.getByRole('heading', { name: 'Beijing' }).querySelector('img')).toHaveAttribute(
+      'src', '/images/province-labels/%E5%8C%97%E4%BA%AC.png',
+    )
+    expect(screen.queryByText('City to be added')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(80))
+    selectFootprintFilter('Province', 'Inner Mongolia')
+    const heading = screen.getByRole('heading', { name: 'Inner Mongolia' })
+    expect(heading.querySelector('img')).toHaveAttribute(
+      'src', '/images/province-labels/%E5%86%85%E8%92%99%E5%8F%A4.png',
+    )
+    selectFootprintFilter('Theme', 'Coast')
+    expect(screen.getByRole('heading', { name: 'Inner Mongolia' })).toBe(heading)
+    act(() => vi.advanceTimersByTime(2800))
+    expect(screen.getByRole('heading', { name: 'Inner Mongolia' }).querySelector('img')).toHaveAttribute(
+      'src', '/images/province-labels/%E5%86%85%E8%92%99%E5%8F%A4.png',
+    )
+    expect(screen.getByText('No footprints match these filters.')).toBeInTheDocument()
+    expect(screen.queryByText('City to be added')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+
+    selectFootprintFilter('Province', 'All provinces')
+    const introduction = screen.getByRole('heading', { name: 'Footprints' })
+    expect(introduction).toHaveTextContent('Journal')
+    expect(introduction.querySelector('img')).toBeNull()
   })
 
   it('moves the clicked photo with its neighbor on the reel into the rightmost lead slot', async () => {
@@ -585,7 +648,7 @@ describe('App', () => {
     const province = matchingName.replace('View photo from ', '')
     const { left, width } = outgoing.style
 
-    fireEvent.change(screen.getByLabelText('Province'), { target: { value: province } })
+    selectFootprintFilter('Province', province)
     expect(outgoing).toBeInTheDocument()
     expect(region).not.toHaveClass('fp-gallery--out')
 
@@ -627,7 +690,7 @@ describe('App', () => {
     await openFootprintsFromHome()
     const region = screen.getByRole('region', { name: 'Photo composition' })
     const matchingName = 'View photo from Anhui'
-    fireEvent.change(screen.getByLabelText('Province'), { target: { value: 'Anhui' } })
+    selectFootprintFilter('Province', 'Anhui')
     act(() => vi.advanceTimersByTime(2500))
 
     const [, selected] = screen.getAllByRole<HTMLButtonElement>('button', { name: matchingName })

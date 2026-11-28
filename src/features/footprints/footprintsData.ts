@@ -18,9 +18,14 @@ export type Footprint = PhotoDraft & {
   ownerId: number
   suggestedThemes?: { theme: Theme; confidence: number }[]
 }
+export type PhotoUpload = {
+  sessionId?: string
+  cancel?: () => Promise<void>
+  onProgress: (confirmed: number, total: number) => void
+}
 export type FootprintsRepository = {
   list(ownerId: number): Promise<Footprint[]>
-  save(ownerId: number, draft: PhotoDraft, id?: string): Promise<Footprint>
+  save(ownerId: number, draft: PhotoDraft, id?: string, upload?: PhotoUpload): Promise<Footprint>
   remove?(ownerId: number, id: string): Promise<void>
 }
 

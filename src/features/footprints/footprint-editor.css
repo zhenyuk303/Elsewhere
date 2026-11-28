@@ -1,0 +1,365 @@
+.fp-editor {
+  --fp-editor-surface: #fbfaf8;
+  --fp-editor-text: #22262e;
+  --fp-editor-muted: #626670;
+  --fp-editor-border: rgb(34 38 46 / 14%);
+  --fp-editor-padding: clamp(16px, 2.5vw, 24px);
+  position: fixed;
+  inset: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom)) auto;
+  width: min(424px, calc(100% - 20px));
+  max-width: calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--fp-editor-border);
+  border-radius: 20px;
+  background: var(--fp-editor-surface);
+  color: var(--fp-editor-text);
+  box-shadow: 0 16px 48px rgb(22 26 34 / 18%);
+  font: 400 .875rem/1.4 'Google Sans Variable', Arial, sans-serif;
+}
+
+.fp-editor[open],
+.fp-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-editor::backdrop { background: rgb(33 38 48 / 18%); }
+
+.fp-delete-confirmation {
+  box-sizing: border-box;
+  width: min(360px, calc(100% - 32px));
+  margin: auto;
+  padding: 24px;
+  border: 1px solid rgb(34 38 46 / 14%);
+  border-radius: 16px;
+  background: #fbfaf8;
+  color: #22262e;
+  box-shadow: 0 16px 48px rgb(22 26 34 / 18%);
+  font: 400 .875rem/1.5 'Google Sans Variable', Arial, sans-serif;
+}
+.fp-delete-confirmation::backdrop { background: rgb(33 38 48 / 18%); }
+.fp-delete-confirmation h2 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+.fp-delete-confirmation p { margin: 12px 0 20px; color: #626670; }
+.fp-delete-confirmation-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.fp-delete-confirmation button {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid rgb(34 38 46 / 18%);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fp-delete-confirmation button:last-child { border-color: #8f2839; background: #8f2839; color: #fff; }
+.fp-delete-confirmation button:focus-visible { outline: 2px solid #233068; outline-offset: 3px; }
+
+.fp-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px var(--fp-editor-padding) 16px;
+  border-bottom: 1px solid var(--fp-editor-border);
+}
+
+.fp-editor-head h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+}
+
+.fp-editor-head p {
+  margin: 5px 0 0;
+  color: var(--fp-editor-muted);
+  font-size: .81rem;
+}
+
+.fp-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #eeedeb;
+  color: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.fp-form,
+.fp-editor-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.fp-editor-body {
+  padding: 16px var(--fp-editor-padding) 20px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 12px;
+}
+
+.fp-editor-body::-webkit-scrollbar { width: 8px; }
+.fp-editor-body::-webkit-scrollbar-thumb {
+  border: 2px solid var(--fp-editor-surface);
+  border-radius: 99px;
+  background: #c8c8cc;
+}
+.fp-editor-body::-webkit-scrollbar-button { display: none; }
+
+.fp-editor-fields,
+.fp-theme-field {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fp-editor-fields,
+.fp-editor-field {
+  display: grid;
+  min-width: 0;
+}
+
+.fp-editor-fields { gap: 15px; }
+.fp-editor-field { gap: 6px; }
+.fp-editor-field > label,
+label.fp-editor-field,
+.fp-theme-field legend {
+  font-size: .82rem;
+  font-weight: 650;
+}
+
+.fp-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.fp-form-row .fp-field-message { grid-column: 1 / -1; }
+
+.fp-editor-field > input,
+.fp-editor-field > textarea,
+.fp-editor .fp-select-trigger {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  margin: 0;
+  padding: 8px 11px;
+  border: 1px solid var(--fp-editor-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--fp-editor-text);
+  font: 400 .875rem/1.35 'Google Sans Variable', Arial, sans-serif;
+}
+
+.fp-editor-field > textarea { resize: vertical; }
+.fp-editor :is(input, button)[aria-invalid='true'] { border-color: #a12b40; }
+
+.fp-preview {
+  display: grid;
+  height: clamp(95px, 17dvh, 148px);
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--fp-editor-border);
+  border-radius: 12px;
+  background: #f0eeeb;
+  color: var(--fp-editor-muted);
+  font-size: .82rem;
+}
+
+.fp-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+
+.fp-file {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 36px;
+}
+
+.fp-file input[type='file'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.fp-file-action {
+  flex: none;
+  padding: 8px 12px;
+  border: 1px solid var(--fp-editor-border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.fp-file-name {
+  overflow: hidden;
+  color: var(--fp-editor-muted);
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-file input:focus-visible + .fp-file-action {
+  outline: 2px solid var(--elsewhere-indigo);
+  outline-offset: 2px;
+}
+
+.fp-theme-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.fp-theme-options label {
+  position: relative;
+  cursor: pointer;
+}
+
+.fp-theme-options input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.fp-theme-pill {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--fp-editor-border);
+  border-radius: 20px;
+  background: #f2f1ef;
+  color: var(--fp-editor-text);
+  font-size: .73rem;
+  font-weight: 600;
+}
+
+.fp-theme-pill > span { width: 1em; opacity: 0; }
+.fp-theme-options input:checked + .fp-theme-pill {
+  border-color: #b4bfd7;
+  background: #e9edf7;
+  color: var(--elsewhere-indigo);
+}
+.fp-theme-options input:checked + .fp-theme-pill > span { opacity: 1; }
+.fp-theme-options input:focus-visible + .fp-theme-pill {
+  outline: 2px solid var(--elsewhere-indigo);
+  outline-offset: 2px;
+}
+
+.fp-field-message {
+  margin: 0;
+  color: var(--fp-editor-muted);
+  font-size: .8rem;
+}
+
+.fp-theme-field .fp-field-message { margin-top: 7px; }
+.fp-field-message[role='alert'] { color: #a12b40; }
+.fp-field-message button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.fp-editor-footer {
+  display: grid;
+  max-height: 45%;
+  gap: 8px;
+  padding: 12px var(--fp-editor-padding);
+  overflow-y: auto;
+  border-top: 1px solid var(--fp-editor-border);
+}
+
+.fp-upload-progress {
+  display: grid;
+  gap: 3px;
+  font-size: .77rem;
+}
+
+.fp-upload-progress progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--elsewhere-indigo);
+}
+
+.fp-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.fp-editor-actions button {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--fp-editor-border);
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.fp-editor-actions button[type='submit'] {
+  border-color: var(--elsewhere-indigo);
+  background: var(--elsewhere-indigo);
+  color: #fff;
+}
+
+.fp-editor-actions .fp-delete {
+  margin-inline-end: auto;
+  padding-inline: 3px;
+  border-color: transparent;
+  background: transparent;
+  color: #a12b40;
+}
+
+.fp-editor button:not(:disabled) { cursor: pointer; }
+.fp-editor :disabled + .fp-file-action,
+.fp-theme-options input:disabled + .fp-theme-pill,
+.fp-editor button:disabled { opacity: .55; cursor: default; }
+
+.fp-editor :is(button, input, textarea):focus-visible {
+  outline: 2px solid var(--elsewhere-indigo);
+  outline-offset: 2px;
+}
+
+.fp-editor-body:focus-visible {
+  outline: 2px solid var(--elsewhere-indigo);
+  outline-offset: -3px;
+}
+
+@media (max-width: 767px) {
+  .fp-editor-field > input,
+  .fp-editor-field > textarea,
+  .fp-editor .fp-select-trigger { font-size: 1rem; }
+}

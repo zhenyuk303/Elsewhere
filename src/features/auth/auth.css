@@ -23,6 +23,7 @@
 
 .brand .brand-logo {
   --brand-logo-width: clamp(170px, 15vw, 240px);
+  --brand-logo-size: calc(var(--brand-logo-width) / 5.47);
 }
 
 .title-block {
@@ -139,10 +140,14 @@
   outline: none;
 }
 
-.field-error {
+.field-error,
+.field-hint {
   margin: 0 4px;
-  color: #a84438;
   font-size: 0.72rem;
+}
+
+.field-error {
+  color: #a84438;
 }
 
 .agreement-row {
@@ -282,35 +287,11 @@
 }
 
 .social-icon {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 8px;
-}
-
-.social-icon img {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: block;
+  flex: 0 0 auto;
   object-fit: contain;
-}
-
-.social-icon--github {
-  background: #24292f;
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: -0.08em;
-}
-
-.social-icon--google {
-  background: #fff;
-  color: #4285f4;
-  font-size: 1.35rem;
-  font-weight: 700;
 }
 
 .mode-switch {

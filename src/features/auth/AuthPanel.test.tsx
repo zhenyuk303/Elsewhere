@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import githubMark from '../../assets/social/github-mark.svg'
+import googleMark from '../../assets/social/google-g.png'
 import { AuthPanel } from './AuthPanel'
 
 function renderPanel(mode: 'signup' | 'login' = 'signup') {
@@ -109,8 +111,8 @@ describe('AuthPanel', () => {
   it('shows GitHub and Google marks without the retired providers', () => {
     renderPanel()
 
-    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('.social-icon')).toHaveTextContent('GH')
-    expect(screen.getByRole('button', { name: 'Google' }).querySelector('.social-icon')).toHaveTextContent('G')
+    expect(screen.getByRole('button', { name: 'GitHub' }).querySelector('img')).toHaveAttribute('src', githubMark)
+    expect(screen.getByRole('button', { name: 'Google' }).querySelector('img')).toHaveAttribute('src', googleMark)
     expect(screen.queryByRole('button', { name: 'QQ' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '微信' })).not.toBeInTheDocument()
   })
@@ -220,7 +222,7 @@ describe('AuthPanel', () => {
     } as DOMRect)
 
     await user.type(screen.getByLabelText('Username'), 'traveler')
-    await user.type(screen.getByLabelText('Password'), 'secret-path')
+    await user.type(screen.getByLabelText('Password'), 'Fixture1!')
     await user.click(
       screen.getByRole('checkbox', {
         name: 'I agree to all Term, Privacy Policy and Fees',
@@ -237,6 +239,18 @@ describe('AuthPanel', () => {
       },
       'signup',
     )
+  })
+
+  it('shows the signup password rules and rejects a digits-only password before submitting', async () => {
+    const user = userEvent.setup()
+    const { onAuthenticate } = renderPanel()
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/8–72 characters/)
+    await user.type(screen.getByLabelText('Username'), 'traveler')
+    await user.type(screen.getByLabelText('Password'), '12345678')
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/uppercase letter/)
+    expect(onAuthenticate).not.toHaveBeenCalled()
   })
 
   it('places login social actions in the same form slot as signup', () => {
