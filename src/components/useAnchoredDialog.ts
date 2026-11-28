@@ -6,23 +6,37 @@ type AnchoredDialogOptions = {
   onClose: () => void
   initialFocus?: string
   onBackdropClick?: () => void
+  motion?: 'paper' | 'card'
 }
 
 const motionQuery = '(prefers-reduced-motion: reduce)'
+const paperTiming = { easing: 'cubic-bezier(.25, .62, .26, 1)' }
 
 function prefersReducedMotion() {
   return window.matchMedia?.(motionQuery).matches ?? false
 }
 
-function dialogFrames(panel: HTMLDialogElement, anchor: HTMLElement | null): Keyframe[] | undefined {
+function pixels(values: number[]) {
+  return values.map(value => `${Number(value.toFixed(2))}px`).join(' ')
+}
+
+function dialogFrames(panel: HTMLDialogElement, anchor: HTMLElement | null, motion: 'paper' | 'card'): Keyframe[] | undefined {
   if (!anchor?.isConnected || typeof panel.animate !== 'function' || prefersReducedMotion()) return
-  if (window.CSS?.supports('clip-path', 'path("M 0 0 L 0 1 Z")') === false) return
 
   const target = panel.getBoundingClientRect()
   const source = anchor.getBoundingClientRect()
   if (!source.width || !source.height || target.width < 40 || target.height < 40) return
 
   const { width, height } = target
+  if (motion === 'card') {
+    return [
+      { transformOrigin: 'top left', opacity: .72,
+        transform: `translate(${pixels([source.left - target.left])}, ${pixels([source.top - target.top])}) scale(${source.width / width}, ${source.height / height})` },
+      { transformOrigin: 'top left', opacity: 1, transform: 'translate(0px, 0px) scale(1, 1)' },
+    ]
+  }
+
+  if (window.CSS?.supports('clip-path', 'inset(0 round 8px)') === false) return
   const pullsLeft = source.left + source.width / 2 >= target.left + width / 2
   const pullsUp = source.top + source.height / 2 >= target.top + height / 2
   const seam = Math.min(26, source.height / 2)
@@ -30,41 +44,39 @@ function dialogFrames(panel: HTMLDialogElement, anchor: HTMLElement | null): Key
   const seamY = source.top + (source.height + (pullsUp ? seam : -seam)) / 2
   const startX = seamX - (pullsLeft ? target.right : target.left)
   const startY = seamY - (pullsUp ? target.bottom : target.top)
-  const reachX = Math.max(4, Math.min(width * .36, 168,
+  const reachX = Math.max(4, Math.min(width * .36, 260,
     (pullsLeft ? seamX : window.innerWidth - seamX) - 10))
-  const reachY = Math.max(seam, Math.min(height * .39, 164,
+  const reachY = Math.max(seam, Math.min(height * .29, 210,
     (pullsUp ? seamY : window.innerHeight - seamY) - 10))
 
-  function point(x: number, y: number) {
-    return `${(pullsLeft ? width - x : x).toFixed(2)} ${(pullsUp ? height - y : y).toFixed(2)}`
+  const leadingCorner = pullsUp ? (pullsLeft ? 0 : 1) : (pullsLeft ? 3 : 2)
+
+  function clip(reach: number, length: number, round: number, padding = 0) {
+    const horizontalCut = width - reach
+    const verticalCut = height - length
+    const insets = [
+      pullsUp ? verticalCut : -padding,
+      pullsLeft ? -padding : horizontalCut,
+      pullsUp ? -padding : verticalCut,
+      pullsLeft ? horizontalCut : -padding,
+    ]
+    const corners = [round * .55, round * .55, round * .55, round * .55]
+    corners[leadingCorner] = round
+    corners[(leadingCorner + 2) % 4] = 0
+    return `inset(${pixels(insets)} round ${pixels(corners)})`
   }
 
-  function sheet(reach: number, length: number, neck: number, droop: number, curl: number, padding = 0) {
-    return `path("M ${point(-padding, -padding)}
-      C ${point(reach * .24, -padding)}, ${point(reach * .66, droop * .1 - padding)}, ${point(reach, droop - padding)}
-      C ${point(reach + curl, droop + (length - droop) * .24)}, ${point(reach + curl, length * .88)}, ${point(reach, length)}
-      C ${point(reach * .7, length - (length - neck) * .08)}, ${point(reach * .34, neck)}, ${point(-padding, neck)}
-      C ${point(-padding, neck * .65)}, ${point(-padding, neck * .25)}, ${point(-padding, -padding)} Z")`.replace(/\s+/g, ' ')
+  function offset(x: number, y: number) {
+    return `translate(${pixels([x])}, ${pixels([y])})`
   }
 
-  function frame(offset: number, position: number, clipPath: string, ink: number, sheen: number): Keyframe {
-    return {
-      offset,
-      clipPath,
-      transform: `translate(${startX * position}px, ${startY * position}px)`,
-      '--paper-ink': ink,
-      '--paper-sheen': sheen,
-    }
-  }
-
-  // Pull a narrow leading edge out first. The curve fills in behind it while the form stays full size.
-  const shadowInset = 56
+  const shadowPadding = 48
   return [
-    { ...frame(0, 1, sheet(0, seam, seam, 0, 0), 0, 0), easing: 'ease-out' },
-    frame(.22, 1, sheet(reachX, reachY, seam, reachY * .42, 10), 0, .85),
-    { ...frame(.55, .3, sheet(width * .83, height * .73, height * .32, height * .12, 14), .72, .52),
-      easing: 'cubic-bezier(.2, .55, .26, 1)' },
-    frame(1, 0, sheet(width + shadowInset, height + shadowInset, height + shadowInset, 0, 0, shadowInset), 1, 0),
+    { clipPath: clip(0, seam, 0), transform: offset(startX, startY) },
+    { offset: .36, clipPath: clip(reachX, reachY, Math.min(56, reachX * .42, reachY * .48)),
+      transform: offset(startX * .72, startY * .79) },
+    { clipPath: clip(width + shadowPadding, height + shadowPadding, 0, shadowPadding),
+      transform: offset(0, 0) },
   ]
 }
 
@@ -79,7 +91,7 @@ function hitsBackdrop(event: MouseEvent<HTMLDialogElement>) {
   return event.clientX < left || event.clientX >= right || event.clientY < top || event.clientY >= bottom
 }
 
-export function useAnchoredDialog({ anchor, onClose, initialFocus, onBackdropClick }: AnchoredDialogOptions) {
+export function useAnchoredDialog({ anchor, onClose, initialFocus, onBackdropClick, motion = 'paper' }: AnchoredDialogOptions) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const animation = useRef<Animation | null>(null)
   const isClosing = useRef(false)
@@ -95,9 +107,9 @@ export function useAnchoredDialog({ anchor, onClose, initialFocus, onBackdropCli
     else panel.setAttribute('open', '')
     if (initialFocus) panel.querySelector<HTMLElement>(initialFocus)?.focus({ preventScroll: true })
 
-    const frames = dialogFrames(panel, anchor)
+    const frames = dialogFrames(panel, anchor, motion)
     if (frames) {
-      const opening = panel.animate(frames, { duration: 540, fill: 'backwards' })
+      const opening = panel.animate(frames, { ...paperTiming, duration: motion === 'card' ? 310 : 255, fill: 'backwards' })
       animation.current = opening
       opening.onfinish = () => { animation.current = null }
     } else {
@@ -113,7 +125,7 @@ export function useAnchoredDialog({ anchor, onClose, initialFocus, onBackdropCli
       delete panel.dataset.anchoredDialog
       if (panel.open) hideDialog(panel)
     }
-  }, [anchor, initialFocus])
+  }, [anchor, initialFocus, motion])
 
   function close(afterClose?: () => void) {
     const panel = dialogRef.current
@@ -148,14 +160,14 @@ export function useAnchoredDialog({ anchor, onClose, initialFocus, onBackdropCli
       return
     }
 
-    const frames = dialogFrames(panel, anchor)
+    const frames = dialogFrames(panel, anchor, motion)
     if (!frames) {
       finish()
       return
     }
     panel.inert = true
     panel.dataset.anchoredDialog = 'closing'
-    const closing = panel.animate(frames, { duration: 430, direction: 'reverse', fill: 'both' })
+    const closing = panel.animate(frames, { ...paperTiming, duration: motion === 'card' ? 215 : 195, direction: 'reverse', fill: 'both' })
     animation.current = closing
     closing.onfinish = finish
   }

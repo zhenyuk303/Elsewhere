@@ -14,9 +14,10 @@
   --fp-gutter: var(--home-edge-gutter, max(12px, 1.5vw));
   --fp-muted: #434343;
   --fp-display: Impact, Haettenschweiler, 'Arial Narrow', sans-serif;
+  --fp-prose-font: Georgia, 'Songti SC', 'Noto Serif CJK SC', 'Microsoft YaHei', serif;
   --fp-control-height: clamp(36px, 2.3vw, 42px);
   --fp-tools-top: calc(var(--home-nav-top) + clamp(36px, 3.5vw, 68px) + 8px);
-  --fp-selected-top: max(57px, min(5.2vw, 15svh));
+  --fp-selected-top: calc(var(--fp-tools-top) + var(--fp-control-height) + clamp(12px, 1.15vw, 20px));
   position: relative;
   width: 100%;
   height: 100svh;
@@ -201,36 +202,20 @@
 .fp-details {
   width: min(100%, 30rem);
   margin-top: clamp(14px, 1.45vw, 28px);
-  margin-inline: auto;
   pointer-events: auto;
 }
 .fp-note {
-  --fp-note-height: min(17svh, 10em);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--fp-note-lines, 4);
   margin: 0;
-  max-height: min(var(--fp-note-height), var(--fp-note-room, 100svh));
-  padding-inline-end: .4em;
-  overflow: auto;
+  overflow: hidden;
   color: #292723;
-  font: 400 clamp(.95rem, 1.17vw, 1.22rem)/1.65 Georgia, 'Songti SC', 'Noto Serif CJK SC', SimSun, serif;
+  font: 400 clamp(.94rem, 1.02vw, 1.075rem)/1.75 var(--fp-prose-font);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  text-wrap: pretty;
 }
-.fp-note::-webkit-scrollbar { width: 8px; }
-.fp-note::-webkit-scrollbar-thumb {
-  border: 2px solid var(--elsewhere-warm);
-  border-radius: 10px;
-  background: #aaa69f;
-}
-.fp-note::-webkit-scrollbar-button { display: none; }
-@supports not selector(::-webkit-scrollbar) {
-  .fp-note {
-    scrollbar-width: thin;
-    scrollbar-color: #aaa69f transparent;
-  }
-}
+.fp-note[data-expanded='true'] { display: block; overflow: visible; }
 .fp-note > span {
   color: var(--fp-muted);
   font: 400 .85rem/1.55 'Google Sans Variable', Arial, sans-serif;
@@ -279,9 +264,15 @@
   color: #64615b;
 }
 .fp-detail-meta time { font-variant-numeric: tabular-nums; }
-.fp-edit {
-  min-height: 32px;
+.fp-detail-actions {
+  display: flex;
+  flex: none;
+  gap: 13px;
   margin-inline-start: auto;
+}
+
+.fp-edit, .fp-read-note {
+  min-height: 32px;
   padding: 0;
   border: 0;
   color: var(--elsewhere-indigo);
@@ -289,39 +280,24 @@
   font: 650 .76rem/1 'Google Sans Variable', Arial, sans-serif;
   cursor: pointer;
 }
-.fp-edit:hover { text-decoration: underline; text-underline-offset: 3px; }
+.fp-edit:hover, .fp-read-note:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 @media (min-width: 768px) {
   .fp-province-artwork {
     inline-size: min(100%, clamp(12rem, 27vw, 26rem), 48svh);
   }
-  .fp-details {
-    position: absolute;
-    width: min(42vw, 40rem);
-    top: max(
-      clamp(24px, 3.4svh, 46px),
-      calc(var(--fp-tools-top) + var(--fp-control-height) + 12px - var(--fp-selected-top))
-    );
-    inset-inline: 0;
-    margin: 0 auto;
+  .fp-intro[data-selected='true'] .fp-intro-content {
+    display: grid;
+    grid-template-columns: minmax(0, clamp(10rem, 23vw, 24rem)) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(16px, 1.75vw, 29px);
+    width: min(62vw, 60rem);
   }
-  .fp-note {
-    --fp-note-height: min(21svh, 6lh);
-    font-size: clamp(.95rem, 1.12vw, 1.125rem);
-    line-height: 1.7;
+  .fp-details {
+    width: 100%;
+    margin-top: clamp(8px, 1vw, 16px);
   }
   .fp-detail-footer { margin-top: clamp(8px, .75vw, 12px); }
-}
-
-@media (min-width: 1024px) {
-  .fp-details {
-    --fp-detail-width: min(42vw, 40rem);
-    --fp-detail-start: calc((100% - var(--fp-detail-width)) / 2);
-    top: calc(var(--fp-tools-top) - var(--fp-selected-top));
-    inset-inline: var(--fp-detail-start) auto;
-    width: min(var(--fp-detail-width), calc(100% - var(--fp-detail-start) - var(--fp-tools-reserve, 0px)));
-    margin: 0;
-  }
 }
 
 .fp-gallery {
@@ -436,12 +412,11 @@
   .fp-title--province { font-size: min(17vw, 11svh); transform: none; }
   .fp-province-fallback { width: 136%; transform: scaleX(.61); }
   .fp-description { font-size: clamp(13px, 3.6vw, 20px); }
-  .fp-edit { min-height: 44px; }
+  .fp-edit, .fp-read-note { min-height: 44px; }
 }
 
 @media (max-height: 520px) {
   .fp-intro[data-selected='true'] .fp-province-artwork { inline-size: min(100%, 11rem, 24svh); }
-  .fp-note { --fp-note-height: 12svh; }
 }
 @media (max-width: 767px) and (max-height: 520px) {
   .fp-detail-footer { margin-top: 8px; }

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, vi } from 'vitest'
 import { App } from './App'
 import { authenticate, currentUser, logout } from './features/auth/authApi'
 import {
+  FOOTPRINTS_TO_GUIDES_EXIT_MS,
   HOME_FOOTPRINTS_EXIT_MS,
   HOME_GALLERY_MS,
   HOME_LIFT_MS,
@@ -491,10 +492,27 @@ describe('App', () => {
     expect(screen.queryByLabelText('Province')).not.toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBe(navigation)
 
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Footprints' })) })
+    const footprints = screen.getByRole('button', { name: 'Footprints' })
+    await act(async () => { fireEvent.click(footprints) })
     expect(screen.getByRole('combobox', { name: 'Province' })).toBeInTheDocument()
     expect(guides).not.toHaveAttribute('aria-current')
+    const outgoing = document.querySelector('.footprints')
+
     fireEvent.click(guides)
+    expect(outgoing).toBeInTheDocument()
+    expect(document.getElementById('guides-title')).not.toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(FOOTPRINTS_TO_GUIDES_EXIT_MS / 2))
+    fireEvent.click(footprints)
+    await act(async () => { vi.advanceTimersByTime(FOOTPRINTS_TO_GUIDES_EXIT_MS) })
+    expect(outgoing).toBeInTheDocument()
+    expect(footprints).toHaveAttribute('aria-current', 'page')
+
+    fireEvent.click(guides)
+    act(() => vi.advanceTimersByTime(FOOTPRINTS_TO_GUIDES_EXIT_MS - 1))
+    expect(outgoing).toBeInTheDocument()
+    await act(async () => { vi.advanceTimersByTime(1) })
+    expect(outgoing).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBe(navigation)
     expect(document.getElementById('guides-title')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Elsewhere home' }))
     expect(screen.getByRole('heading', { name: 'FIND YOUR ELSEWHERE' })).toBeInTheDocument()
@@ -514,7 +532,7 @@ describe('App', () => {
     expect(home.closest('main')).not.toHaveAttribute('data-footprints-transition', 'leaving')
   })
 
-  it('opens Footprints immediately when reduced motion is requested', async () => {
+  it('changes pages immediately when reduced motion is requested', async () => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
     vi.mocked(window.matchMedia).mockImplementation(query => ({
       ...media,
@@ -529,6 +547,9 @@ describe('App', () => {
     expect(footprints).not.toHaveAttribute('data-opening', 'true')
     expect(navigation.closest('main')).not.toHaveAttribute('data-footprints-transition', 'leaving')
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBe(navigation)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Guides' })) })
+    expect(footprints).not.toBeInTheDocument()
+    expect(document.getElementById('guides-title')).toBeInTheDocument()
   })
 
   it('settles on the last gallery click and keeps missing info tied to the lead photo', async () => {
@@ -720,8 +741,9 @@ describe('App', () => {
     const initial = names()
     fireEvent.keyDown(screen.getAllByRole('button', { name: /^View photo from / })[0], { key: 'ArrowRight' })
     act(() => vi.advanceTimersByTime(2400))
-    expect(names().slice(1)).toEqual(initial.slice(0, 4))
-    expect(initial).not.toContain(names()[0])
+    const shifted = names()
+    expect(shifted.slice(1)).toEqual(initial.slice(0, shifted.length - 1))
+    expect(initial).not.toContain(shifted[0])
     expect(screen.getByRole('heading', { name: 'Footprints' })).toBeInTheDocument()
   })
 

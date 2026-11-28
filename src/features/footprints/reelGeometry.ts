@@ -1,8 +1,10 @@
 export const mobileBreakpoint = 767
+const reelPhotoScale = .9
+const desktopPhotoWidth = .30
 const wrap = (number: number, length: number) => ((number % length) + length) % length
 
 export function reelStride(viewport: number) {
-  return viewport <= mobileBreakpoint ? Math.max(226, viewport * .68) + 8 : viewport * .15
+  return viewport <= mobileBreakpoint ? photoSize(viewport).width + 8 : viewport * .15
 }
 
 export function wheelTravel(dx: number, dy: number, mode = 0, pageHeight = 720) {
@@ -12,10 +14,10 @@ export function wheelTravel(dx: number, dy: number, mode = 0, pageHeight = 720) 
 
 export function photoSize(viewport: number) {
   if (viewport <= mobileBreakpoint) {
-    const width = reelStride(viewport) - 8
+    const width = Math.max(226, viewport * .68) * reelPhotoScale
     return { width, height: width * .98 }
   }
-  return { width: viewport * .30, height: viewport * .275 }
+  return { width: viewport * desktopPhotoWidth * reelPhotoScale, height: viewport * .275 * reelPhotoScale }
 }
 
 export function photoGeometry(viewport: number, x: number) {
@@ -26,9 +28,9 @@ export function photoGeometry(viewport: number, x: number) {
   // is scaled with the card, which produces the accelerating staircase.
   const min = viewport <= 991 ? .35 : .055
   const max = viewport <= 991 ? 1.4 : viewport <= 1440 ? 1.6 : 2.1
-  const progress = Math.max(0, Math.min(1, (x + width / 2) / viewport))
+  const progress = Math.max(0, Math.min(1, x / viewport + desktopPhotoWidth / 2))
   const scale = min + progress * (max - min)
-  return { left: x * scale, width: width * scale, height: height * scale, scale }
+  return { left: x * scale * reelPhotoScale, width: width * scale, height: height * scale, scale }
 }
 
 export function highestPhotoBefore(viewport: number, rightEdge: number) {

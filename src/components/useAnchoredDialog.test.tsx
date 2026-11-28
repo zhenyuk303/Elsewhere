@@ -44,12 +44,14 @@ function setup(reducedMotion = false) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('anchored dialog motion', () => {
-  it('reveals a curved sheet instead of resizing the form to the button', () => {
+  it('reveals a rounded sheet at full form size', () => {
     const { animate } = setup()
-    const [frames] = animate.mock.calls[0] as unknown as [Keyframe[]]
+    const [frames, options] = animate.mock.calls[0] as unknown as [Keyframe[], KeyframeAnimationOptions]
+    expect(options.duration).toBeLessThan(300)
     expect(frames[0]).toMatchObject({ transform: 'translate(0px, -41px)' })
-    expect(frames.every(frame => frame.clipPath?.toString().includes('C'))).toBe(true)
+    expect(frames.every(frame => frame.clipPath?.toString().startsWith('inset('))).toBe(true)
     expect(frames.every(frame => !frame.transform?.toString().includes('scale'))).toBe(true)
+    expect(frames[1].transform).not.toBe(frames[0].transform)
     expect(frames.at(-1)?.transform).toBe('translate(0px, 0px)')
   })
 

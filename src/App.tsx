@@ -16,6 +16,7 @@ import type {
 import { TravelCarousel } from './features/carousel/TravelCarousel'
 import { FootprintsPage } from './features/footprints/FootprintsPage'
 import { GuidesPage } from './features/guides/GuidesPage'
+import { CommunityPage } from './features/community/CommunityPage'
 import { HomePage } from './features/home/HomePage'
 import {
   HOME_GALLERY_MS,
@@ -115,7 +116,7 @@ export function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [screen, dispatch] = useReducer(screenReducer, initialScreenState)
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [page, setPage] = useState<'home' | 'footprints' | 'guides'>('home')
+  const [page, setPage] = useState<'home' | 'footprints' | 'guides' | 'community'>('home')
   const [isLogoutPending, setIsLogoutPending] = useState(false)
   const signInRevision = useRef(0)
   const [oauthError] = useState(() => {
@@ -234,6 +235,7 @@ export function App() {
 
   const openFootprints = useCallback(() => setPage('footprints'), [])
   const openGuides = useCallback(() => setPage('guides'), [])
+  const openCommunity = useCallback(() => setPage('community'), [])
 
   const handleLogout = useCallback(async () => {
     signInRevision.current += 1
@@ -259,12 +261,16 @@ export function App() {
           onLogout={handleLogout}
           onOpenFootprints={user ? openFootprints : undefined}
           onOpenGuides={user ? openGuides : undefined}
+          onOpenCommunity={user ? openCommunity : undefined}
           onReturnHome={() => setPage('home')}
           footprints={screen.view === 'home' && page === 'footprints' && user
             ? <FootprintsPage key={user.id} ownerId={user.id} />
             : undefined}
           guides={screen.view === 'home' && page === 'guides' && user
             ? <GuidesPage key={user.id} ownerId={user.id} />
+            : undefined}
+          community={screen.view === 'home' && page === 'community' && user
+            ? <CommunityPage key={user.id} ownerId={user.id} username={user.username} />
             : undefined}
         />
       ) : null}

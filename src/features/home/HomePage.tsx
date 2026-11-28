@@ -9,6 +9,7 @@ import {
 import { BrandLogo } from '../brand/BrandLogo'
 import { usePopupPullout } from '../transition/usePopupPullout'
 import {
+  FOOTPRINTS_TO_GUIDES_EXIT_MS,
   HOME_ACTION_DELAY_MS,
   HOME_CONTENT_DELAY_MS,
   HOME_COUNTER_EXIT_AT_MS,
@@ -29,19 +30,24 @@ const introStyle = {
   '--home-action-delay': `${HOME_ACTION_DELAY_MS}ms`,
   '--home-line-duration': `${HOME_LINE_REVEAL_MS}ms`,
   '--home-footprints-exit': `${HOME_FOOTPRINTS_EXIT_MS}ms`,
+  '--footprints-guides-exit': `${FOOTPRINTS_TO_GUIDES_EXIT_MS}ms`,
 } as CSSProperties
 
 const digits = Array.from({ length: 10 }, (_, digit) => digit)
 const actionEdges = ['top', 'right', 'bottom', 'left'] as const
+
+type Subpage = 'footprints' | 'guides' | 'community'
 
 type HomePageProps = {
   phase: HomePhase
   onLogout: () => Promise<void>
   onOpenFootprints?: () => void
   onOpenGuides?: () => void
+  onOpenCommunity?: () => void
   onReturnHome?: () => void
   footprints?: ReactNode
   guides?: ReactNode
+  community?: ReactNode
 }
 
 function ProfileIcon() {
@@ -106,11 +112,13 @@ function HomepageMarquee({ phase }: { phase: HomePhase }) {
   )
 }
 
-export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onReturnHome, footprints, guides }: HomePageProps) {
+export function HomePage({
+  phase, onLogout, onOpenFootprints, onOpenGuides, onOpenCommunity, onReturnHome, footprints, guides, community,
+}: HomePageProps) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isLogoutPending, setIsLogoutPending] = useState(false)
-  const [pendingPage, setPendingPage] = useState<'footprints' | 'guides' | null>(null)
-  const leavingFootprints = pendingPage !== null
+  const [pendingPage, setPendingPage] = useState<Subpage | null>(null)
+  const [guidesArrival, setGuidesArrival] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const profilePopupRef = useRef<HTMLDivElement>(null)
   const showProfilePopup = usePopupPullout(isProfileMenuOpen, profilePopupRef)
@@ -119,7 +127,13 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
   const menuFocusTargetRef = useRef<'first' | 'last'>('first')
   const footprintsButtonRef = useRef<HTMLButtonElement>(null)
   const guidesButtonRef = useRef<HTMLButtonElement>(null)
-  const hasSubpage = !!footprints || !!guides
+  const communityButtonRef = useRef<HTMLButtonElement>(null)
+  const activePage = community ? 'community' : guides ? 'guides' : footprints ? 'footprints' : null
+  const hasSubpage = activePage !== null
+  const leavingHome = !hasSubpage && pendingPage !== null
+  const leavingFootprints = !!footprints && pendingPage === 'guides'
+  const openPages = { footprints: onOpenFootprints, guides: onOpenGuides, community: onOpenCommunity }
+  const openPendingPage = pendingPage ? openPages[pendingPage] : undefined
   const isInteractive = phase === 'lifting' || phase === 'ready'
   const isHidden = phase === 'primed'
   const isInteractionLocked = !isInteractive
@@ -131,28 +145,37 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
   }, [isHidden, hasSubpage])
 
   useEffect(() => {
-    const openPage = pendingPage === 'footprints' ? onOpenFootprints : onOpenGuides
-    if (!pendingPage || !openPage) return
+    if (!openPendingPage) return
     const timer = window.setTimeout(() => {
+      setGuidesArrival(leavingFootprints)
       setPendingPage(null)
-      openPage()
-    }, HOME_FOOTPRINTS_EXIT_MS)
+      openPendingPage()
+    }, leavingFootprints ? FOOTPRINTS_TO_GUIDES_EXIT_MS : HOME_FOOTPRINTS_EXIT_MS)
     return () => window.clearTimeout(timer)
-  }, [pendingPage, onOpenFootprints, onOpenGuides])
+  }, [pendingPage, leavingFootprints, openPendingPage])
 
-  function openPage(destination: 'footprints' | 'guides') {
-    const open = destination === 'footprints' ? onOpenFootprints : onOpenGuides
-    const alreadyOpen = destination === 'footprints' ? footprints : guides
-    if (!isInteractive || !open || alreadyOpen || pendingPage === destination) return
-    if (hasSubpage || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+  function openPage(destination: Subpage) {
+    const open = openPages[destination]
+    if (!isInteractive || !open || pendingPage === destination) return
+    if (activePage === destination) {
       setPendingPage(null)
+      return
+    }
+    if ((hasSubpage && !(activePage === 'footprints' && destination === 'guides')) ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setPendingPage(null)
+      setGuidesArrival(false)
       open()
-    } else setPendingPage(destination)
+      return
+    }
+    setPendingPage(destination)
   }
 
   function returnHome() {
-    const trigger = guides || pendingPage === 'guides' ? guidesButtonRef : footprintsButtonRef
+    const triggerPage = pendingPage ?? activePage
+    const trigger = triggerPage === 'community' ? communityButtonRef : triggerPage === 'guides' ? guidesButtonRef : footprintsButtonRef
     setPendingPage(null)
+    setGuidesArrival(false)
     onReturnHome?.()
     trigger.current?.focus({ preventScroll: true })
   }
@@ -264,11 +287,11 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
 
   return (
     <main
-      className={`homepage ${guides ? 'homepage--guides' : footprints ? 'homepage--footprints' : `homepage--${phase}`}`}
+      className={`homepage homepage--${activePage ?? phase}`}
       style={introStyle}
       data-home-phase={phase}
-      data-footprints-transition={leavingFootprints ? 'leaving' : undefined}
-      aria-labelledby={guides ? 'guides-title' : footprints ? 'footprints-title' : 'homepage-title'}
+      data-footprints-transition={leavingHome ? 'leaving' : undefined}
+      aria-labelledby={`${activePage ?? 'homepage'}-title`}
       aria-hidden={isHidden ? true : undefined}
       inert={isInteractionLocked ? true : undefined}
     >
@@ -283,7 +306,7 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
         >
           {onReturnHome || hasSubpage ? (
             <button type="button" className="homepage-brand-home" aria-label="Elsewhere home"
-              disabled={!hasSubpage && !leavingFootprints} onClick={returnHome}>
+              disabled={!hasSubpage && !leavingHome} onClick={returnHome}>
               <BrandLogo className="homepage-brand homepage-reveal-line" decorative />
             </button>
           ) : <BrandLogo className="homepage-brand homepage-reveal-line" />}
@@ -296,7 +319,8 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
               aria-current={guides ? 'page' : undefined} onClick={() => openPage('guides')}>
               <span className="homepage-reveal-line">Guides</span>
             </button>
-            <button className="homepage-nav-action" type="button">
+            <button className="homepage-nav-action" type="button" ref={communityButtonRef}
+              aria-current={community ? 'page' : undefined} onClick={() => openPage('community')}>
               <span className="homepage-reveal-line">Community</span>
             </button>
           </div>
@@ -331,7 +355,7 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
                   role="menuitem"
                   onClick={() => {
                     closeProfileMenu(true)
-                    if (hasSubpage || leavingFootprints) returnHome()
+                    if (hasSubpage || leavingHome) returnHome()
                   }}
                 >
                   Personal homepage
@@ -350,8 +374,14 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
           </div>
         </nav>
 
-        {guides ?? footprints ?? (
-          <div className="homepage-route-content" inert={leavingFootprints ? true : undefined}>
+        {community ?? (guides ? (
+          guidesArrival ? <div className="homepage-guides-arrival">{guides}</div> : guides
+        ) : footprints ? (
+          <div className="homepage-footprints-content" data-leaving={leavingFootprints || undefined} inert={leavingFootprints}>
+            {footprints}
+          </div>
+        ) : (
+          <div className="homepage-route-content" inert={leavingHome ? true : undefined}>
             <HomepageMarquee phase={phase} />
 
             {phase === 'ready' ? <WalkerParade /> : null}
@@ -376,7 +406,7 @@ export function HomePage({ phase, onLogout, onOpenFootprints, onOpenGuides, onRe
               <p className="homepage-credit homepage-reveal-line"><BrandLogo /><span>· 2026</span></p>
             </footer>
           </div>
-        )}
+        ))}
       </div>
 
       {!hasSubpage && <>

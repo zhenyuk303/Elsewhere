@@ -71,10 +71,29 @@ body.home-view {
   ) {
     animation: homepage-content-exit var(--home-footprints-exit) ease both;
   }
+
+  .homepage-footprints-content {
+    transition: opacity var(--footprints-guides-exit) ease,
+                transform var(--footprints-guides-exit) var(--home-fast-out);
+  }
+
+  .homepage-footprints-content[data-leaving='true'] {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  .homepage-guides-arrival {
+    animation: homepage-guides-arrive 165ms var(--home-fast-out) both;
+  }
 }
 
 @keyframes homepage-content-exit {
   to { opacity: 0; }
+}
+
+@keyframes homepage-guides-arrive {
+  /* Start above the resting position so the full-height page stays within the viewport. */
+  from { opacity: .68; transform: translateY(-5px); }
 }
 
 .homepage-indigo-curtain {
@@ -197,7 +216,7 @@ body.home-view {
   place-items: center;
   padding: 0;
   border: 1px solid var(--elsewhere-indigo);
-  border-radius: 0;
+  border-radius: 50%;
   background: var(--elsewhere-indigo);
   color: var(--elsewhere-warm);
   cursor: pointer;

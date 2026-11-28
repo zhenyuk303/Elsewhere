@@ -140,6 +140,8 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   const [gallery, setGallery] = useState<Gallery>({ ids: [] })
   const [filterSlide, setFilterSlide] = useState<FilterSlide | null>(null)
   const [editor, setEditor] = useState<'add' | Footprint | null>(null)
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null)
+  const [noteClipped, setNoteClipped] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -151,7 +153,6 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   const galleryVersion = useRef(0)
   const chosenFilters = useRef(allFilters)
   const sceneElement = useRef<HTMLElement>(null)
-  const toolsElement = useRef<HTMLDivElement>(null)
   const detailsElement = useRef<HTMLDivElement>(null)
   const noteElement = useRef<HTMLParagraphElement>(null)
   const wheelPointer = useRef<{ x: number; y: number } | null>(null)
@@ -222,38 +223,42 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
     chosenFilters.current = next
     setFilters(next)
     setNotice('')
+    setExpandedNoteId(null)
     slideToFilter({ ids: shufflePhotoIds(filterPhotos(photos, next)), version: ++galleryVersion.current })
   }
 
   function select(photo: Footprint, card: GalleryCard) {
     if (filterSlide) return
     setNotice('')
+    if (gallery.lead?.id !== photo.id) setExpandedNoteId(null)
     setGallery(current => ({ ...current, lead: photo, leadKey: card.key }))
     reel.scrollTo(reel.position + card.x - rightmostPhotoX(reel.width))
   }
 
   const lead = gallery.lead
   const hasLead = !!lead
+  const noteExpanded = !!lead && expandedNoteId === lead.id
+  const noteText = lead?.note.trim() ?? ''
+  const notePreview = noteText.split(/\r?\n[ \t]*\r?\n/, 1)[0]
+  const hasFullNote = !!noteText && (noteExpanded || notePreview !== noteText || noteClipped)
   const titleProvince = lead?.province ?? filters.province
   const canScrollReel = !filterSlide && gallery.ids.length > 0
 
   useLayoutEffect(() => {
     const scene = sceneElement.current
-    const tools = toolsElement.current
     const details = detailsElement.current
     const note = noteElement.current
-    if (!scene || !tools || !details || !note) return
+    if (!scene || !details || !note) return
 
     const measure = () => {
       const frame = scene.getBoundingClientRect()
       if (!frame.height) return
-      scene.style.setProperty('--fp-tools-reserve', `${Math.ceil(tools.getBoundingClientRect().width) + 20}px`)
       const reading = details.getBoundingClientRect()
       const body = note.getBoundingClientRect()
       const photoHeight = highestPhotoBefore(reel.width, reading.right - frame.left + 12)
       const spaceAroundNote = reading.bottom - frame.top - body.height + photoHeight + 24
       const lineHeight = Number.parseFloat(getComputedStyle(note).lineHeight)
-      const minimumNoteHeight = Math.min(note.scrollHeight, lineHeight * 3)
+      const minimumNoteHeight = noteExpanded ? body.height : Math.min(note.scrollHeight, lineHeight * 3)
       const title = heading.current?.querySelector<HTMLElement>(
         '.fp-title-current .fp-province-artwork, .fp-title-current .fp-province-fallback',
       )?.getBoundingClientRect()
@@ -264,11 +269,13 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
       const minimumHeight = Math.ceil(Math.max(spaceAroundNote + minimumNoteHeight, spaceForTitle))
       const noteRoom = Math.floor(Math.max(window.innerHeight, minimumHeight) - spaceAroundNote)
       scene.style.setProperty('--fp-minimum-height', `${minimumHeight}px`)
-      note.style.setProperty('--fp-note-room', `${noteRoom}px`)
+      if (!noteExpanded) {
+        note.style.setProperty('--fp-note-lines', String(Math.max(1, Math.min(4, Math.floor(noteRoom / lineHeight)))))
+        setNoteClipped(note.scrollHeight - note.clientHeight > 1)
+      }
     }
     measure()
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
-    observer?.observe(tools)
     observer?.observe(details)
     if (heading.current) observer?.observe(heading.current)
     window.addEventListener('resize', measure)
@@ -276,10 +283,9 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
       observer?.disconnect()
       window.removeEventListener('resize', measure)
       scene.style.removeProperty('--fp-minimum-height')
-      scene.style.removeProperty('--fp-tools-reserve')
-      note.style.removeProperty('--fp-note-room')
+      note.style.removeProperty('--fp-note-lines')
     }
-  }, [lead?.id, titleProvince, reel.width])
+  }, [lead?.id, noteExpanded, noteText, titleProvince, reel.width])
 
   useEffect(() => {
     const element = sceneElement.current
@@ -351,7 +357,7 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
   return (
     <section ref={sceneElement} className="footprints" data-opening={opening && gallery.version === undefined}
       style={{ '--fp-title-letter-duration': `${titleLetterDuration}ms` } as CSSProperties}>
-      <div ref={toolsElement} className="fp-tools">
+      <div className="fp-tools">
         <div className="fp-filter">
           <span aria-hidden="true">Province</span>
           <FootprintSelect id="fp-filter-province" label="Province" value={filters.province} options={provinceOptions}
@@ -373,17 +379,26 @@ export function FootprintsPage({ ownerId, repository = serverFootprints }: {
           <JournalTitle province={titleProvince} headingRef={heading} />
           {lead ? (
             <div className="fp-details" ref={detailsElement} aria-live="polite">
-              <p key={lead.id} ref={noteElement} className="fp-note">{lead.note.trim() ? lead.note : <span>Note to be added</span>}</p>
+              <p id="fp-journal-note" key={lead.id} ref={noteElement} className="fp-note" data-expanded={noteExpanded}>
+                {noteExpanded ? lead.note : notePreview || <span>Note to be added</span>}
+              </p>
               <div className="fp-detail-footer">
                 <dl className="fp-detail-meta">
                   <div><dt className="fp-sr-only">City</dt><dd>{lead.city || <span>City to be added</span>}</dd></div>
                   <div><dt className="fp-sr-only">Date</dt><dd>{lead.date ? <time dateTime={lead.date}>{lead.date}</time> : <span>Date to be added</span>}</dd></div>
                   <div><dt className="fp-sr-only">Theme</dt><dd>{lead.themes.length ? lead.themes.join(' / ') : <span>Theme to be added</span>}</dd></div>
                 </dl>
-                {lead.ownerId === ownerId && <button type="button" className="fp-edit" onClick={event => {
-                  editorTrigger.current = event.currentTarget
-                  setEditor(lead)
-                }}>Edit<span aria-hidden="true"> ↗</span></button>}
+                {(hasFullNote || lead.ownerId === ownerId) && <div className="fp-detail-actions">
+                  {hasFullNote && <button type="button" className="fp-read-note"
+                    aria-expanded={noteExpanded} aria-controls="fp-journal-note"
+                    onClick={() => setExpandedNoteId(noteExpanded ? null : lead.id)}>
+                    {noteExpanded ? 'Show less' : 'Read full note'}
+                  </button>}
+                  {lead.ownerId === ownerId && <button type="button" className="fp-edit" onClick={event => {
+                    editorTrigger.current = event.currentTarget
+                    setEditor(lead)
+                  }}>Edit<span aria-hidden="true"> ↗</span></button>}
+                </div>}
               </div>
             </div>
           ) : <p className="fp-description">{introduction.lines.map(line => <span key={line}>{line}</span>)}</p>}

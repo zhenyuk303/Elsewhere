@@ -14,6 +14,7 @@ export const HOME_CONTENT_DELAY_MS = 600
 export const HOME_ACTION_DELAY_MS = 1380
 export const HOME_LINE_REVEAL_MS = 800
 export const HOME_FOOTPRINTS_EXIT_MS = 300
+export const FOOTPRINTS_TO_GUIDES_EXIT_MS = 180
 // Give the browser a paint after the last line settles before the walker mounts.
 export const HOME_LIFT_MS = HOME_ACTION_DELAY_MS + HOME_LINE_REVEAL_MS + 40
 
