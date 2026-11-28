@@ -1,0 +1,44 @@
+@property --paper-ink {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --paper-sheen {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+dialog[data-anchored-dialog] > :not(dialog) {
+  opacity: var(--paper-ink, 1);
+}
+
+dialog[data-anchored-dialog]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--paper-sheen, 0);
+  background: linear-gradient(138deg, rgb(89 73 53 / 20%), rgb(255 255 255 / 56%) 51%, rgb(89 73 53 / 16%));
+}
+
+dialog[data-anchored-dialog]::backdrop {
+  transition: opacity 375ms ease;
+}
+
+dialog[data-anchored-dialog='closing']::backdrop {
+  opacity: 0;
+}
+
+@starting-style {
+  dialog[data-anchored-dialog='open']::backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[data-anchored-dialog]::backdrop {
+    transition: none;
+  }
+}

@@ -15,6 +15,7 @@ import type {
 } from './features/auth/types'
 import { TravelCarousel } from './features/carousel/TravelCarousel'
 import { FootprintsPage } from './features/footprints/FootprintsPage'
+import { GuidesPage } from './features/guides/GuidesPage'
 import { HomePage } from './features/home/HomePage'
 import {
   HOME_GALLERY_MS,
@@ -114,7 +115,7 @@ export function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [screen, dispatch] = useReducer(screenReducer, initialScreenState)
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [showFootprints, setShowFootprints] = useState(false)
+  const [page, setPage] = useState<'home' | 'footprints' | 'guides'>('home')
   const [isLogoutPending, setIsLogoutPending] = useState(false)
   const signInRevision = useRef(0)
   const [oauthError] = useState(() => {
@@ -231,13 +232,14 @@ export function App() {
     })
   }, [])
 
-  const openFootprints = useCallback(() => setShowFootprints(true), [])
+  const openFootprints = useCallback(() => setPage('footprints'), [])
+  const openGuides = useCallback(() => setPage('guides'), [])
 
   const handleLogout = useCallback(async () => {
     signInRevision.current += 1
     setIsLogoutPending(true)
     setAuthMode('login')
-    setShowFootprints(false)
+    setPage('home')
     setUser(null)
     dispatch({ type: 'return-to-auth' })
     try {
@@ -256,9 +258,13 @@ export function App() {
           phase={screen.homePhase}
           onLogout={handleLogout}
           onOpenFootprints={user ? openFootprints : undefined}
-          onReturnHome={() => setShowFootprints(false)}
-          footprints={screen.view === 'home' && showFootprints && user
+          onOpenGuides={user ? openGuides : undefined}
+          onReturnHome={() => setPage('home')}
+          footprints={screen.view === 'home' && page === 'footprints' && user
             ? <FootprintsPage key={user.id} ownerId={user.id} />
+            : undefined}
+          guides={screen.view === 'home' && page === 'guides' && user
+            ? <GuidesPage key={user.id} ownerId={user.id} />
             : undefined}
         />
       ) : null}
